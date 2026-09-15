@@ -1,4 +1,4 @@
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 import offer from "../src/content/offer.json";
@@ -7,11 +7,15 @@ import {
   type AddonId, type Currency, type LadderId,
 } from "../src/order/prices";
 
-const plan03 = readFileSync(resolve(__dirname, "../../Game of Us/03-offer-and-catalogue.md"), "utf8");
+// The business plan lives beside this repo on the owner's machine, not in it: CI (and a fresh clone) skips
+// the plan cross-check rather than failing on a missing file.
+const plan03Path = resolve(__dirname, "../../Game of Us/03-offer-and-catalogue.md");
+const hasPlan = existsSync(plan03Path);
+const plan03 = hasPlan ? readFileSync(plan03Path, "utf8") : "";
 const ladders = Object.keys(LADDERS) as LadderId[];
 const major = (minor: number, c: Currency) => (c === "DKK" ? Math.round(minor / 100).toLocaleString("en-US") : (minor / 100).toFixed(2));
 
-describe("price file agrees with plan 03", () => {
+describe.skipIf(!hasPlan)("price file agrees with plan 03", () => {
   it.each(ladders)("ladder %s: every edition's founder and normal price is in plan 03", l => {
     for (const id of EDITION_IDS) {
       const e = LADDERS[l].editions[id];
