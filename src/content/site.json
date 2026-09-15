@@ -1,0 +1,8 @@
+{
+  "_note": "Fill these in when the accounts exist. While a URL is empty the site says ordering opens soon instead of linking nowhere.",
+  "orderFormUrl": "",
+  "contactEmail": "",
+  "analyticsToken": "",
+  "siteUrl": "",
+  "isDraft": true
+}

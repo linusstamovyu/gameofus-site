@@ -1,0 +1,174 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Game of Us · A retro RPG starring your friends</title>
+  <meta name="description" content="We turn your group's real photos, places and in-jokes into a retro RPG you play together in the browser. Made for stag dos, group trips, big birthdays and Christmas.">
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="Game of Us · A retro RPG starring your friends">
+  <meta property="og:description" content="Your friends. Your places. Your game. Walk the beach and meet the squad.">
+  <meta property="og:image" content="assets/share.jpg">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="theme-color" content="#7a4a26">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect x='3' y='3' width='10' height='10' transform='rotate(45 8 8)' fill='%231a9e95' stroke='%23fdf6e3' stroke-width='2'/%3E%3C/svg%3E">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Pixelify+Sans:wght@500;700&display=swap">
+  <script type="module" src="/src/main.ts"></script>
+</head>
+<body>
+<a class="skip-link" href="#features">Skip to the site</a>
+
+<nav class="nav" aria-label="Main">
+  <div class="wrap">
+    <a class="logo" href="#top"><i aria-hidden="true"></i>Game of Us</a>
+    <span class="draft-flag" data-draft>Draft</span>
+    <ul>
+      <li><a href="#features">The game</a></li>
+      <li><a href="#squad">The squad</a></li>
+      <li><a href="#how">How it works</a></li>
+      <li><a href="#prices">Prices</a></li>
+      <li><a href="#faq">FAQ</a></li>
+    </ul>
+    <span id="navOrder"></span>
+  </div>
+</nav>
+
+<header class="hero" id="top">
+  <div class="wrap">
+    <div class="stage" id="stage" tabindex="0" aria-label="Playable beach. Click or tap the sand to walk; after clicking, use W A S D to walk and E to talk. Everything here is also written out below.">
+      <canvas aria-hidden="true"></canvas>
+      <div class="title-card" id="titleCard">
+        <p class="eyebrow">A retro RPG starring your friends</p>
+        <h1>Your friends. Your places. <em>Your game.</em></h1>
+        <p>We turn your group's real photos, places and in-jokes into a game you play together. This beach is a real one: walk around and meet the squad.</p>
+        <div class="row">
+          <button class="btn" id="heroTour" type="button">Take the tour ▶</button>
+          <button class="btn ghost" id="heroWalk" type="button">Walk around</button>
+        </div>
+        <small>Tap or click the sand to walk · <kbd>WASD</kbd> <kbd>Shift</kbd> <kbd>E</kbd> after clicking the world</small>
+      </div>
+      <button class="mini-title" id="miniTitle" type="button" hidden>◀ Game of Us</button>
+      <nav class="tour" aria-label="Guided tour">
+        <button class="btn ghost" id="prev" type="button" aria-label="Previous stop">◀</button>
+        <div class="where"><small id="tourStep">Guided tour</small><strong id="tourName">Stops on the beach</strong><div class="dots" id="dots"></div></div>
+        <button class="btn" id="next" type="button">Start ▶</button>
+      </nav>
+      <div class="scrim" id="scrim" hidden></div>
+      <section class="card" id="card" role="dialog" aria-labelledby="cardTitle" hidden></section>
+      <div class="toast" id="toast" role="status" hidden></div>
+      <noscript><p class="noscript">The beach needs JavaScript. Everything on it is written out below.</p></noscript>
+    </div>
+    <div class="skip">
+      <span>Rather read than walk? Everything on the beach is also on this page.</span>
+      <a href="#features">Scroll to the site ↓</a>
+    </div>
+  </div>
+</header>
+
+<main>
+  <section class="night" id="features">
+    <div class="wrap">
+      <div class="sec-head">
+        <div><p class="eyebrow">What's in your game</p><h2>A real adventure, not a greeting card</h2></div>
+        <p>Every game is built on the same engine as our flagship: an overworld to explore, turn-based battles with types and evolutions, and a story that ends somewhere only your group understands.</p>
+      </div>
+      <div class="features">
+        <article class="feat">
+          <div class="scene" style="background-image:url(assets/bg_beach.jpg)" role="img" aria-label="A battle on the beach: Rico against Kai">
+            <div class="hp" style="left:10px;top:10px"><b><span>Kai</span><span>Lv 12</span></b><i style="--w:62%"></i></div>
+            <div class="spr" style="background-image:url(assets/kai_walk.png);right:22%;top:14%;background-position:0 0"></div>
+            <div class="spr" style="background-image:url(assets/rico_walk.png);left:18%;bottom:6%;width:84px;height:168px;background-position:37.5% 0"></div>
+            <div class="hp" style="right:10px;bottom:48px"><b><span>Rico</span><span>Lv 12</span></b><i style="--w:88%"></i></div>
+            <span class="move-pop">Rico used Casual Nutmeg!</span>
+          </div>
+          <div class="txt"><p class="eyebrow">Turn-based battles</p><p>Every friend is a fighter with a type, stats and four signature moves drawn from your in-jokes. Catch the rest of the group and switch between them mid-fight.</p></div>
+        </article>
+        <article class="feat">
+          <div class="scene" style="background-image:url(assets/bg_harbour.jpg)" role="img" aria-label="Nala the pug walking along the marina">
+            <div class="spr walk-side" style="background-image:url(assets/nala_walk.png);bottom:4%;transform:scaleX(-1)"></div>
+            <button class="pause" type="button" aria-label="Pause animation" data-pause>❚❚</button>
+          </div>
+          <div class="txt"><p class="eyebrow">Your places, as the map</p><p>The flat, the beach, the bar you always end up in. We lay the world out from your photos, so walking to the marina in the game means something.</p></div>
+        </article>
+        <article class="feat">
+          <div class="scene" style="background-image:url(assets/bg_oura_street.jpg)" role="img" aria-label="Elias walking down the avenue">
+            <div class="spr walk-down" style="background-image:url(assets/elias_walk.png);left:44%;bottom:5%"></div>
+            <button class="pause" type="button" aria-label="Pause animation" data-pause>❚❚</button>
+          </div>
+          <div class="txt"><p class="eyebrow">A story that really happened</p><p>Lost passports, a missed flight, a stag do gone sideways. You tell us the night everyone still talks about, and it becomes the main quest.</p></div>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <section class="squad" id="squad">
+    <div class="wrap">
+      <div class="sec-head">
+        <div><p class="eyebrow">Meet the squad</p><h2>From your camera roll to the character select</h2></div>
+        <p>These are the real people from our flagship game, <b>Lads Trip to Albufeira</b>, next to the characters we made from their photos. The dog counts.</p>
+      </div>
+      <div class="roster" id="roster"></div>
+      <p class="note">Everyone shown agreed to appear. We never use photos of children, and your source photos are deleted 60 days after delivery.</p>
+    </div>
+  </section>
+
+  <section class="how" id="how">
+    <div class="wrap">
+      <div class="sec-head">
+        <div><p class="eyebrow">How it works</p><h2>Three steps, about four weeks</h2></div>
+        <p>You bring the stories. We do the building, and you see the game twice before it's finished.</p>
+      </div>
+      <div class="steps3">
+        <div class="step"><span class="num"></span><h3>Tell us about your group</h3><p>A short questionnaire and a 20-minute call.</p>
+          <ul><li>3–5 photos of each friend</li><li>Your places, as photos or map pins</li><li>The in-jokes and the night everyone remembers</li></ul><span class="when">Day 1–5</span></div>
+        <div class="step"><span class="num"></span><h3>We build it</h3><p>You approve the cast first, then play a preview.</p>
+          <ul><li>Character select preview to check the faces</li><li>A playable preview link</li><li>Two rounds of changes included</li></ul><span class="when">Day 5–26</span></div>
+        <div class="step"><span class="num"></span><h3>Play it together</h3><p>A private link that runs in the browser, nothing to install.</p>
+          <ul><li>Play on one laptop or everyone on the same wifi</li><li>A 60-second trailer to share</li><li>Bugs fixed free for 30 days</li></ul><span class="when">Day 28</span></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="prices" id="prices">
+    <div class="wrap">
+      <div class="sec-head">
+        <div><p class="eyebrow">Prices</p><h2>Pick your cartridge</h2></div>
+        <p id="perFriend"></p>
+      </div>
+      <p class="order-soon" id="orderSoon" role="status" hidden>Ordering opens on 4 October. Until then, tell us about your group at the launch: follow Game of Us for the date.</p>
+      <div class="carts" id="carts"></div>
+      <p class="addons" id="addons"></p>
+    </div>
+  </section>
+
+  <section class="band" id="faq">
+    <div class="wrap">
+      <p class="eyebrow">Made for</p>
+      <div class="occ">
+        <div><b>Stag &amp; hen dos</b><span>A hype gift before the trip, or a memorial after it.</span></div>
+        <div><b>Group trips</b><span>Turn the holiday photos into the map.</span></div>
+        <div><b>Big birthdays</b><span>Reveal it at the party, on the TV.</span></div>
+        <div><b>Christmas</b><span id="occChristmas"></span></div>
+      </div>
+      <div class="faq">
+        <div><p class="eyebrow">Questions</p><h2 style="font-size:40px">Before you order</h2></div>
+        <div id="faqList"></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="cta">
+    <div class="wrap">
+      <div><h2>Put your group in a game</h2><p id="deadlines"></p></div>
+      <span id="ctaButton"></span>
+    </div>
+  </section>
+</main>
+<footer><div class="wrap">
+  <span>© <span id="year">2026</span> Game of Us · custom retro RPGs starring your friends · Copenhagen</span>
+  <span class="legal"><a href="privacy.html">Privacy</a> · <a href="terms.html">Terms of sale</a><span data-draft> · Draft design, not a live shop</span></span>
+</div></footer>
+</body>
+</html>

@@ -1,0 +1,16 @@
+{
+  "_source": "Game of Us plan 03 (packages, add-ons) and 02 (order deadlines). Change prices there first, then here.",
+  "tiers": [
+    { "id": "side_quest", "name": "Side Quest", "short": "Side Quest", "priceDkk": 1995, "from": false, "tag": "2 weeks", "friends": "2 friends",
+      "features": ["2 characters from your photos", "1 home zone and 1 gym", "A short story, about 20–30 minutes", "1 round of changes"], "cta": "Choose Side Quest", "star": false },
+    { "id": "squad_trip", "name": "Squad Trip", "short": "Squad Trip", "priceDkk": 6495, "from": false, "tag": "Most picked", "friends": "6 friends",
+      "features": ["6 characters, one with an evolution", "3 zones and 3 gyms", "A main quest from a real memory", "Party minigames and same-wifi multiplayer", "2 rounds of changes"], "cta": "Choose Squad Trip", "star": true },
+    { "id": "legendary_saga", "name": "Legendary Saga", "short": "Saga", "priceDkk": 19995, "from": true, "tag": "6–10 weeks", "friends": "10+ friends",
+      "features": ["10+ characters, all with evolutions", "6+ zones, even a second country", "Illustrated cutscenes", "Online multiplayer, hosted for a year", "3 rounds of changes"], "cta": "Ask about a Saga", "star": false }
+  ],
+  "addons": [
+    ["Extra friend", "from 249 DKK"], ["Extra zone", "from 495 DKK"], ["Voice lines", "195 DKK"], ["Party Mode (18+)", "495 DKK"], ["Trailer", "395 DKK"]
+  ],
+  "perFriendNote": "A Squad Trip for six works out at about 1,080 DKK each, less than one big night out.",
+  "deadlines": [["Squad Trip", "8 Nov"], ["Side Quest", "29 Nov"]]
+}
