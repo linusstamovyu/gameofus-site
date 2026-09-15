@@ -32,7 +32,7 @@ describe("assets", () => {
     for (const [src] of (s as { thumbs?: [string, string][] }).thumbs ?? []) referenced.add(src);
   }
   const html = readFileSync(resolve(root, "index.html"), "utf8");
-  for (const m of html.matchAll(/assets\/([\w.-]+\.(?:png|jpg))/g)) referenced.add(m[1]);
+  for (const m of html.matchAll(/assets\/([\w.-]+\.(?:png|jpg|webp))/g)) referenced.add(m[1]);
 
   it("every file the site names has been built (run npm run assets)", () => {
     for (const f of referenced) expect(existsSync(resolve(assets, f)), f).toBe(true);

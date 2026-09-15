@@ -32,7 +32,7 @@ export class BeachWorld {
     this.map = new BeachMap(stops);
     this.player = new Player(this.map);
     squad.forEach(m => { this.squad.set(m.id, m); this.loadSprite(m.id, m.walk); });
-    this.loadSprite("palm", "palm.png");
+    this.loadSprite("palm", "palm.webp");
 
     new ResizeObserver(() => this.resize()).observe(stage);
     this.resize();
@@ -188,8 +188,15 @@ export class BeachWorld {
     card.append(art, body);
     card.hidden = false; $("#scrim").hidden = false;
     card.classList.remove("enter"); void card.offsetWidth; card.classList.add("enter");
+    // Keyboard and screen-reader users land on the card's first action, not somewhere behind it.
+    acts.querySelector<HTMLElement>(".btn")?.focus({ preventScroll: true });
   }
-  private closeCard() { $("#card").hidden = true; $("#scrim").hidden = true; }
+  private closeCard() {
+    const card = $("#card");
+    const hadFocus = card.contains(document.activeElement);
+    card.hidden = true; $("#scrim").hidden = true;
+    if (hadFocus) this.stage.focus({ preventScroll: true });
+  }
 
   private toast(msg: string) { const t = $("#toast"); t.textContent = msg; t.hidden = false; this.toastLeft = 1.6; }
 

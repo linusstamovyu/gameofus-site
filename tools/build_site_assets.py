@@ -28,7 +28,7 @@ OUT = SITE / "public" / "assets"
 CONTENT = SITE / "src" / "content"
 PHOTOS = SITE / "source" / "photos"
 
-BUDGET_BYTES = 3 * 1024 * 1024  # plan 16: first load <= 3 MB
+BUDGET_BYTES = 3 * 1024 * 1024  # plan 16: first load <= 3 MB (share.jpg is not loaded by the page)
 
 # Squad members drawn on the site. Folder = the game's character folder.
 SQUAD = {"rico": "Rico", "kai": "Kai", "elias": "Elias", "ethan": "Ethan", "nala": "Nala"}
@@ -56,8 +56,9 @@ def src(path: Path) -> Path | None:
     return path
 
 
-def save_png(im: Image.Image, name: str) -> None:
-    im.save(OUT / name, optimize=True)
+def save_webp(im: Image.Image, name: str, quality: int = 90) -> None:
+    # WebP with alpha: about a third of the PNG size, supported by every current browser.
+    im.save(OUT / name, "WEBP", quality=quality, method=6)
 
 
 def build_squad() -> None:
@@ -66,29 +67,29 @@ def build_squad() -> None:
         if walk:
             im = Image.open(walk).convert("RGBA")
             # 9 cells of 128x256 -> 64x128: the beach draws one tile at <= 66 px.
-            save_png(im.resize((im.width // 2, im.height // 2), Image.LANCZOS), f"{sid}_walk.png")
+            save_webp(im.resize((im.width // 2, im.height // 2), Image.LANCZOS), f"{sid}_walk.webp")
         face = src(GAME / "characters" / folder / "Portrait" / f"{sid}_portrait.png")
         if face:
             im = Image.open(face).convert("RGBA")
             im.thumbnail((256, 256), Image.LANCZOS)
-            save_png(im, f"{sid}_face.png")
+            save_webp(im, f"{sid}_face.webp")
         file, box = PHOTO_CROPS[sid]
         photo = src(PHOTOS / file)
         if photo:
             im = ImageOps.exif_transpose(Image.open(photo)).convert("RGB").crop(box)
-            im.resize((256, 256), Image.LANCZOS).save(OUT / f"{sid}_photo.jpg", quality=84)
+            save_webp(im.resize((256, 256), Image.LANCZOS), f"{sid}_photo.webp", quality=84)
 
 
 def build_world() -> None:
     palm = src(GAME / "props" / "palm_retro.png")
     if palm:
-        save_png(Image.open(palm).convert("RGBA"), "palm.png")
+        save_webp(Image.open(palm).convert("RGBA"), "palm.webp")
     for key in PLATES:
         plate = src(GAME / "backgrounds" / "battle" / f"{key}.png")
         if plate:
             im = Image.open(plate).convert("RGB")
             im.thumbnail((720, 480), Image.LANCZOS)
-            im.save(OUT / f"bg_{key}.jpg", quality=80)
+            save_webp(im, f"bg_{key}.webp", quality=80)
 
 
 def build_share_image() -> None:
@@ -97,7 +98,7 @@ def build_share_image() -> None:
     draw = ImageDraw.Draw(card)
     draw.rectangle((0, 440, 1200, 630), fill=(239, 220, 179))
     draw.rectangle((0, 436, 1200, 444), fill=(32, 36, 44))
-    faces = [OUT / f"{sid}_face.png" for sid in SQUAD]
+    faces = [OUT / f"{sid}_face.webp" for sid in SQUAD]
     x = 60
     for f in faces:
         if not f.exists():
@@ -120,7 +121,7 @@ def check_content_refs() -> None:
     """Every asset a content file names must exist after the build."""
     for jf in sorted(CONTENT.glob("*.json")):
         json.loads(jf.read_text())  # a broken content file fails here, not in the browser
-        for token in re.findall(r'"([\w.-]+\.(?:png|jpg))"', jf.read_text()):
+        for token in re.findall(r'"([\w.-]+\.(?:png|jpg|webp))"', jf.read_text()):
             if not (OUT / token).exists():
                 errors.append(f"{jf.name} names {token}, which was not built")
 

@@ -1,7 +1,7 @@
 [
-  { "id": "rico",  "name": "Rico",  "type": "chill", "move": "Casual Nutmeg", "line": "The unbothered one. You play as him on the beach above.", "walk": "rico_walk.png", "face": "rico_face.png", "photo": "rico_photo.jpg" },
-  { "id": "kai",   "name": "Kai",   "type": "speed", "move": "Rolling Dash",  "line": "Runs a gym where you build your own ramps to reach him.", "walk": "kai_walk.png", "face": "kai_face.png", "photo": "kai_photo.jpg" },
-  { "id": "elias", "name": "Elias", "type": "chill", "move": "Siren Song",    "line": "Same shades, same top. The mic is his idea of an entrance.", "walk": "elias_walk.png", "face": "elias_face.png", "photo": "elias_photo.jpg" },
-  { "id": "ethan", "name": "Ethan", "type": "charm", "move": "Make It Rain",  "line": "The jacket with the gold stripe made it in, stitch for stitch.", "walk": "ethan_walk.png", "face": "ethan_face.png", "photo": "ethan_photo.jpg" },
-  { "id": "nala",  "name": "Nala",  "type": "charm", "move": "Derp Beam",     "line": "A pug. Guards a gym. Her tongue is permanently out, in both worlds.", "walk": "nala_walk.png", "face": "nala_face.png", "photo": "nala_photo.jpg" }
+  { "id": "rico",  "name": "Rico",  "type": "chill", "move": "Casual Nutmeg", "line": "The unbothered one. You play as him on the beach above.", "walk": "rico_walk.webp", "face": "rico_face.webp", "photo": "rico_photo.webp" },
+  { "id": "kai",   "name": "Kai",   "type": "speed", "move": "Rolling Dash",  "line": "Runs a gym where you build your own ramps to reach him.", "walk": "kai_walk.webp", "face": "kai_face.webp", "photo": "kai_photo.webp" },
+  { "id": "elias", "name": "Elias", "type": "chill", "move": "Siren Song",    "line": "Same shades, same top. The mic is his idea of an entrance.", "walk": "elias_walk.webp", "face": "elias_face.webp", "photo": "elias_photo.webp" },
+  { "id": "ethan", "name": "Ethan", "type": "charm", "move": "Make It Rain",  "line": "The jacket with the gold stripe made it in, stitch for stitch.", "walk": "ethan_walk.webp", "face": "ethan_face.webp", "photo": "ethan_photo.webp" },
+  { "id": "nala",  "name": "Nala",  "type": "charm", "move": "Derp Beam",     "line": "A pug. Guards a gym. Her tongue is permanently out, in both worlds.", "walk": "nala_walk.webp", "face": "nala_face.webp", "photo": "nala_photo.webp" }
 ]

@@ -9,13 +9,16 @@ _Last updated: 15 Sep 2026_
 | Plan task | Week | State | Notes |
 |---|---|---|---|
 | Scaffold Vite + TypeScript | 1 | ✅ Done | Builds, type-checks, 23 tests pass |
-| `build_site_assets.py` | 1 | ✅ Done | 22 files, 1.2 MB first load (budget 3 MB); fails on missing file / over budget |
+| `build_site_assets.py` | 1 | ✅ Done | WebP output, 400 KB first load (budget 3 MB); fails on missing file / over budget |
 | Split the world into modules, content into JSON | 1 | ✅ Done | map, path, player, paint, draw, world; squad, stops, offer, faq, site |
 | Touch: tap targets, bottom-sheet cards | 1 | ✅ Done | Checked at 375 px: no sideways scroll, card fits |
 | Page sections from the draft | 2 | ✅ Done | Features, squad, how it works, prices, made for, FAQ, CTA |
 | Privacy + terms pages | 2 | ✅ Draft | From the templates. Square-bracket gaps + needs review before payment |
 | Title, description, share image | 2 | ✅ Done | `assets/share.jpg` 1200×630 |
 | Order buttons wired | 2 | ✅ Ready | Point at Tally the moment `orderFormUrl` is filled in |
+| Speed pass: WebP art, lazy images, cache headers | 3 | ✅ Done | First load 400 KB (was 1.2 MB); whole site 672 KB |
+| Card focus + keyboard return | 3 | ✅ Done | First action focused on open; focus returns to the beach on close |
+| Deploy prep: `_headers`, `robots.txt`, 404 page, CI workflow, DEPLOY.md | – | ✅ Done | Cloudflare Pages settings written out; deploys the moment the repo is connected |
 | Low-power fallback | 3 | ✅ Done | Sea and palms stop animating under 24 fps or with reduced motion; page never waits for the world |
 
 Verified in the browser: tour walks Rico to Kai and opens his card with the real photo; roster shows all 5 photo → game pairs; 3 tiers, 6 FAQs, no broken images, no console errors.
@@ -35,6 +38,6 @@ Verified in the browser: tour walks Rico to Kai and opens his card with the real
 
 ## Still to do (not blocked)
 
-- Device testing on real phones (week 3)
+- Device testing on real phones (week 3, needs your devices)
 - Stretch: bake the real beach zone from the game's map preview
 - Launch day: `isDraft: false`, fill `site.json`, deploy

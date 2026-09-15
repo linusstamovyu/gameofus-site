@@ -1,0 +1,14 @@
+# Cloudflare Pages headers (https://developers.cloudflare.com/pages/configuration/headers/)
+/*
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: strict-origin-when-cross-origin
+  Permissions-Policy: camera=(), microphone=(), geolocation=()
+  X-Frame-Options: DENY
+
+# Hashed build output never changes under the same name.
+/static/*
+  Cache-Control: public, max-age=31536000, immutable
+
+# Art keeps its name when it is rebuilt, so cache it for a day only.
+/assets/*
+  Cache-Control: public, max-age=86400
