@@ -1,0 +1,67 @@
+// The two emails an order sends: one to the owner with everything needed to start, one to the customer.
+// Plain text on purpose: it always renders, and customer-typed text can never become markup.
+import { BIG_GAMES, MINIGAMES } from "../src/order/catalogue";
+import { formatMoney } from "../src/order/prices";
+import type { OrderRecord } from "./orders";
+
+const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
+
+export function ownerEmail(o: OrderRecord, siteUrl: string): { subject: string; text: string } {
+  const p = o.payload;
+  const kind = o.status === "requested" ? "REQUEST (custom game, needs a quote)" : "PAID";
+  const lines = [
+    `${kind} · ${cap(p.edition)} edition · ${formatMoney(o.quote.total, o.quote.currency)}${o.quote.founder ? " (founder price)" : ""}`,
+    `Order ${o.id}`,
+    "",
+    `Organiser: ${p.organiser.name} <${p.organiser.email}>, country ${p.country}`,
+    p.partyMode ? `Party Mode: yes · birth year ${p.organiser.birthYear} · adults confirmed ${p.organiser.adultsConfirmed}` : "Party Mode: no",
+    "",
+    `Squad (${p.friends.length}): ${p.friends.map(f => f.name).join(", ")}`,
+    `Big games: ${p.bigGames.map(id => BIG_GAMES.find(g => g.id === id)?.name ?? id).join(", ") || "none"}`,
+    `Minigames: ${p.minigames.map(id => MINIGAMES.find(g => g.id === id)?.name ?? id).join(", ") || "none"}`,
+    p.customGame ? `Custom game idea:\n${p.customGame}` : "",
+    p.flexPass ? "Flex Pass: yes" : "",
+    p.directorsCut ? "Director's Cut: yes" : "",
+    "",
+    "Price lines:",
+    ...o.quote.lines.map(l => `  ${l.label} × ${l.qty}: ${formatMoney(l.total, o.quote.currency)}`),
+    "",
+    `Photos are in the R2 bucket under orders/${o.id}/photos/ (${p.friends.length * 3} files).`,
+    "Next: send each friend the consent form before starting (templates/consent-form.md).",
+    `Stripe session: ${o.stripeSessionId ?? "none"} · Site: ${siteUrl}`,
+  ];
+  return { subject: `New Game of Us order: ${cap(p.edition)} for ${p.organiser.name}`, text: lines.filter((l, i, a) => l !== "" || a[i - 1] !== "").join("\n") };
+}
+
+export function customerEmail(o: OrderRecord): { subject: string; text: string } {
+  const p = o.payload;
+  const first = p.organiser.name.split(" ")[0];
+  const paid = o.status === "paid";
+  const text = [
+    `Hi ${first},`,
+    "",
+    paid
+      ? `Thank you for your order! Your ${cap(p.edition)} edition starring ${p.friends.map(f => f.name).join(", ")} is booked, and your receipt from Stripe is on its way separately.`
+      : `Thank you for your request! Because it includes a game of your own design, we'll reply within two days with a quote and a payment link. Nothing has been charged.`,
+    "",
+    "What happens next:",
+    "1. Each friend in the game gets a short consent form from us. We start once everyone has signed.",
+    "2. You'll see your characters within 5 days of us having everything. Love the preview or get your money back.",
+    `3. Then we build it. Your changes rounds are included.`,
+    "",
+    `Your order reference: ${o.id.slice(0, 8).toUpperCase()}`,
+    "Just reply to this email if anything's wrong or you want to add something.",
+    "",
+    "Game of Us",
+  ].join("\n");
+  return { subject: paid ? "Your Game of Us order is booked" : "We've got your Game of Us request", text };
+}
+
+export async function sendEmail(apiKey: string, from: string, to: string, email: { subject: string; text: string }, replyTo?: string): Promise<void> {
+  const res = await fetch("https://api.resend.com/emails", {
+    method: "POST",
+    headers: { authorization: `Bearer ${apiKey}`, "content-type": "application/json" },
+    body: JSON.stringify({ from, to: [to], subject: email.subject, text: email.text, ...(replyTo ? { reply_to: replyTo } : {}) }),
+  });
+  if (!res.ok) throw new Error(`Resend: ${res.status} ${await res.text()}`);
+}

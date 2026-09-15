@@ -1,0 +1,174 @@
+// The order page (plan 07, launch slice of plan 17): four steps over one saved draft, a running total, and a
+// thank-you screen after Stripe or a sent request. Steps live in steps/*.ts; rules in draft.ts and prices.ts.
+import "../styles.css";
+import "./order.css";
+import siteData from "../content/site.json";
+import type { SiteConfig } from "../content/types";
+import { $, el } from "../dom";
+import { currentCountry, currentCurrency, initCountryPicker, onCountryChange } from "../shared/countryPicker";
+import { shopStatus } from "./api";
+import { money, type Ctx, type StepView } from "./context";
+import { chooseEdition, problems, STEPS, toPicks, type Draft, type StepId } from "./draft";
+import { EDITION_IDS, FOUNDER_SPOTS, quote, type EditionId } from "./prices";
+import { clearAll, loadDraft, saveDraft } from "./storage";
+import { editionStep } from "./steps/edition";
+import { gamesStep } from "./steps/games";
+import { reviewStep } from "./steps/review";
+import { squadStep } from "./steps/squad";
+
+const site = siteData as SiteConfig;
+const VIEWS: Record<StepId, StepView> = { squad: squadStep, edition: editionStep, games: gamesStep, review: reviewStep };
+
+let draft: Draft;
+let paid = 0;
+let spotsLeft: number | null = null;
+let open = false;
+let cleanup: (() => void) | void;
+let saveTimer = 0;
+
+const ctx: Ctx = {
+  draft: () => draft,
+  update(fn, opts = {}) {
+    draft = fn(draft);
+    clearTimeout(saveTimer);
+    saveTimer = window.setTimeout(() => void saveDraft(draft), 250);
+    if (opts.rerender === false) renderBar();
+    else render();
+  },
+  currency: currentCurrency,
+  country: currentCountry,
+  quote: (d = draft) => quote(toPicks(d), currentCurrency(), paid),
+  paidOrders: () => paid,
+  founderSpotsLeft: () => spotsLeft,
+  shopOpen: () => open,
+  go(step) {
+    draft = { ...draft, step };
+    void saveDraft(draft);
+    render();
+    $("#order").scrollIntoView({ behavior: "smooth", block: "start" });
+    ($("#panel").querySelector("h1") as HTMLElement | null)?.focus();
+  },
+  notify(message, tone = "info") {
+    const n = $("#notice");
+    n.textContent = message;
+    n.className = `order-notice ${tone}`;
+    n.hidden = false;
+    clearTimeout(Number(n.dataset.timer));
+    n.dataset.timer = String(window.setTimeout(() => (n.hidden = true), 7000));
+  },
+};
+
+function stepIndex(id: StepId) {
+  return STEPS.findIndex(s => s.id === id);
+}
+
+function renderStepper() {
+  const ol = $("#stepper");
+  ol.replaceChildren();
+  const current = stepIndex(draft.step);
+  STEPS.forEach((s, i) => {
+    const li = el("li", i === current ? "on" : i < current ? "done" : null);
+    const b = el("button", null);
+    b.type = "button";
+    b.append(el("span", "n", String(i + 1)), el("span", "l", s.label));
+    if (i === current) b.setAttribute("aria-current", "step");
+    // You can always go back; going forward past an unfinished step is what Next is for.
+    b.disabled = i > current && STEPS.slice(0, i).some(p => problems(draft, p.id).length > 0);
+    b.onclick = () => ctx.go(s.id);
+    li.append(b);
+    ol.append(li);
+  });
+}
+
+function renderBar() {
+  const q = ctx.quote();
+  const box = $("#barTotal");
+  box.replaceChildren();
+  if (!draft.friends.length) {
+    box.append(el("span", "bar-label", "Add your squad to see your price"));
+  } else {
+    const main = el("span", "bar-main");
+    main.append(el("strong", null, q.isRequest ? `from ${money(ctx, q.total)}` : money(ctx, q.total)));
+    if (q.founder && q.normalTotal > q.total) main.append(" ", el("s", null, money(ctx, q.normalTotal)));
+    box.append(main, el("span", "bar-label", `${draft.friends.length > 1 ? `≈ ${money(ctx, q.perFriend, true)} per friend · ` : ""}${q.founder ? "founder price" : "normal price"}`));
+  }
+  const i = stepIndex(draft.step);
+  $<HTMLButtonElement>("#back").hidden = i === 0;
+  const next = $<HTMLButtonElement>("#next");
+  next.hidden = draft.step === "review";
+  next.textContent = i === STEPS.length - 2 ? "Review ▶" : "Next ▶";
+}
+
+function render() {
+  if (typeof cleanup === "function") cleanup();
+  const panel = $("#panel");
+  panel.replaceChildren();
+  cleanup = VIEWS[draft.step](ctx, panel);
+  const h1 = panel.querySelector("h1");
+  if (h1) h1.tabIndex = -1;
+  renderStepper();
+  renderBar();
+}
+
+function doneScreen(kind: string, id: string) {
+  $("#stepper").hidden = true;
+  $("#bar").hidden = true;
+  const panel = $("#panel");
+  const paidNow = kind === "paid";
+  panel.replaceChildren(
+    el("p", "eyebrow", paidNow ? "Payment received" : "Request sent"),
+    el("h1", null, paidNow ? "Your game is on its way" : "We've got your request"),
+    el("p", "lede", paidNow
+      ? "Thank you! We've emailed your receipt. Next, each friend in the game gets a short consent form from us, and you'll see your characters within 5 days of us having everything."
+      : "Thank you! Your order includes a custom game, so we'll reply by email with a quote and a payment link, usually within two days."),
+    el("p", "order-ref", `Order reference: ${id.slice(0, 8).toUpperCase()}`),
+  );
+  const home = el("a", "btn", "Back to the beach");
+  home.href = "./";
+  panel.append(home);
+}
+
+async function start() {
+  document.querySelectorAll<HTMLElement>("[data-draft]").forEach(n => (n.hidden = !site.isDraft));
+  const year = document.getElementById("year");
+  if (year) year.textContent = String(new Date().getFullYear());
+  const params = new URLSearchParams(location.search);
+
+  const done = params.get("done");
+  if (done === "paid" || done === "request") {
+    void initCountryPicker();
+    if (done === "paid") await clearAll();
+    doneScreen(done, params.get("id") ?? "");
+    return;
+  }
+
+  draft = await loadDraft();
+  const wanted = params.get("edition") as EditionId | null;
+  if (wanted && EDITION_IDS.includes(wanted)) draft = chooseEdition(draft, wanted);
+  if (params.get("cancelled")) draft = { ...draft, step: "review" };
+  // Applied once: a reload shouldn't keep overriding a later choice.
+  if (wanted || params.get("cancelled")) history.replaceState(null, "", location.pathname);
+  $("#back").onclick = () => ctx.go(STEPS[Math.max(0, stepIndex(draft.step) - 1)].id);
+  $("#next").onclick = () => {
+    const found = problems(draft, draft.step);
+    if (found.length) {
+      ctx.notify(found[0].message + (found.length > 1 ? ` (and ${found.length - 1} more)` : ""), "error");
+      return;
+    }
+    ctx.go(STEPS[Math.min(STEPS.length - 1, stepIndex(draft.step) + 1)].id);
+  };
+  onCountryChange(() => render());
+  render();
+  if (params.get("cancelled")) ctx.notify("Checkout was cancelled. Nothing was charged; your order is still here.");
+  void initCountryPicker();
+  const status = await shopStatus();
+  open = status.open;
+  if (status.paidOrders !== null) {
+    paid = status.paidOrders;
+    spotsLeft = Math.max(0, FOUNDER_SPOTS - paid);
+  }
+  if (!open) ctx.notify("Ordering opens on 4 October. You can build your order now; it's saved on this device.");
+  render();
+}
+
+void start();

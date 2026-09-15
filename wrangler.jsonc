@@ -1,10 +1,26 @@
-// Cloudflare Workers static-assets deploy. Its presence stops `wrangler deploy` from
-// trying to auto-configure the Vite project, which refuses Vite 5.
+// Cloudflare Worker: the built site (dist/) plus the order API in worker/ (plan 17).
+// Without the commented bindings below the site still deploys and serves every page; the order API
+// answers "not open yet" until they exist. To open the shop:
+//   1. Cloudflare dashboard → R2 → create bucket "gameofus-orders" (private). Add a lifecycle rule:
+//      delete objects with prefix "pending/" after 2 days.
+//   2. Workers KV → create namespace "gameofus-shop"; paste its id below.
+//   3. Uncomment the two blocks below and push.
+//   4. Worker → Settings → Variables and secrets: add STRIPE_SECRET_KEY, STRIPE_WEBHOOK_SECRET,
+//      RESEND_API_KEY (secrets) and ORDER_EMAIL_TO, ORDER_EMAIL_FROM, SITE_URL (text).
+//   5. Stripe → Developers → Webhooks: endpoint https://<your domain>/api/stripe, events
+//      checkout.session.completed and checkout.session.async_payment_succeeded.
 {
   "name": "gameofus-site",
+  "main": "worker/index.ts",
   "compatibility_date": "2026-09-15",
+  // Text variables set in the dashboard survive each deploy (secrets always do).
+  "keep_vars": true,
   "assets": {
     "directory": "./dist",
-    "not_found_handling": "404-page"
+    "binding": "ASSETS",
+    "not_found_handling": "404-page",
+    "run_worker_first": ["/api/*"]
   }
+  // ,"r2_buckets": [{ "binding": "ORDERS", "bucket_name": "gameofus-orders" }]
+  // ,"kv_namespaces": [{ "binding": "SHOP", "id": "<paste the KV namespace id>" }]
 }

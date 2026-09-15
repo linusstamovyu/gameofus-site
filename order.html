@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Build your game · Game of Us</title>
+  <meta name="description" content="Build your group's retro RPG: add your friends' photos, pick an edition and choose the games.">
+  <meta name="robots" content="noindex">
+  <meta name="theme-color" content="#7a4a26">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect x='3' y='3' width='10' height='10' transform='rotate(45 8 8)' fill='%231a9e95' stroke='%23fdf6e3' stroke-width='2'/%3E%3C/svg%3E">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Pixelify+Sans:wght@500;700&display=swap">
+  <script type="module" src="/src/order/main.ts"></script>
+</head>
+<body class="order-page">
+<nav class="nav" aria-label="Main">
+  <div class="wrap">
+    <a class="logo" href="./"><i aria-hidden="true"></i>Game of Us</a>
+    <span class="draft-flag" data-draft>Draft</span>
+    <span class="order-title">Build your game</span>
+    <span data-country-slot></span>
+  </div>
+</nav>
+
+<main class="order" id="order">
+  <div class="wrap">
+    <ol class="stepper" id="stepper" aria-label="Order steps"></ol>
+    <div class="order-notice" id="notice" role="status" hidden></div>
+    <section class="step-panel" id="panel" aria-live="polite"></section>
+  </div>
+</main>
+
+<div class="order-bar" id="bar">
+  <div class="wrap">
+    <button class="btn ghost" id="back" type="button">◀ Back</button>
+    <div class="bar-total" id="barTotal"></div>
+    <button class="btn" id="next" type="button">Next ▶</button>
+  </div>
+</div>
+
+<footer><div class="wrap">
+  <span>© <span id="year">2026</span> Game of Us · custom retro RPGs starring your friends</span>
+  <span class="legal"><a href="privacy.html">Privacy</a> · <a href="terms.html">Terms of sale</a><span data-draft> · Draft design, not a live shop</span></span>
+</div></footer>
+<noscript><p class="noscript">Building your game needs JavaScript switched on.</p></noscript>
+</body>
+</html>
