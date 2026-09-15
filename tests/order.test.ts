@@ -1,12 +1,14 @@
 import { describe, expect, it } from "vitest";
 import { BIG_GAMES, MINIGAMES, visibleMinigames } from "../src/order/catalogue";
 import {
-  addFriend, allowanceUse, chooseEdition, newDraft, problems, removeFriend, reviveDraft, setPartyMode, setPhoto, shareMessage, toggleIn, toPicks, updateFriend,
+  addFriend, allowanceUse, setSection, chooseEdition, newDraft, problems, removeFriend, reviveDraft, setPartyMode, setPhoto, shareMessage, toggleIn, toPicks, updateFriend,
   type Draft, type PhotoMeta,
 } from "../src/order/draft";
 import { checkPayload, picksFromPayload } from "../src/order/payload";
 import { faceCrop, judgePhoto, laplacianVariance, meanBrightness, quantise } from "../src/order/photoRules";
 import { ACTIVE_LADDER, MAX_FRIENDS, smallestEditionFor } from "../src/order/prices";
+import { storySection } from "../src/order/sections/story";
+import { worldSection } from "../src/order/sections/world";
 
 const photo = (status: PhotoMeta["status"] = "ok"): PhotoMeta => ({ key: "k", width: 900, height: 1200, status, note: "" });
 
@@ -49,8 +51,17 @@ describe("draft", () => {
     expect(problems(fullSquad(1), "games")[0].message).toMatch(/big game/);
   });
 
+  it("needs a home base and the memory before review, as steps 4–9 require", () => {
+    const d = { ...fullSquad(2), bigGames: ["kart"] };
+    const messages = problems(d, "review").map(p => p.message);
+    expect(messages).toContain("Add at least your home base.");
+    expect(messages).toContain("Tell us the memory, or attach a voice note.");
+  });
+
   it("asks for the organiser's details, and the age gate only with Party Mode", () => {
     let d = { ...fullSquad(2), bigGames: ["kart"] };
+    d = setSection(d, "world", worldSection.check({ places: [{ id: "home1", kind: "home", kit: "home", name: "Our flat", photos: [] }] }));
+    d = setSection(d, "story", storySection.check({ memory: "The night we lost the passports in Albufeira." }));
     expect(problems(d, "review").map(p => p.message)).toEqual([
       "Add your name.", "Add an email address we can reach you on.",
       "Confirm that everyone in the photos agreed to be in the game.", "Tick that we can start work straight away.",

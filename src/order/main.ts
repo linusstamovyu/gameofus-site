@@ -42,7 +42,11 @@ const ctx: Ctx = {
     draft = fn(draft);
     clearTimeout(saveTimer);
     saveTimer = window.setTimeout(() => void saveDraft(draft), 250);
-    if (opts.rerender === false) renderBar();
+    if (opts.rerender === false) {
+      // Typing can finish a step, so the stepper's locks follow it; the panel is left alone to keep focus.
+      renderStepper();
+      renderBar();
+    }
     else render();
   },
   currency: currentCurrency,

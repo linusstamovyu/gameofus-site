@@ -1,0 +1,12 @@
+/* Step 9, Keepsakes and delivery. */
+.s-keepsakes-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+.s-keepsakes-gift{min-width:0}
+.s-keepsakes-gift > b{display:block;margin-bottom:8px}
+.s-keepsakes-textarea{font:inherit;font-weight:400;font-size:16px;border:2px solid #cdb98f;border-radius:6px;padding:9px 10px;background:#fff;color:var(--ink);width:100%;resize:vertical}
+.s-keepsakes-textarea:focus{border-color:var(--teal);outline:none}
+.s-keepsakes-date input{max-width:240px}
+.s-keepsakes-warn{margin:-4px 0 12px;font-size:14px;color:#8a5a12;background:#fbe7c2;border-left:4px solid #d39a4a;border-radius:4px;padding:7px 10px}
+@media (max-width:520px){
+  .s-keepsakes-grid{grid-template-columns:1fr}
+  .s-keepsakes-date input{max-width:none}
+}

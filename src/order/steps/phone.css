@@ -1,0 +1,36 @@
+/* Step 6, The phone. Mobile first: one column; a CSS-drawn phone frame joins on wide screens. */
+.s-phone-layout{display:block}
+.s-phone-frame{display:none}
+.s-phone-main{min-width:0}
+.s-phone-main > .shelf:first-child{margin-top:8px}
+
+.s-phone-intro{display:flex;gap:12px;align-items:flex-start}
+.s-phone-intro .rules{margin:0 0 14px;flex:1;min-width:0}
+.s-phone-art{flex:none;width:56px;height:56px;border-radius:10px;background:var(--night-2) center/cover no-repeat;border:2px solid var(--ink)}
+
+.s-phone-photos{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-bottom:12px}
+.s-phone-photo{margin:0;display:flex;flex-direction:column;gap:6px;background:#fffaf0;border:3px solid #d9c9a3;border-radius:10px;padding:6px 8px 8px;min-width:0}
+.s-phone-thumb{display:block;width:100%;aspect-ratio:1;object-fit:cover;border-radius:6px;background:var(--night-2)}
+.s-phone-caption{margin:0}
+.s-phone-caption input{font-size:16px;padding:7px 8px}
+.s-phone-photo .link-btn{align-self:flex-start}
+
+.s-phone-beat{background:#fffaf0;border:3px solid #d9c9a3;border-radius:10px;padding:10px 12px 4px;margin:0 0 12px}
+.s-phone-beat-head{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+.s-phone-beat-head .s-phone-art{width:44px;height:44px}
+.s-phone-beat-head h3{flex:1;min-width:0;font-size:18px;margin:0}
+.s-phone-about{font:inherit;font-weight:400;font-size:16px;border:2px solid #cdb98f;border-radius:6px;padding:9px 10px;background:#fff;color:var(--ink);width:100%;resize:vertical}
+.s-phone-about:focus{border-color:var(--teal);outline:none}
+.s-phone-add{display:flex;gap:8px;flex-wrap:wrap}
+.s-phone-note{font-size:14px;color:var(--muted)}
+.s-phone-apps{grid-template-columns:repeat(2,minmax(0,1fr))}
+
+@media (min-width:980px){
+  .s-phone-layout{display:grid;grid-template-columns:200px minmax(0,1fr);gap:24px;align-items:start}
+  .s-phone-frame{display:block;position:sticky;top:16px;margin-top:22px;background:var(--ink);border-radius:30px;padding:26px 10px 30px;box-shadow:inset 0 0 0 2px #3a3f4a}
+  .s-phone-notch{display:block;width:60px;height:6px;border-radius:3px;background:#3a3f4a;margin:-14px auto 12px}
+  .s-phone-screen{display:grid;grid-template-columns:repeat(2,1fr);gap:12px 8px;background:var(--night-2);border-radius:18px;padding:16px 10px;min-height:300px;align-content:start}
+  .s-phone-app{display:flex;flex-direction:column;align-items:center;gap:4px;font-size:11px;color:#f1e6cc}
+  .s-phone-icon{width:52px;height:52px;border-radius:12px;background:#222 center/cover no-repeat}
+  .s-phone-photos{grid-template-columns:repeat(3,minmax(0,1fr))}
+}

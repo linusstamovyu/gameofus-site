@@ -1,0 +1,25 @@
+/* Step 7, Your story. Mobile first; nothing here may be wider than the panel. */
+.s-story-text{font:inherit;font-weight:400;font-size:16px;border:2px solid #cdb98f;border-radius:6px;padding:9px 10px;background:#fff;color:var(--ink);width:100%;max-width:100%;box-sizing:border-box;resize:vertical}
+.s-story-text:focus{border-color:var(--teal);outline:none}
+.s-story-count{font-size:13px;font-weight:400;color:var(--muted)}
+.s-story-art{margin:0 0 12px;border-radius:10px;overflow:hidden;background:var(--night-2)}
+.s-story-art img{display:block;width:100%;aspect-ratio:3/1;object-fit:cover}
+.s-story-voice{display:flex;flex-direction:column;gap:8px}
+.s-story-voice-row{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.s-story-file{font-size:14px;font-weight:700;overflow-wrap:anywhere;min-width:0}
+.s-story-voice audio{width:100%;max-width:100%}
+.s-story-hint{margin:0;font-size:14px;color:var(--muted)}
+.s-story-chips{display:grid;grid-template-columns:1fr;gap:8px}
+.s-story-chip{display:flex;flex-direction:column;gap:2px;text-align:left;font:inherit;color:var(--ink);background:#fffaf0;border:3px solid #d9c9a3;border-radius:10px;padding:10px 12px;cursor:pointer;min-width:0}
+.s-story-chip b{font-size:15px}
+.s-story-chip span{font-size:13px;line-height:1.35;color:var(--muted)}
+.s-story-chip.on{border-color:var(--teal);box-shadow:0 0 0 3px #bfe6e1}
+.s-story-lang{margin-top:14px}
+.s-story-moments{list-style:none;margin:0 0 12px;padding:0;display:flex;flex-direction:column;gap:12px}
+.s-story-moment{background:#fffaf0;border:2px solid #e6d7b3;border-radius:10px;padding:12px}
+.s-story-photo{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.s-story-thumb{width:84px;height:84px;object-fit:cover;border-radius:6px;background:var(--night-2)}
+.s-story-private{margin:8px 0 0;font-size:14px;background:#e8f5f2;color:var(--teal-dark);border-radius:6px;padding:8px 10px}
+@media (min-width:640px){
+  .s-story-chips{grid-template-columns:repeat(2,1fr)}
+}

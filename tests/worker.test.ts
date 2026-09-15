@@ -135,6 +135,21 @@ describe("worker: an order from start to paid", () => {
     expect((await route(req("PUT", `/api/orders/${created.id}/photos/f1/face`, "<svg/>", { "content-type": "image/svg+xml" }), env))!.status).toBe(400);
   });
 
+  it("takes files named by the order's sections, refuses others, and waits for them before submitting", async () => {
+    const { env, store } = openEnv();
+    const sections = { ...defaultSections(), world: { places: [{ id: "home1", kind: "home", kit: "home", name: "Our flat", mapPin: "", fromPhotos: true, photos: [{ id: "placephoto1", kind: "image", name: "flat.jpg", type: "image/jpeg", size: 6 }], notes: "" }], signs: [] } };
+    const created = await createWithPhotos(env, { ...payload, sections } as typeof payload);
+    const early = await route(req("POST", `/api/orders/${created.id}/submit`), env);
+    expect((await early!.json()).message).toMatch(/6 of 7/);
+    expect((await route(req("PUT", `/api/orders/${created.id}/files/notinorder`, new Uint8Array([1]), { "content-type": "image/jpeg" }), env))!.status).toBe(400);
+    expect((await route(req("PUT", `/api/orders/${created.id}/files/placephoto1`, new Uint8Array([1]), { "content-type": "audio/mpeg" }), env))!.status).toBe(400);
+    expect((await route(req("PUT", `/api/orders/${created.id}/files/placephoto1`, new Uint8Array([255, 216, 1]), { "content-type": "image/jpeg" }), env))!.status).toBe(200);
+    expect(store.has(`pending/${created.id}/files/placephoto1.jpg`)).toBe(true);
+    vi.spyOn(globalThis, "fetch").mockResolvedValue(new Response(JSON.stringify({ id: "cs_2", url: "https://checkout.stripe.com/x" }), { status: 200 }));
+    const ok = await route(req("POST", `/api/orders/${created.id}/submit`), env);
+    expect((await ok!.json()).kind).toBe("checkout");
+  });
+
   it("rejects a webhook with a bad or stale signature", async () => {
     const { env } = openEnv();
     const body = JSON.stringify({ type: "checkout.session.completed", data: { object: { id: "x", metadata: { order_id: "y" } } } });
