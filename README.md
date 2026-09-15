@@ -24,6 +24,8 @@ npm run preview    # serve dist/
 | `privacy.html`, `terms.html` | Draft legal pages. Must be reviewed before taking payment |
 | `tools/build_site_assets.py` | The only thing that reads the game repo |
 | `source/photos/` | Consented real photos, cropped by the asset script |
+| `tools/recut_outfit_sheets.py` | Recuts the outfit sheets from the raw strips in `source/outfits/Generation/simple-raw` into `source/outfits/recut`, and swaps in any regenerated frames from `source/outfits/regen-requests/out` |
+| `tools/deploy_regenerated_outfits.py` | Copies `source/outfits/recut` to `public/worlds` (the space world is the handoff's "mars"). The beach has no outfit on purpose. It replaced `dress_walk_sheet.py`'s drawn-on accessories, so don't re-run that one |
 
 ## Rules
 
