@@ -1,6 +1,7 @@
 // The walkable beach in the hero: tap to walk, a guided tour, and a card per stop.
 import type { Offer, SquadMember, Stop } from "../content/types";
-import { $, asset, el, formatDkk, photoPair } from "../dom";
+import { $, asset, el, photoPair } from "../dom";
+import { ACTIVE_LADDER, LADDERS, formatMoney } from "../order/prices";
 import { drawCharacter, drawMarker, drawPalm, drawParasol, drawPrompt, drawSign, drawTarget } from "./draw";
 import { BeachMap, Ground, H, PALMS, PARASOLS, W, groundAt } from "./map";
 import { paintSea, paintStaticLayer } from "./paint";
@@ -172,7 +173,7 @@ export class BeachWorld {
       const g = el("div", "tiers");
       this.offer.tiers.forEach(t => {
         const d = el("div", t.star ? "star" : null);
-        d.append(el("b", null, t.short), el("span", null, `${formatDkk(t.founderDkk)} DKK`), el("em", null, t.friends));
+        d.append(el("b", null, t.short), el("span", null, formatMoney(LADDERS[ACTIVE_LADDER].editions[t.id].founder.DKK, "DKK")), el("em", null, t.copy[ACTIVE_LADDER].friends));
         g.append(d);
       });
       body.append(g);

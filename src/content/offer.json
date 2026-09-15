@@ -1,94 +1,164 @@
 {
-  "_source": "Game of Us plan 03 (editions, add-ons) and 04 (founder pricing). Change prices there first, then here. The order configurator will read src/order/prices.ts instead (plan 17).",
-  "founderSpots": 30,
+  "_source": "Card copy only. Prices, cast sizes and 'worth' come from src/order/prices.ts; ACTIVE_LADDER there picks which copy (A or B) is shown. Both versions are kept for a later decision: see Game of Us/pricing-versions/README.md.",
   "tiers": [
     {
       "id": "standard",
       "name": "Standard",
       "short": "Standard",
-      "founderDkk": 799,
-      "normalDkk": 1049,
-      "worthDkk": 2300,
-      "people": 2,
-      "tag": "2 weeks",
-      "friends": "2 friends",
-      "features": [
-        "2 characters from your photos",
-        "1 home zone, 1 big game and 3 minigames",
-        "A short story, about 20–30 minutes",
-        "1 round of changes"
-      ],
       "cta": "Choose Standard",
-      "star": false
+      "star": false,
+      "copy": {
+        "A": {
+          "tag": "2 weeks",
+          "friends": "2 friends",
+          "features": [
+            "2 characters from your photos",
+            "1 home zone, 1 big game and 3 minigames",
+            "A short story, about 20–30 minutes",
+            "1 round of changes"
+          ]
+        },
+        "B": {
+          "tag": "2 weeks",
+          "friends": "2–3 friends",
+          "features": [
+            "Up to 3 characters from your photos",
+            "1 home zone, 1 big game and 3 minigames",
+            "A short story, about 20–30 minutes",
+            "1 round of changes"
+          ]
+        }
+      }
     },
     {
       "id": "deluxe",
       "name": "Deluxe",
       "short": "Deluxe",
-      "founderDkk": 1049,
-      "normalDkk": 1399,
-      "worthDkk": 9100,
-      "people": 6,
-      "tag": "Most picked",
-      "friends": "6 friends",
-      "features": [
-        "6 characters, one with an evolution",
-        "3 zones, 3 big games and 6 minigames",
-        "A main quest from a real memory",
-        "Same-wifi multiplayer",
-        "2 rounds of changes"
-      ],
       "cta": "Choose Deluxe",
-      "star": true
+      "star": true,
+      "copy": {
+        "A": {
+          "tag": "Most picked",
+          "friends": "6 friends",
+          "features": [
+            "6 characters, one with an evolution",
+            "3 zones, 3 big games and 6 minigames",
+            "A main quest from a real memory",
+            "Same-wifi multiplayer",
+            "2 rounds of changes"
+          ]
+        },
+        "B": {
+          "tag": "Most picked",
+          "friends": "6 friends",
+          "features": [
+            "6 characters, one with an evolution",
+            "3 zones, 3 big games and 6 minigames",
+            "A main quest from a real memory",
+            "Same-wifi multiplayer",
+            "2 rounds of changes"
+          ]
+        }
+      }
     },
     {
       "id": "ultimate",
       "name": "Ultimate",
       "short": "Ultimate",
-      "founderDkk": 1399,
-      "normalDkk": 1799,
-      "worthDkk": 27300,
-      "people": 10,
-      "tag": "6–10 weeks",
-      "friends": "10 friends",
-      "features": [
-        "10 characters, all with evolutions",
-        "6 zones, even a second country",
-        "5 big games and all 12 minigames",
-        "Illustrated cutscenes and online multiplayer",
-        "3 rounds of changes"
-      ],
       "cta": "Choose Ultimate",
-      "star": false
+      "star": false,
+      "copy": {
+        "A": {
+          "tag": "6–10 weeks",
+          "friends": "10 friends",
+          "features": [
+            "10 characters, all with evolutions",
+            "6 zones, even a second country",
+            "5 big games and all 12 minigames",
+            "Illustrated cutscenes and online multiplayer",
+            "3 rounds of changes"
+          ]
+        },
+        "B": {
+          "tag": "6–8 weeks",
+          "friends": "10 friends",
+          "features": [
+            "10 characters, two with evolutions",
+            "5 zones, 5 big games and all 12 minigames",
+            "A multi-act story with 2 cutscenes",
+            "Same-wifi multiplayer",
+            "3 rounds of changes"
+          ]
+        }
+      }
     }
   ],
-  "addons": [
-    [
-      "Extra friend",
-      "from 159 DKK"
+  "addons": {
+    "A": [
+      [
+        "character",
+        "Extra friend",
+        true
+      ],
+      [
+        "big_game",
+        "Big game",
+        false
+      ],
+      [
+        "zone",
+        "Extra zone",
+        true
+      ],
+      [
+        "voice_line",
+        "Voice line",
+        false
+      ],
+      [
+        "party_mode",
+        "Party Mode (18+)",
+        false
+      ],
+      [
+        "flex_pass",
+        "Flex Pass",
+        false
+      ]
     ],
-    [
-      "Big game",
-      "449 DKK"
-    ],
-    [
-      "Extra zone",
-      "from 299 DKK"
-    ],
-    [
-      "Voice line",
-      "129 DKK"
-    ],
-    [
-      "Party Mode (18+)",
-      "299 DKK"
-    ],
-    [
-      "Flex Pass",
-      "129 DKK"
+    "B": [
+      [
+        "directors_cut",
+        "Director's Cut (evolutions for everyone, more cutscenes, online play)",
+        false
+      ],
+      [
+        "character",
+        "Extra friend",
+        true
+      ],
+      [
+        "big_game",
+        "Big game",
+        false
+      ],
+      [
+        "zone",
+        "Extra zone",
+        true
+      ],
+      [
+        "party_mode",
+        "Party Mode (18+)",
+        false
+      ],
+      [
+        "flex_pass",
+        "Flex Pass",
+        false
+      ]
     ]
-  ],
-  "perFriendNote": "Split between six friends, a Deluxe game is 175 DKK each. Pay in full at order, or spread it with Klarna.",
+  },
   "deadlines": [
     [
       "Ultimate",
@@ -102,5 +172,9 @@
       "Standard",
       "29 Nov"
     ]
-  ]
+  ],
+  "perFriendNote": {
+    "A": "Split between {people} friends, a Deluxe game is {each} DKK each. Pay in full at order, or spread it with Klarna.",
+    "B": "A Deluxe game for {people} works out at about {each} DKK each. Pay in full at order, or spread it with Klarna."
+  }
 }

@@ -33,30 +33,29 @@ export interface Stop {
   last?: boolean;
 }
 
-export interface Tier {
-  id: string;
-  name: string;
-  short: string;
-  /** Founder launch price, charged for the first `founderSpots` orders. */
-  founderDkk: number;
-  /** Normal price, shown crossed out; charged from order founderSpots + 1. */
-  normalDkk: number;
-  /** What the contents cost as add-ons (plan 03), shown as "worth X". */
-  worthDkk: number;
-  /** Group size the per-person price is worked out for. */
-  people: number;
+export interface TierCopy {
   tag: string;
   friends: string;
   features: string[];
+}
+
+/** Card copy for one edition. Prices and cast sizes live in src/order/prices.ts. */
+export interface Tier {
+  id: "standard" | "deluxe" | "ultimate";
+  name: string;
+  short: string;
   cta: string;
   star: boolean;
+  /** One set of copy per pricing ladder (A and B are both kept for a later decision). */
+  copy: Record<"A" | "B", TierCopy>;
 }
 
 export interface Offer {
-  founderSpots: number;
   tiers: Tier[];
-  addons: [string, string][];
-  perFriendNote: string;
+  /** Add-ons shown under the cards, per ladder: [price-file id, label, show "from"]. */
+  addons: Record<"A" | "B", [string, string, boolean][]>;
+  /** Heading line; {people} and {each} are filled from the Deluxe edition. */
+  perFriendNote: Record<"A" | "B", string>;
   deadlines: [string, string][];
 }
 

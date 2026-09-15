@@ -1,6 +1,7 @@
 // Fills the page sections from src/content. The markup around them is static in index.html.
 import type { Offer, SiteConfig, SquadMember } from "../content/types";
 import { $, el, formatDkk, photoPair } from "../dom";
+import { ACTIVE_LADDER, ADDONS, FOUNDER_SPOTS, LADDERS, formatMoney, type AddonId } from "../order/prices";
 
 export function renderSquad(squad: SquadMember[]) {
   const roster = $("#roster");
@@ -18,28 +19,46 @@ export function renderSquad(squad: SquadMember[]) {
 }
 
 export function renderOffer(offer: Offer, site: SiteConfig) {
+  const ladder = LADDERS[ACTIVE_LADDER];
+  const dkk = (minor: number) => formatMoney(minor, "DKK");
   const carts = $("#carts");
   for (const t of offer.tiers) {
+    const ed = ladder.editions[t.id];
+    const copy = t.copy[ladder.id];
     const card = el("article", t.star ? "cart star" : "cart");
     const label = el("div", "label");
-    label.append(el("h3", null, t.name), el("span", "tag", t.tag));
-    const each = Math.round(t.founderDkk / t.people);
+    label.append(el("h3", null, t.name), el("span", "tag", copy.tag));
     const price = el("div", "price");
     price.append(el("span", "founder", "Founder price"), document.createElement("br"));
-    price.append(document.createTextNode(`${formatDkk(each)} `), el("small", null, "DKK per person"));
     const total = el("p", "total");
-    total.append(document.createTextNode(`${formatDkk(t.founderDkk)} DKK for ${t.people} friends `), el("s", null, `${formatDkk(t.normalDkk)} DKK`));
-    const worth = el("p", "worth", `Worth ${formatDkk(t.worthDkk)} DKK as add-ons`);
+    const normal = el("s", null, dkk(ed.normal.DKK));
+    normal.setAttribute("aria-label", `normally ${dkk(ed.normal.DKK)}`);
+    if (ladder.display === "perPersonFirst") {
+      // Version A: the per-person figure is the big number, the total and "worth" sit under it.
+      price.append(document.createTextNode(`${formatDkk(Math.round(ed.founder.DKK / 100 / ed.people))} `), el("small", null, "DKK per person"));
+      total.append(document.createTextNode(`${dkk(ed.founder.DKK)} for ${ed.people} friends `), normal);
+      card.append(label, price, total, el("p", "worth", `Worth ${formatDkk(ed.worthDkk)} DKK as add-ons`));
+    } else {
+      // Version B: the total leads; Standard is a gift for two or three and is never split.
+      price.append(document.createTextNode(`${formatDkk(ed.founder.DKK / 100)} `), el("small", null, "DKK"), normal);
+      total.textContent = ed.people > 3 ? `≈ ${formatDkk(Math.round(ed.founder.DKK / 100 / ed.people))} DKK per friend` : "For two or three";
+      card.append(label, price, total);
+    }
     const ul = el("ul");
-    t.features.forEach(f => ul.append(el("li", null, f)));
+    copy.features.forEach(f => ul.append(el("li", null, f)));
     const foot = el("div", "foot");
     foot.append(orderButton(t.cta, t.id, site, t.star ? "btn" : "btn ghost"));
-    card.append(label, price, total, worth, ul, foot);
+    card.append(ul, foot);
     carts.append(card);
   }
-  $("#perFriend").textContent = offer.perFriendNote;
-  $("#founderNote").textContent = `Founder prices for the first ${offer.founderSpots} orders. The crossed-out price is the normal price after that.`;
-  $("#addons").textContent = "Add-ons: " + offer.addons.map(([n, p]) => `${n} ${p}`).join(" · ");
+  const deluxe = ladder.editions.deluxe;
+  const words = ["", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten"];
+  $("#perFriend").textContent = offer.perFriendNote[ladder.id]
+    .replace("{people}", words[deluxe.people] ?? String(deluxe.people))
+    .replace("{each}", formatDkk(Math.round(deluxe.founder.DKK / 100 / deluxe.people)));
+  $("#founderNote").textContent = `Founder prices for the first ${FOUNDER_SPOTS} orders. The crossed-out price is the normal price after that.`;
+  const addons = offer.addons[ladder.id].filter((a): a is [AddonId, string, boolean] => a[0] in ADDONS);
+  $("#addons").textContent = "Add-ons: " + addons.map(([id, label, from]) => `${label} ${from ? "from " : ""}${dkk(ADDONS[id].price.DKK)}`).join(" · ");
   const dl = offer.deadlines.map(([n, d]) => `${n} ${d}`).join(" · ");
   $("#deadlines").textContent = `Christmas order deadlines: ${dl}.`;
   $("#occChristmas").textContent = `Order a Deluxe game by ${offer.deadlines.find(([n]) => n === "Deluxe")?.[1] ?? "early November"} to have it for Christmas.`;

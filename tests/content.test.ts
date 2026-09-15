@@ -7,20 +7,12 @@ import squad from "../src/content/squad.json";
 import stops from "../src/content/stops.json";
 
 const root = resolve(__dirname, "..");
-const plan03 = resolve(root, "../Game of Us/03-offer-and-catalogue.md");
 const assets = resolve(root, "public/assets");
 
-describe("prices", () => {
-  it("match plan 03 exactly", () => {
-    const text = readFileSync(plan03, "utf8");
-    for (const t of offer.tiers) {
-      for (const n of [t.founderDkk, t.normalDkk]) {
-        const shown = n.toLocaleString("en-US");
-        expect(text, `${t.name} ${shown} DKK`).toContain(`${shown} DKK`);
-      }
-      expect(text, `${t.name} in plan 03`).toContain(`**${t.name}**`);
-      expect(t.normalDkk, `${t.name} normal above founder`).toBeGreaterThan(t.founderDkk);
-    }
+describe("offer copy", () => {
+  it("has card copy for every edition in both pricing ladders", () => {
+    expect(offer.tiers.map(t => t.id)).toEqual(["standard", "deluxe", "ultimate"]);
+    for (const t of offer.tiers) for (const l of ["A", "B"] as const) expect(t.copy[l].features.length, `${t.id} ${l}`).toBeGreaterThan(0);
   });
 
   it("show the most-picked tier once", () => {
@@ -49,7 +41,7 @@ describe("assets", () => {
 });
 
 describe("what the site must never say", () => {
-  const files = ["index.html", "privacy.html", "terms.html", "src/content/squad.json", "src/content/stops.json", "src/content/faq.json", "src/content/offer.json"];
+  const files = ["index.html", "privacy.html", "terms.html", "src/content/squad.json", "src/content/stops.json", "src/content/faq.json", "src/content/offer.json", "src/order/prices.ts"];
   // Franchise names stay out of copy and metadata (plan clip rules).
   const banned = [/pok[eé]mon/i, /minecraft/i, /fortnite/i, /ronaldo/i, /jonesy/i];
   it.each(files)("%s names no franchise or celebrity", f => {
