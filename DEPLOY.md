@@ -15,6 +15,9 @@
    | Build output directory | `dist` |
    | Environment variable | `NODE_VERSION` = `22` |
    Every push to `main` deploys; every other branch gets its own preview URL.
+   If Cloudflare created it as a **Worker** instead (deploy command `npx wrangler deploy`), `wrangler.jsonc`
+   handles it: it uploads `dist/` as static assets. Without that file wrangler tries to auto-configure Vite
+   and fails on Vite 5.
 3. **Domain:** Pages project → Custom domains → add the domain you bought, follow the DNS steps.
 4. **Analytics:** Pages project → Metrics → enable Web Analytics (no cookies, no banner needed).
 
