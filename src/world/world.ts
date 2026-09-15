@@ -172,7 +172,7 @@ export class BeachWorld {
       const g = el("div", "tiers");
       this.offer.tiers.forEach(t => {
         const d = el("div", t.star ? "star" : null);
-        d.append(el("b", null, t.short), el("span", null, `${t.from ? "from " : ""}${formatDkk(t.priceDkk)}${t.from ? "" : " DKK"}`), el("em", null, t.friends));
+        d.append(el("b", null, t.short), el("span", null, `${formatDkk(t.founderDkk)} DKK`), el("em", null, t.friends));
         g.append(d);
       });
       body.append(g);

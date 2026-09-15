@@ -23,21 +23,26 @@ export function renderOffer(offer: Offer, site: SiteConfig) {
     const card = el("article", t.star ? "cart star" : "cart");
     const label = el("div", "label");
     label.append(el("h3", null, t.name), el("span", "tag", t.tag));
+    const each = Math.round(t.founderDkk / t.people);
     const price = el("div", "price");
-    if (t.from) price.append(el("small", null, "from "));
-    price.append(document.createTextNode(`${formatDkk(t.priceDkk)} `), el("small", null, "DKK"));
+    price.append(el("span", "founder", "Founder price"), document.createElement("br"));
+    price.append(document.createTextNode(`${formatDkk(each)} `), el("small", null, "DKK per person"));
+    const total = el("p", "total");
+    total.append(document.createTextNode(`${formatDkk(t.founderDkk)} DKK for ${t.people} friends `), el("s", null, `${formatDkk(t.normalDkk)} DKK`));
+    const worth = el("p", "worth", `Worth ${formatDkk(t.worthDkk)} DKK as add-ons`);
     const ul = el("ul");
     t.features.forEach(f => ul.append(el("li", null, f)));
     const foot = el("div", "foot");
     foot.append(orderButton(t.cta, t.id, site, t.star ? "btn" : "btn ghost"));
-    card.append(label, price, ul, foot);
+    card.append(label, price, total, worth, ul, foot);
     carts.append(card);
   }
   $("#perFriend").textContent = offer.perFriendNote;
+  $("#founderNote").textContent = `Founder prices for the first ${offer.founderSpots} orders. The crossed-out price is the normal price after that.`;
   $("#addons").textContent = "Add-ons: " + offer.addons.map(([n, p]) => `${n} ${p}`).join(" · ");
   const dl = offer.deadlines.map(([n, d]) => `${n} ${d}`).join(" · ");
   $("#deadlines").textContent = `Christmas order deadlines: ${dl}.`;
-  $("#occChristmas").textContent = `Order a Squad Trip by ${offer.deadlines[0]?.[1] ?? "early November"} to have it for Christmas.`;
+  $("#occChristmas").textContent = `Order a Deluxe game by ${offer.deadlines.find(([n]) => n === "Deluxe")?.[1] ?? "early November"} to have it for Christmas.`;
   $("#ctaButton").replaceWith(orderButton("Start your order ▶", "", site, "btn dark"));
   $("#navOrder").replaceWith(orderButton("Start your order", "", site, "btn"));
 }

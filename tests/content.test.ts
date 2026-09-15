@@ -14,8 +14,12 @@ describe("prices", () => {
   it("match plan 03 exactly", () => {
     const text = readFileSync(plan03, "utf8");
     for (const t of offer.tiers) {
-      const shown = t.priceDkk.toLocaleString("en-US");
-      expect(text, `${t.name} ${shown} DKK`).toContain(`${shown} DKK`);
+      for (const n of [t.founderDkk, t.normalDkk]) {
+        const shown = n.toLocaleString("en-US");
+        expect(text, `${t.name} ${shown} DKK`).toContain(`${shown} DKK`);
+      }
+      expect(text, `${t.name} in plan 03`).toContain(`**${t.name}**`);
+      expect(t.normalDkk, `${t.name} normal above founder`).toBeGreaterThan(t.founderDkk);
     }
   });
 

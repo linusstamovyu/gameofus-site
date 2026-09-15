@@ -170,6 +170,11 @@
   .cart .tag{font-family:var(--pixel);font-size:11px;letter-spacing:.12em;text-transform:uppercase;background:var(--ink);color:var(--paper);padding:2px 7px;border-radius:3px}
   .cart .price{padding:18px 20px 6px;font-family:var(--pixel);font-size:34px;font-variant-numeric:tabular-nums}
   .cart .price small{font-size:14px;color:var(--muted);font-family:var(--body)}
+  .cart .price .founder{font-family:var(--body);font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--teal-dark)}
+  .cart .total{margin:0;padding:0 20px;font-size:14.5px;font-variant-numeric:tabular-nums}
+  .cart .total s{color:var(--muted);margin-left:4px}
+  .cart .worth{margin:6px 20px 0;font-size:13px;font-weight:700;color:var(--teal-dark)}
+  .founder-note{margin:0 0 16px;font-size:14px;color:#4a4036}
   .cart ul{list-style:none;margin:0;padding:8px 20px 18px;display:flex;flex-direction:column;gap:7px;font-size:14.5px;flex:1}
   .cart li{display:grid;grid-template-columns:16px 1fr;gap:8px}
   .cart li::before{content:"";width:9px;height:9px;background:var(--teal);transform:rotate(45deg);margin-top:6px}

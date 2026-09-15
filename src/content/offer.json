@@ -1,16 +1,106 @@
 {
-  "_source": "Game of Us plan 03 (packages, add-ons) and 02 (order deadlines). Change prices there first, then here.",
+  "_source": "Game of Us plan 03 (editions, add-ons) and 04 (founder pricing). Change prices there first, then here. The order configurator will read src/order/prices.ts instead (plan 17).",
+  "founderSpots": 30,
   "tiers": [
-    { "id": "side_quest", "name": "Side Quest", "short": "Side Quest", "priceDkk": 1995, "from": false, "tag": "2 weeks", "friends": "2 friends",
-      "features": ["2 characters from your photos", "1 home zone and 1 gym", "A short story, about 20–30 minutes", "1 round of changes"], "cta": "Choose Side Quest", "star": false },
-    { "id": "squad_trip", "name": "Squad Trip", "short": "Squad Trip", "priceDkk": 6495, "from": false, "tag": "Most picked", "friends": "6 friends",
-      "features": ["6 characters, one with an evolution", "3 zones and 3 gyms", "A main quest from a real memory", "Party minigames and same-wifi multiplayer", "2 rounds of changes"], "cta": "Choose Squad Trip", "star": true },
-    { "id": "legendary_saga", "name": "Legendary Saga", "short": "Saga", "priceDkk": 19995, "from": true, "tag": "6–10 weeks", "friends": "10+ friends",
-      "features": ["10+ characters, all with evolutions", "6+ zones, even a second country", "Illustrated cutscenes", "Online multiplayer, hosted for a year", "3 rounds of changes"], "cta": "Ask about a Saga", "star": false }
+    {
+      "id": "standard",
+      "name": "Standard",
+      "short": "Standard",
+      "founderDkk": 799,
+      "normalDkk": 1049,
+      "worthDkk": 2300,
+      "people": 2,
+      "tag": "2 weeks",
+      "friends": "2 friends",
+      "features": [
+        "2 characters from your photos",
+        "1 home zone, 1 big game and 3 minigames",
+        "A short story, about 20–30 minutes",
+        "1 round of changes"
+      ],
+      "cta": "Choose Standard",
+      "star": false
+    },
+    {
+      "id": "deluxe",
+      "name": "Deluxe",
+      "short": "Deluxe",
+      "founderDkk": 1049,
+      "normalDkk": 1399,
+      "worthDkk": 9100,
+      "people": 6,
+      "tag": "Most picked",
+      "friends": "6 friends",
+      "features": [
+        "6 characters, one with an evolution",
+        "3 zones, 3 big games and 6 minigames",
+        "A main quest from a real memory",
+        "Same-wifi multiplayer",
+        "2 rounds of changes"
+      ],
+      "cta": "Choose Deluxe",
+      "star": true
+    },
+    {
+      "id": "ultimate",
+      "name": "Ultimate",
+      "short": "Ultimate",
+      "founderDkk": 1399,
+      "normalDkk": 1799,
+      "worthDkk": 27300,
+      "people": 10,
+      "tag": "6–10 weeks",
+      "friends": "10 friends",
+      "features": [
+        "10 characters, all with evolutions",
+        "6 zones, even a second country",
+        "5 big games and all 12 minigames",
+        "Illustrated cutscenes and online multiplayer",
+        "3 rounds of changes"
+      ],
+      "cta": "Choose Ultimate",
+      "star": false
+    }
   ],
   "addons": [
-    ["Extra friend", "from 249 DKK"], ["Extra zone", "from 495 DKK"], ["Voice lines", "195 DKK"], ["Party Mode (18+)", "495 DKK"], ["Trailer", "395 DKK"]
+    [
+      "Extra friend",
+      "from 159 DKK"
+    ],
+    [
+      "Big game",
+      "449 DKK"
+    ],
+    [
+      "Extra zone",
+      "from 299 DKK"
+    ],
+    [
+      "Voice line",
+      "129 DKK"
+    ],
+    [
+      "Party Mode (18+)",
+      "299 DKK"
+    ],
+    [
+      "Flex Pass",
+      "129 DKK"
+    ]
   ],
-  "perFriendNote": "A Squad Trip for six works out at about 1,080 DKK each, less than one big night out.",
-  "deadlines": [["Squad Trip", "8 Nov"], ["Side Quest", "29 Nov"]]
+  "perFriendNote": "Split between six friends, a Deluxe game is 175 DKK each. Pay in full at order, or spread it with Klarna.",
+  "deadlines": [
+    [
+      "Ultimate",
+      "25 Oct"
+    ],
+    [
+      "Deluxe",
+      "8 Nov"
+    ],
+    [
+      "Standard",
+      "29 Nov"
+    ]
+  ]
 }

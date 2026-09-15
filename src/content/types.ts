@@ -37,8 +37,14 @@ export interface Tier {
   id: string;
   name: string;
   short: string;
-  priceDkk: number;
-  from: boolean;
+  /** Founder launch price, charged for the first `founderSpots` orders. */
+  founderDkk: number;
+  /** Normal price, shown crossed out; charged from order founderSpots + 1. */
+  normalDkk: number;
+  /** What the contents cost as add-ons (plan 03), shown as "worth X". */
+  worthDkk: number;
+  /** Group size the per-person price is worked out for. */
+  people: number;
   tag: string;
   friends: string;
   features: string[];
@@ -47,6 +53,7 @@ export interface Tier {
 }
 
 export interface Offer {
+  founderSpots: number;
   tiers: Tier[];
   addons: [string, string][];
   perFriendNote: string;
