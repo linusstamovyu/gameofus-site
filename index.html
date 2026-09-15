@@ -31,6 +31,7 @@
       <li><a href="#prices">Prices</a></li>
       <li><a href="#faq">FAQ</a></li>
     </ul>
+    <span data-country-slot></span>
     <span id="navOrder"></span>
   </div>
 </nav>
@@ -50,6 +51,11 @@
         <small>Tap or click the sand to walk · <kbd>WASD</kbd> <kbd>Shift</kbd> <kbd>E</kbd> after clicking the world</small>
       </div>
       <button class="mini-title" id="miniTitle" type="button" hidden>◀ Game of Us</button>
+      <label class="world-pick">
+        <span class="world-swatch" id="worldSwatch" aria-hidden="true"></span>
+        <span class="world-label">World</span>
+        <select id="worldSelect" aria-label="Choose the world: same squad, same map, new setting"></select>
+      </label>
       <nav class="tour" aria-label="Guided tour">
         <button class="btn ghost" id="prev" type="button" aria-label="Previous stop">◀</button>
         <div class="where"><small id="tourStep">Guided tour</small><strong id="tourName">Stops on the beach</strong><div class="dots" id="dots"></div></div>
@@ -137,7 +143,6 @@
         <div><p class="eyebrow">Prices</p><h2>Pick your cartridge</h2></div>
         <p id="perFriend"></p>
       </div>
-      <p class="order-soon" id="orderSoon" role="status" hidden>Ordering opens on 4 October. The founder prices below are the ones you'll pay.</p>
       <p class="founder-note" id="founderNote"></p>
       <div class="carts" id="carts"></div>
       <p class="addons" id="addons"></p>

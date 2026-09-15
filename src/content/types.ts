@@ -60,7 +60,6 @@ export interface Offer {
 }
 
 export interface SiteConfig {
-  orderFormUrl: string;
   contactEmail: string;
   analyticsToken: string;
   siteUrl: string;

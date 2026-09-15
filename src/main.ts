@@ -5,7 +5,8 @@ import siteData from "./content/site.json";
 import squadData from "./content/squad.json";
 import stopsData from "./content/stops.json";
 import type { Offer, SiteConfig, SquadMember, Stop } from "./content/types";
-import { renderFaq, renderOffer, renderPause, renderSquad } from "./sections/render";
+import { renderFaq, renderOffer, renderOrderCalls, renderPause, renderSquad } from "./sections/render";
+import { currentCurrency, initCountryPicker, onCountryChange } from "./shared/countryPicker";
 import { BeachWorld } from "./world/world";
 
 const squad = squadData as unknown as SquadMember[];
@@ -15,7 +16,10 @@ const site = siteData as SiteConfig;
 
 // The page comes first and never waits for the world.
 renderSquad(squad);
-renderOffer(offer, site);
+renderOffer(offer, currentCurrency());
+renderOrderCalls(offer);
+onCountryChange((_, currency) => renderOffer(offer, currency));
+void initCountryPicker();
 renderFaq(faqData as unknown as [string, string][]);
 renderPause();
 document.querySelectorAll<HTMLElement>("[data-draft]").forEach(n => (n.hidden = !site.isDraft));

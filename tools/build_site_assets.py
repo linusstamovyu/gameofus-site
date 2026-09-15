@@ -46,6 +46,25 @@ PHOTO_CROPS = {
 # Battle plates used as card art (game key -> site file).
 PLATES = ["beach", "harbour", "oura_street", "gym1_interior", "kai_gym_mid", "marina_street"]
 
+# The order page's art (plan 07 Q12: existing game art as stills for now; the owner replaces look-alike
+# art later). It lives in its own folder with its own budget, loaded only on /order, so the home page's
+# first-load budget is untouched. Output name -> (game file, how to fit it into a 3:2 card).
+ORDER_OUT = SITE / "public" / "order-assets"
+ORDER_BUDGET_BYTES = 2 * 1024 * 1024
+MINIGAMES = ["blackjack", "kings-cup", "the-bus", "dice-push-your-luck", "three-cup-shuffle", "landmine",
+             "reaction-light", "stop-the-pour", "safecracker", "mini-battleships", "takeaway-nim", "tic-tac-toe"]
+BIG_GAMES = {
+    "game_kart.webp": ("props/kart_gantry.png", "cover"),
+    "game_brawler.webp": ("fighter/stages/arcade_mid.png", "cover"),
+    "game_build.webp": ("backgrounds/battle/kai_gym_mid.png", "cover"),
+    "game_craft.webp": ("station-a/props/crafting_table.png", "prop"),
+    "game_gym.webp": ("backgrounds/battle/gym1_interior.png", "cover"),
+    "game_photo.webp": ("phone/photos/albufeira_caro_tower.jpg", "cover"),
+    "game_escort.webp": ("backgrounds/battle/ber_kiez.png", "cover"),
+    "game_quiz.webp": ("cutscene/berlin-coffee/coffee_cup.png", "cover"),
+    "game_chase.webp": ("backgrounds/battle/harbour.png", "cover"),
+}
+
 errors: list[str] = []
 
 
@@ -92,6 +111,28 @@ def build_world() -> None:
             save_webp(im, f"bg_{key}.webp", quality=80)
 
 
+def build_order_art() -> None:
+    card = (360, 240)
+    for name, (rel, fit) in BIG_GAMES.items():
+        f = src(GAME / rel)
+        if not f:
+            continue
+        im = Image.open(f).convert("RGBA")
+        if fit == "cover":
+            out = ImageOps.fit(im.convert("RGB"), card, Image.LANCZOS)
+        else:  # a small prop on transparency: centre it on the site's night panel colour
+            out = Image.new("RGB", card, (34, 50, 66))
+            im.thumbnail((card[0] - 60, card[1] - 40), Image.LANCZOS)
+            out.paste(im, ((card[0] - im.width) // 2, (card[1] - im.height) // 2), im)
+        out.save(ORDER_OUT / name, "WEBP", quality=80, method=6)
+    for mid in MINIGAMES:
+        f = src(GAME / "minigames" / "covers" / f"{mid}.png")
+        if f:
+            im = Image.open(f).convert("RGB")
+            im.thumbnail((192, 192), Image.LANCZOS)
+            im.save(ORDER_OUT / f"mini_{mid}.webp", "WEBP", quality=80, method=6)
+
+
 def build_share_image() -> None:
     """1200x630 share card: the squad's portraits on the sea."""
     card = Image.new("RGB", (1200, 630), (28, 95, 130))
@@ -122,16 +163,18 @@ def check_content_refs() -> None:
     for jf in sorted(CONTENT.glob("*.json")):
         json.loads(jf.read_text())  # a broken content file fails here, not in the browser
         for token in re.findall(r'"([\w.-]+\.(?:png|jpg|webp))"', jf.read_text()):
-            if not (OUT / token).exists():
+            if not (OUT / token).exists() and not (ORDER_OUT / token).exists():
                 errors.append(f"{jf.name} names {token}, which was not built")
 
 
 def main() -> int:
-    OUT.mkdir(parents=True, exist_ok=True)
-    for old in OUT.glob("*"):
-        old.unlink()
+    for folder in (OUT, ORDER_OUT):
+        folder.mkdir(parents=True, exist_ok=True)
+        for old in folder.glob("*"):
+            old.unlink()
     build_squad()
     build_world()
+    build_order_art()
     build_share_image()
     check_content_refs()
 
@@ -140,6 +183,10 @@ def main() -> int:
           f"(budget {BUDGET_BYTES / 1024:.0f} KB)")
     if total > BUDGET_BYTES:
         errors.append(f"over budget: {total} > {BUDGET_BYTES} bytes")
+    order_total = sum(p.stat().st_size for p in ORDER_OUT.glob("*"))
+    print(f"order page art: {len(list(ORDER_OUT.glob('*')))} files, {order_total / 1024:.0f} KB (budget {ORDER_BUDGET_BYTES / 1024:.0f} KB)")
+    if order_total > ORDER_BUDGET_BYTES:
+        errors.append(f"order art over budget: {order_total} > {ORDER_BUDGET_BYTES} bytes")
     for e in errors:
         print("ERROR:", e)
     return 1 if errors else 0

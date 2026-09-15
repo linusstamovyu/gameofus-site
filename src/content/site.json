@@ -1,6 +1,5 @@
 {
-  "_note": "Fill these in when the accounts exist. While a URL is empty the site says ordering opens soon instead of linking nowhere.",
-  "orderFormUrl": "",
+  "_note": "Fill these in when the accounts exist. Ordering itself is the /order page and the Worker (plan 17); it says so when the shop isn't open yet.",
   "contactEmail": "",
   "analyticsToken": "",
   "siteUrl": "",

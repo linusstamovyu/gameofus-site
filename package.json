@@ -5,15 +5,19 @@
   "type": "module",
   "scripts": {
     "assets": "python3 tools/build_site_assets.py",
-    "dev": "vite",
-    "build": "tsc && vite build",
+    "dev": "npm run vendor && vite",
+    "build": "npm run vendor && tsc && vite build",
     "preview": "vite preview",
-    "test": "vitest run"
+    "test": "vitest run",
+    "vendor": "node tools/copy-vendor.mjs"
   },
   "devDependencies": {
     "@types/node": "^26.5.1",
     "typescript": "~5.6.2",
     "vite": "^5.4.10",
     "vitest": "^2.1.9"
+  },
+  "dependencies": {
+    "@mediapipe/tasks-vision": "1.0.1"
   }
 }

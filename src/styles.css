@@ -34,6 +34,20 @@
   .btn.dark{background:var(--ink);box-shadow:inset 0 -4px 0 #000}
   .btn:disabled{opacity:.45;cursor:default}
 
+  /* ---------- country picker ---------- */
+  .country-btn{font-family:var(--pixel);font-size:14px;background:transparent;color:var(--paper);border:2px solid #b98150;border-radius:6px;padding:6px 10px;cursor:pointer;white-space:nowrap}
+  .country-btn:hover{border-color:var(--paper)}
+  .country-banner{position:sticky;top:0;z-index:40;display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:6px 14px;background:var(--ink);color:var(--paper);font-size:14px;padding:8px 16px}
+  .link-btn{font:inherit;font-weight:700;background:none;border:0;color:var(--cyan);text-decoration:underline;cursor:pointer;padding:2px 4px}
+  .country-list{position:fixed;z-index:60;width:min(300px,calc(100vw - 24px));max-height:min(460px,80vh);overflow:auto;background:var(--paper);border:3px solid var(--ink);border-radius:10px;box-shadow:6px 6px 0 rgba(0,0,0,.25);padding:10px}
+  .country-list .country-head{margin:2px 6px 8px;font-family:var(--pixel);font-size:15px}
+  .country-list ul{list-style:none;margin:0 0 6px;padding:0}
+  .country-list li button{width:100%;display:grid;grid-template-columns:28px 1fr auto;align-items:center;gap:8px;font:inherit;font-size:15px;text-align:left;background:none;border:0;border-radius:6px;padding:7px 8px;cursor:pointer;color:var(--ink)}
+  .country-list li button:hover,.country-list li button.on{background:#e8f5f2}
+  .country-list li button.on .name{font-weight:700}
+  .country-list .cur{font-family:var(--pixel);font-size:12px;color:var(--muted)}
+  .country-list .link-btn{color:var(--teal-dark)}
+
   /* ---------- hero / world ---------- */
   .hero{background:var(--sea-deep);padding:22px 0 30px}
   .stage{position:relative;height:clamp(520px,74vh,700px);border:4px solid var(--ink);border-radius:14px;overflow:hidden;
@@ -204,7 +218,7 @@
 
   @media (max-width:980px){
     .roster{grid-template-columns:repeat(2,1fr)} .features,.carts,.steps3{grid-template-columns:1fr} .step+.step{border-left:0;border-top:3px dashed #d6c39b}
-    .occ{grid-template-columns:repeat(2,1fr)} .faq{grid-template-columns:1fr} .nav ul{display:none} .sec-head{flex-direction:column;align-items:start}
+    .occ{grid-template-columns:repeat(2,1fr)} .faq{grid-template-columns:1fr} .nav ul{display:none} .nav .country-btn{margin-left:auto} .sec-head{flex-direction:column;align-items:start}
     .card{left:10px;right:10px;top:auto;width:auto;max-height:80%} .title-card{right:22px}
   }
   @media (prefers-reduced-motion:reduce){ html{scroll-behavior:auto} .scene .spr{animation:none!important} .card.enter{animation:none} }
@@ -214,7 +228,6 @@
   .skip-link{position:absolute;left:-999px;top:8px;z-index:50;background:var(--paper);color:var(--ink);padding:8px 12px;border-radius:4px;font-family:var(--pixel)}
   .skip-link:focus{left:8px}
   .nav .btn{margin-left:4px}
-  .order-soon{background:var(--paper);border:3px solid var(--teal);border-radius:8px;padding:12px 16px;margin:0 0 16px;font-size:15px}
   .noscript{position:absolute;inset:auto 20px 20px;background:var(--paper);padding:12px;border-radius:6px;margin:0}
   .stage.no-world canvas,.stage.no-world .tour{display:none}
   .stage.no-world{background:url(/assets/bg_beach.webp) center/cover}
@@ -239,3 +252,17 @@
   .legal-page p,.legal-page li{max-width:66ch;color:#3a3530}
   .legal-page .draft-note{background:var(--paper);border:3px solid var(--gold);border-radius:8px;padding:12px 16px;margin:18px 0}
   .legal-page .updated{color:var(--muted);font-size:14px;margin:0}
+
+  /* ---------- world picker (same map, new setting) ---------- */
+  .world-pick{position:absolute;right:14px;top:14px;z-index:4;display:flex;align-items:center;gap:8px;background:var(--paper);
+    border:3px solid var(--ink);border-radius:8px;padding:5px 8px 5px 6px;box-shadow:0 4px 0 rgba(0,0,0,.25);cursor:pointer}
+  .world-swatch{width:22px;height:22px;border-radius:4px;border:2px solid var(--ink);flex:none}
+  .world-label{font-family:var(--pixel);font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--teal-dark)}
+  .world-pick select{font-family:var(--pixel);font-size:14px;font-weight:700;color:var(--ink);background:transparent;border:0;
+    max-width:min(260px,52vw);cursor:pointer;padding:2px 0}
+  .stage{transition:background-color .3s}
+  @media (max-width:700px){
+    .world-pick{top:auto;bottom:92px;right:10px}
+    .world-label{display:none}
+    .world-pick select{font-size:13px;max-width:46vw}
+  }

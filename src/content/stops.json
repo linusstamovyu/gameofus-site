@@ -5,7 +5,7 @@
     "art": "bg_kai_gym_mid.webp" },
   { "id": "places", "x": 11, "y": 5, "ax": 11, "ay": 6, "kind": "sign", "label": "MAP",
     "eyebrow": "Explore your places", "title": "Your town becomes the map",
-    "text": "The flat, the beach, the bar you always end up in, laid out from your own photos. You are standing on Praia de Albufeira right now.",
+    "text": "The flat, the beach, the bar you always end up in, laid out from your own photos. You are standing {place} right now.",
     "art": "bg_harbour.webp",
     "thumbs": [["bg_beach.webp", "The beach"], ["bg_harbour.webp", "The marina"], ["bg_oura_street.webp", "Our avenue"]] },
   { "id": "story", "x": 17, "y": 6, "ax": 17, "ay": 7, "kind": "sign", "label": "STORY", "who": "rico",

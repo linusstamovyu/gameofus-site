@@ -2,14 +2,19 @@
 import type { Offer, SquadMember, Stop } from "../content/types";
 import { $, asset, el, photoPair } from "../dom";
 import { ACTIVE_LADDER, LADDERS, formatMoney } from "../order/prices";
-import { drawCharacter, drawMarker, drawPalm, drawParasol, drawPrompt, drawSign, drawTarget } from "./draw";
+import { currentCurrency } from "../shared/countryPicker";
+import { drawCharacter, drawMarker, drawPrompt, drawTarget } from "./draw";
 import { BeachMap, Ground, H, PALMS, PARASOLS, W, groundAt } from "./map";
-import { paintSea, paintStaticLayer } from "./paint";
+import { paintStaticLayer } from "./paint";
+import { THEMES, themeById, type Theme } from "./themes";
+import type { View } from "./themes/kit";
 import { Player, type Facing } from "./player";
 
 const LOW_FPS = 24;          // below this, sea and palms stop animating
 const FPS_SAMPLE_SECONDS = 4;
 const WIDE_CARD_MIN_WIDTH = 980; // card sits beside the lad, so the camera shifts over
+const SWAP_SECONDS = 0.45;       // fade when the world changes
+const THEME_KEY = "gou-world";
 
 export class BeachWorld {
   private readonly ctx: CanvasRenderingContext2D;
@@ -26,6 +31,8 @@ export class BeachWorld {
   private focused = false; private tourIndex = -1; private toastLeft = 0;
   private lowPower = matchMedia("(prefers-reduced-motion: reduce)").matches;
   private fpsFrames = 0; private fpsTime = 0; private fpsChecked = false;
+  private theme: Theme = THEMES[0];
+  private swapLeft = 0;
 
   constructor(private readonly stage: HTMLElement, private readonly stops: Stop[], squad: SquadMember[], private readonly offer: Offer) {
     const canvas = $<HTMLCanvasElement>("canvas", stage);
@@ -33,13 +40,15 @@ export class BeachWorld {
     this.map = new BeachMap(stops);
     this.player = new Player(this.map);
     squad.forEach(m => { this.squad.set(m.id, m); this.loadSprite(m.id, m.walk); });
-    this.loadSprite("palm", "palm.webp");
+    this.theme = themeById(new URLSearchParams(location.search).get("world") ?? readStored(THEME_KEY));
+    this.loadThemeFiles(this.theme);
 
     new ResizeObserver(() => this.resize()).observe(stage);
     this.resize();
     document.fonts?.ready.then(() => this.rebuildLayer());
     this.bindInput(canvas);
     this.bindTour();
+    this.bindWorldPicker();
     requestAnimationFrame(t => this.frame(t));
     // ?debug exposes the world for manual stepping (browsers that pause rAF in background tabs).
     if (new URLSearchParams(location.search).has("debug")) Object.assign(window, { __beach: this });
@@ -50,7 +59,17 @@ export class BeachWorld {
 
   /* ---------- setup ---------- */
   private loadSprite(key: string, file: string) {
+    if (this.sprites.has(key)) return;
     const img = new Image(); img.src = asset(file); this.sprites.set(key, img);
+  }
+  /** A theme's own art and its dressed walk sheets, fetched the first time it is picked. */
+  private loadThemeFiles(t: Theme) {
+    for (const [key, file] of Object.entries(t.files ?? {})) this.loadSprite(`${t.id}:${key}`, file);
+    for (const [who, file] of Object.entries(t.outfits ?? {})) this.loadSprite(`${t.id}:walk:${who}`, file);
+  }
+  private walkSprite(who: string) {
+    const dressed = this.sprites.get(`${this.theme.id}:walk:${who}`);
+    return dressed?.complete && dressed.naturalWidth ? dressed : this.sprites.get(who);
   }
   private resize() {
     const r = this.stage.getBoundingClientRect();
@@ -61,7 +80,36 @@ export class BeachWorld {
     this.T = Math.max(34, Math.min(66, Math.round(this.vw / (this.vw < 700 ? 9 : 16))));
     this.rebuildLayer();
   }
-  private rebuildLayer() { this.layer = paintStaticLayer(this.T, this.dpr); }
+  private rebuildLayer() { this.layer = paintStaticLayer(this.theme, this.T, this.dpr); }
+
+  /* ---------- worlds ---------- */
+  private bindWorldPicker() {
+    const select = $<HTMLSelectElement>("#worldSelect");
+    if (!select) return;
+    THEMES.forEach(t => { const o = el("option", null, `${t.label} · ${t.blurb}`); o.value = t.id; select.append(o); });
+    select.value = this.theme.id;
+    this.paintSwatch();
+    select.addEventListener("change", () => this.setTheme(select.value));
+  }
+  private paintSwatch() {
+    const sw = $("#worldSwatch");
+    if (sw) sw.style.background = `linear-gradient(135deg, ${this.theme.swatch[0]} 50%, ${this.theme.swatch[1]} 50%)`;
+  }
+  setTheme(id: string) {
+    const next = themeById(id);
+    if (next === this.theme) return;
+    this.theme = next;
+    this.loadThemeFiles(next);
+    this.rebuildLayer();
+    this.stage.style.background = next.stageBg;
+    this.stage.dataset.world = next.id;
+    this.swapLeft = SWAP_SECONDS;
+    this.paintSwatch();
+    this.renderTour();
+    writeStored(THEME_KEY, next.id);
+    const card = $("#card");
+    if (!card.hidden) { const s = this.stops[this.tourIndex]; if (s) this.openCard(s); }
+  }
 
   /* ---------- input ---------- */
   private bindInput(canvas: HTMLCanvasElement) {
@@ -91,7 +139,7 @@ export class BeachWorld {
       const below = this.map.stopAt(tx, ty + 1);
       const stop = this.map.stopAt(tx, ty) ?? (below?.kind === "npc" ? below : undefined);
       if (stop) { if (!this.player.walkToStop(stop)) this.toast("No way through from here"); return; }
-      if (!this.map.walkable(tx, ty)) { this.toast(groundAt(tx, ty) === Ground.Sea ? "Too cold for a swim" : "Can’t walk there"); return; }
+      if (!this.map.walkable(tx, ty)) { this.toast(groundAt(tx, ty) === Ground.Sea ? this.theme.lines.barrier : this.theme.lines.blocked); return; }
       if (!this.player.walkTo(tx, ty)) this.toast("Can’t reach that spot");
     });
 
@@ -112,6 +160,8 @@ export class BeachWorld {
 
   /* ---------- tour ---------- */
   private bindTour() {
+    this.stage.style.background = this.theme.stageBg;
+    this.stage.dataset.world = this.theme.id;
     const dots = $("#dots");
     this.stops.forEach(() => dots.append(document.createElement("i")));
     $("#next").addEventListener("click", () => this.tourGo(this.tourIndex + 1));
@@ -121,7 +171,7 @@ export class BeachWorld {
   private renderTour() {
     const s = this.stops[this.tourIndex];
     $("#tourStep").textContent = s ? `Stop ${this.tourIndex + 1} of ${this.stops.length}` : "Guided tour";
-    $("#tourName").textContent = s ? s.title : `${this.stops.length} stops on the beach`;
+    $("#tourName").textContent = s ? s.title : `${this.stops.length} stops · ${this.theme.label}`;
     ($("#prev") as HTMLButtonElement).disabled = this.tourIndex <= 0;
     $("#next").textContent = this.tourIndex < 0 ? "Start ▶" : this.tourIndex >= this.stops.length - 1 ? "Replay ↺" : "Next ▶";
     [...$("#dots").children].forEach((d, i) => d.classList.toggle("on", i <= this.tourIndex));
@@ -158,7 +208,7 @@ export class BeachWorld {
       line.append(el("span", `chip ${who.type}`, who.type), document.createTextNode(`${who.name} · Signature move: ${who.move}`));
       body.append(line);
     }
-    if (s.text) body.append(el("p", null, s.text));
+    if (s.text) body.append(el("p", null, s.text.replace("{place}", this.theme.place)));
     if (s.thumbs) {
       const g = el("div", "thumbs");
       s.thumbs.forEach(([src, label]) => { const f = el("figure"), d = el("div"); d.style.backgroundImage = `url(${asset(src)})`; f.append(d, el("span", null, label)); g.append(f); });
@@ -173,7 +223,7 @@ export class BeachWorld {
       const g = el("div", "tiers");
       this.offer.tiers.forEach(t => {
         const d = el("div", t.star ? "star" : null);
-        d.append(el("b", null, t.short), el("span", null, formatMoney(LADDERS[ACTIVE_LADDER].editions[t.id].founder.DKK, "DKK")), el("em", null, t.copy[ACTIVE_LADDER].friends));
+        d.append(el("b", null, t.short), el("span", null, formatMoney(LADDERS[ACTIVE_LADDER].editions[t.id].founder[currentCurrency()], currentCurrency())), el("em", null, t.copy[ACTIVE_LADDER].friends));
         g.append(d);
       });
       body.append(g);
@@ -210,6 +260,7 @@ export class BeachWorld {
   private update() {
     const dt = this.dt;
     this.time += dt;
+    if (this.swapLeft > 0) this.swapLeft = Math.max(0, this.swapLeft - dt);
     if (this.toastLeft > 0) { this.toastLeft -= dt; if (this.toastLeft <= 0) $("#toast").hidden = true; }
     this.measureFps(dt);
     if (this.cardOpen()) return;
@@ -243,23 +294,29 @@ export class BeachWorld {
     this.cam.x += (tx - this.cam.x) * k; this.cam.y += (ty - this.cam.y) * k;
     const cx = Math.round(this.cam.x * dpr) / dpr, cy = Math.round(this.cam.y * dpr) / dpr;
 
-    ctx.fillStyle = "#2f8fb5"; ctx.fillRect(0, 0, vw, vh);
+    const theme = this.theme, animated = !this.lowPower, t = animated ? this.time : 0;
+    const view: View = {
+      x0: Math.max(0, Math.floor(cx / T)), y0: Math.max(0, Math.floor(cy / T)),
+      x1: Math.min(W - 1, Math.floor((cx + vw) / T)), y1: Math.min(H - 1, Math.floor((cy + vh) / T)),
+      cx, cy, vw, vh,
+    };
+    ctx.fillStyle = theme.stageBg; ctx.fillRect(0, 0, vw, vh);
     ctx.save(); ctx.translate(-cx, -cy);
     if (this.layer) ctx.drawImage(this.layer, 0, 0, mw, mh);
-    paintSea(ctx, T, this.time, !this.lowPower,
-      Math.max(0, Math.floor(cx / T)), Math.max(0, Math.floor(cy / T)),
-      Math.min(W - 1, Math.floor((cx + vw) / T)), Math.min(H - 1, Math.floor((cy + vh) / T)));
+    theme.live?.(ctx, T, this.time, animated, view);
     if (player.target) drawTarget(ctx, T, player.target[0], player.target[1], this.time);
 
-    const palmTime = this.lowPower ? 0 : this.time;
+    const img = (key: string) => this.sprites.get(`${theme.id}:${key}`);
     const items: [number, () => void][] = [];
-    PALMS.forEach(([x, y]) => items.push([y + 1, () => drawPalm(ctx, T, this.sprites.get("palm"), x, y, palmTime)]));
-    PARASOLS.forEach(([x, y]) => items.push([y + 1, () => drawParasol(ctx, T, x, y)]));
+    PALMS.forEach(([x, y]) => items.push([y + 1, () => theme.tall(ctx, T, x, y, t, img)]));
+    PARASOLS.forEach(([x, y]) => items.push([y + 1, () => theme.small(ctx, T, x, y, t)]));
     this.stops.forEach(s => items.push([s.y + 1, () => s.kind === "npc" && s.who
-      ? drawCharacter(ctx, T, this.sprites.get(s.who), s.x * T, s.y * T, this.npcFacing(s), false, 0)
-      : drawSign(ctx, T, s)]));
-    items.push([player.drawY + 1.01, () => drawCharacter(ctx, T, this.sprites.get("rico"), ppx, ppy, player.facing, player.moving && player.t < 0.5, player.step % 2)]);
+      ? drawCharacter(ctx, T, this.walkSprite(s.who), s.x * T, s.y * T, this.npcFacing(s), false, 0)
+      : theme.sign(ctx, T, s)]));
+    items.push([player.drawY + 1.01, () => drawCharacter(ctx, T, this.walkSprite("rico"), ppx, ppy, player.facing, player.moving && player.t < 0.5, player.step % 2)]);
     items.sort((a, b) => a[0] - b[0]).forEach(([, draw]) => draw());
+    theme.grade?.(ctx, T, view);
+    if (theme.lights) { ctx.save(); theme.lights(ctx, T, this.time, animated, view); ctx.restore(); }
     this.stops.forEach(s => drawMarker(ctx, T, s, this.visited.has(s.id), this.time));
 
     const facing = player.facingStop();
@@ -269,5 +326,14 @@ export class BeachWorld {
       drawPrompt(ctx, T, label, player.x, player.y);
     }
     ctx.restore();
+    if (theme.screen) { ctx.save(); theme.screen(ctx, vw, vh, this.time, animated); ctx.restore(); }
+    if (this.swapLeft > 0) {
+      ctx.fillStyle = theme.stageBg; ctx.globalAlpha = this.swapLeft / SWAP_SECONDS;
+      ctx.fillRect(0, 0, vw, vh); ctx.globalAlpha = 1;
+    }
   }
 }
+
+/** localStorage can throw (private windows, blocked storage); the world never depends on it. */
+function readStored(key: string): string | null { try { return localStorage.getItem(key); } catch { return null; } }
+function writeStored(key: string, value: string) { try { localStorage.setItem(key, value); } catch { /* not saved */ } }

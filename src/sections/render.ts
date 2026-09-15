@@ -1,7 +1,7 @@
 // Fills the page sections from src/content. The markup around them is static in index.html.
-import type { Offer, SiteConfig, SquadMember } from "../content/types";
-import { $, el, formatDkk, photoPair } from "../dom";
-import { ACTIVE_LADDER, ADDONS, FOUNDER_SPOTS, LADDERS, formatMoney, type AddonId } from "../order/prices";
+import type { Offer, SquadMember } from "../content/types";
+import { $, el, photoPair } from "../dom";
+import { ACTIVE_LADDER, ADDONS, FOUNDER_SPOTS, LADDERS, formatMoney, type AddonId, type Currency, type Edition } from "../order/prices";
 
 export function renderSquad(squad: SquadMember[]) {
   const roster = $("#roster");
@@ -18,10 +18,25 @@ export function renderSquad(squad: SquadMember[]) {
   }
 }
 
-export function renderOffer(offer: Offer, site: SiteConfig) {
+/** Money as the big number on a card: "400" + "DKK per person", or "£45" + "per person". */
+function bigMoney(minor: number, currency: Currency, suffix: string): [string, string] {
+  const shown = formatMoney(minor, currency, { round: true });
+  return currency === "DKK" ? [shown.replace(" DKK", ""), `DKK${suffix ? " " + suffix : ""}`] : [shown, suffix];
+}
+
+/** The "worth X" figure in the visitor's currency, scaled from the DKK figure by the edition's own ladder. */
+function worthIn(dkk: number, ed: Edition, currency: Currency): string {
+  const minor = (dkk * 100 * ed.founder[currency]) / ed.founder.DKK;
+  const step = currency === "DKK" ? 10000 : 1000;
+  return formatMoney(Math.round(minor / step) * step, currency, { round: true });
+}
+
+/** Renders the price section in a currency; called again whenever the visitor changes country. */
+export function renderOffer(offer: Offer, currency: Currency) {
   const ladder = LADDERS[ACTIVE_LADDER];
-  const dkk = (minor: number) => formatMoney(minor, "DKK");
+  const money = (minor: number) => formatMoney(minor, currency);
   const carts = $("#carts");
+  carts.replaceChildren();
   for (const t of offer.tiers) {
     const ed = ladder.editions[t.id];
     const copy = t.copy[ladder.id];
@@ -31,23 +46,27 @@ export function renderOffer(offer: Offer, site: SiteConfig) {
     const price = el("div", "price");
     price.append(el("span", "founder", "Founder price"), document.createElement("br"));
     const total = el("p", "total");
-    const normal = el("s", null, dkk(ed.normal.DKK));
-    normal.setAttribute("aria-label", `normally ${dkk(ed.normal.DKK)}`);
+    const normal = el("s", null, money(ed.normal[currency]));
+    normal.setAttribute("aria-label", `normally ${money(ed.normal[currency])}`);
     if (ladder.display === "perPersonFirst") {
       // Version A: the per-person figure is the big number, the total and "worth" sit under it.
-      price.append(document.createTextNode(`${formatDkk(Math.round(ed.founder.DKK / 100 / ed.people))} `), el("small", null, "DKK per person"));
-      total.append(document.createTextNode(`${dkk(ed.founder.DKK)} for ${ed.people} friends `), normal);
-      card.append(label, price, total, el("p", "worth", `Worth ${formatDkk(ed.worthDkk)} DKK as add-ons`));
+      const [n, unit] = bigMoney(ed.founder[currency] / ed.people, currency, "per person");
+      price.append(document.createTextNode(`${n} `), el("small", null, unit));
+      total.append(document.createTextNode(`${money(ed.founder[currency])} for ${ed.people} friends `), normal);
+      card.append(label, price, total, el("p", "worth", `Worth ${worthIn(ed.worthDkk, ed, currency)} as add-ons`));
     } else {
       // Version B: the total leads; Standard is a gift for two or three and is never split.
-      price.append(document.createTextNode(`${formatDkk(ed.founder.DKK / 100)} `), el("small", null, "DKK"), normal);
-      total.textContent = ed.people > 3 ? `≈ ${formatDkk(Math.round(ed.founder.DKK / 100 / ed.people))} DKK per friend` : "For two or three";
+      const [n, unit] = bigMoney(ed.founder[currency], currency, "");
+      price.append(document.createTextNode(`${n} `));
+      if (unit) price.append(el("small", null, unit));
+      price.append(normal);
+      total.textContent = ed.people > 3 ? `≈ ${formatMoney(ed.founder[currency] / ed.people, currency, { round: true })} per friend` : "For two or three";
       card.append(label, price, total);
     }
     const ul = el("ul");
     copy.features.forEach(f => ul.append(el("li", null, f)));
     const foot = el("div", "foot");
-    foot.append(orderButton(t.cta, t.id, site, t.star ? "btn" : "btn ghost"));
+    foot.append(orderLink(t.cta, t.id, t.star ? "btn" : "btn ghost"));
     card.append(ul, foot);
     carts.append(card);
   }
@@ -55,37 +74,26 @@ export function renderOffer(offer: Offer, site: SiteConfig) {
   const words = ["", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten"];
   $("#perFriend").textContent = offer.perFriendNote[ladder.id]
     .replace("{people}", words[deluxe.people] ?? String(deluxe.people))
-    .replace("{each}", formatDkk(Math.round(deluxe.founder.DKK / 100 / deluxe.people)));
-  $("#founderNote").textContent = `Founder prices for the first ${FOUNDER_SPOTS} orders. The crossed-out price is the normal price after that.`;
+    .replace("{each} DKK", formatMoney(deluxe.founder[currency] / deluxe.people, currency, { round: true }));
+  $("#founderNote").textContent = `Founder prices for the first ${FOUNDER_SPOTS} orders. The crossed-out price is the normal price after that. Prices in ${currency}, including VAT where it applies.`;
   const addons = offer.addons[ladder.id].filter((a): a is [AddonId, string, boolean] => a[0] in ADDONS);
-  $("#addons").textContent = "Add-ons: " + addons.map(([id, label, from]) => `${label} ${from ? "from " : ""}${dkk(ADDONS[id].price.DKK)}`).join(" · ");
+  $("#addons").textContent = "Add-ons: " + addons.map(([id, label, from]) => `${label} ${from ? "from " : ""}${money(ADDONS[id].price[currency])}`).join(" · ");
+}
+
+/** The rest of the page around the prices: deadlines and the two general order buttons. */
+export function renderOrderCalls(offer: Offer) {
   const dl = offer.deadlines.map(([n, d]) => `${n} ${d}`).join(" · ");
   $("#deadlines").textContent = `Christmas order deadlines: ${dl}.`;
   $("#occChristmas").textContent = `Order a Deluxe game by ${offer.deadlines.find(([n]) => n === "Deluxe")?.[1] ?? "early November"} to have it for Christmas.`;
-  $("#ctaButton").replaceWith(orderButton("Start your order ▶", "", site, "btn dark"));
-  $("#navOrder").replaceWith(orderButton("Start your order", "", site, "btn"));
+  $("#ctaButton").replaceWith(orderLink("Start your order ▶", "", "btn dark"));
+  $("#navOrder").replaceWith(orderLink("Start your order", "", "btn"));
 }
 
-/**
- * An order button. With no order form configured yet it scrolls to prices and
- * says ordering opens soon, rather than linking to nowhere.
- */
-function orderButton(label: string, tierId: string, site: SiteConfig, cls: string): HTMLElement {
-  if (site.orderFormUrl) {
-    const a = el("a", cls, label);
-    const url = new URL(site.orderFormUrl);
-    if (tierId) url.searchParams.set("package", tierId);
-    a.href = url.toString(); a.target = "_blank"; a.rel = "noopener";
-    return a;
-  }
-  const b = el("button", cls, label);
-  b.type = "button";
-  b.addEventListener("click", () => {
-    document.getElementById("prices")?.scrollIntoView({ behavior: "smooth" });
-    const note = $("#orderSoon");
-    note.hidden = false;
-  });
-  return b;
+/** Every order button opens the order page; a price card also pre-selects its edition (plan 07 Q23). */
+function orderLink(label: string, editionId: string, cls: string): HTMLElement {
+  const a = el("a", cls, label);
+  a.href = editionId ? `order.html?edition=${encodeURIComponent(editionId)}` : "order.html";
+  return a;
 }
 
 export function renderFaq(faq: [string, string][]) {
