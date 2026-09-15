@@ -6,6 +6,7 @@ import squadData from "./content/squad.json";
 import stopsData from "./content/stops.json";
 import type { Offer, SiteConfig, SquadMember, Stop } from "./content/types";
 import { renderFaq, renderOffer, renderOrderCalls, renderPause, renderSquad } from "./sections/render";
+import { trackClicks } from "./shared/analytics";
 import { currentCurrency, initCountryPicker, onCountryChange } from "./shared/countryPicker";
 import { BeachWorld } from "./world/world";
 
@@ -22,6 +23,7 @@ onCountryChange((_, currency) => renderOffer(offer, currency));
 void initCountryPicker();
 renderFaq(faqData as unknown as [string, string][]);
 renderPause();
+trackClicks();
 document.querySelectorAll<HTMLElement>("[data-draft]").forEach(n => (n.hidden = !site.isDraft));
 const year = document.getElementById("year");
 if (year) year.textContent = String(new Date().getFullYear());

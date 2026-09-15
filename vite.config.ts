@@ -12,6 +12,8 @@ export default defineConfig({
         privacy: resolve(__dirname, "privacy.html"),
         terms: resolve(__dirname, "terms.html"),
         order: resolve(__dirname, "order.html"),
+        explore: resolve(__dirname, "explore.html"),
+        logoVote: resolve(__dirname, "logo-vote.html"),
       },
     },
   },

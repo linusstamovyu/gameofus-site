@@ -31,6 +31,12 @@ export interface Stop {
   steps?: [string, string][];
   showTiers?: boolean;
   last?: boolean;
+  /** The builder step this stop is about ("Add this to my game" opens it). */
+  step?: string;
+  /** The Explore tab with everything on this topic ("See all"). Absent: Explore's top. */
+  tab?: string;
+  /** The "Add this" button's words. */
+  add?: string;
 }
 
 export interface TierCopy {
@@ -62,6 +68,8 @@ export interface Offer {
 export interface SiteConfig {
   contactEmail: string;
   analyticsToken: string;
+  /** PostHog API host; empty means the EU cloud. */
+  analyticsHost?: string;
   siteUrl: string;
   isDraft: boolean;
 }

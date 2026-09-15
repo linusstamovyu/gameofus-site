@@ -1,8 +1,8 @@
-// Photos in the browser: read, resize, check and make the pixel preview. The rules are in photoRules.ts.
-// Face detection is MediaPipe, self-hosted under /vendor and loaded only the first time a photo is added.
-import type { FaceDetector as MpFaceDetector } from "@mediapipe/tasks-vision";
-import type { PhotoKind } from "./draft";
-import { faceCrop, judgePhoto, laplacianVariance, meanBrightness, quantise, type FaceBox, type Verdict } from "./photoRules";
+// Photos in the browser: read, resize and check the one photo per character. The rules are in photoRules.ts.
+// Face detection and the body check are MediaPipe (Apache 2.0), self-hosted under /vendor and loaded only when
+// the squad step opens. Both share one WASM runtime; the pose model (~5.8 MB) is the "lite" one.
+import type { FaceDetector as MpFaceDetector, PoseLandmarker as MpPoseLandmarker } from "@mediapipe/tasks-vision";
+import { headBoxFromPose, judgePhoto, laplacianVariance, meanBrightness, type Box, type FaceBox, type PoseLandmark, type Verdict } from "./photoRules";
 
 export const MAX_LONG_SIDE = 2000;
 
@@ -11,36 +11,48 @@ export interface ProcessedPhoto {
   width: number;
   height: number;
   verdict: Verdict;
-  /** A small pixel-art preview PNG (data URL), made for face photos only. */
-  preview?: string;
-  face: FaceBox | null;
 }
 
-let detector: Promise<MpFaceDetector | null> | null = null;
+interface Detectors {
+  face: MpFaceDetector | null;
+  pose: MpPoseLandmarker | null;
+}
 
-/** Loads the detector once. Resolves null on any failure: the check then says "we'll check it by hand". */
-function faceDetector(): Promise<MpFaceDetector | null> {
-  detector ??= (async () => {
+let detectors: Promise<Detectors> | null = null;
+
+/** Loads both detectors once. Either can come back null on a device that can't run it: that half is then checked by hand. */
+function loadDetectors(): Promise<Detectors> {
+  detectors ??= (async () => {
     try {
-      const { FaceDetector, FilesetResolver } = await import("@mediapipe/tasks-vision");
+      const { FaceDetector, FilesetResolver, PoseLandmarker } = await import("@mediapipe/tasks-vision");
       const base = new URL("vendor/mediapipe/", document.baseURI).href;
       const fileset = await FilesetResolver.forVisionTasks(`${base}wasm`);
-      return await FaceDetector.createFromOptions(fileset, {
-        baseOptions: { modelAssetPath: `${base}blaze_face_short_range.tflite` },
-        runningMode: "IMAGE",
-        minDetectionConfidence: 0.5,
-      });
+      const [face, pose] = await Promise.all([
+        FaceDetector.createFromOptions(fileset, {
+          baseOptions: { modelAssetPath: `${base}blaze_face_short_range.tflite` },
+          runningMode: "IMAGE",
+          minDetectionConfidence: 0.5,
+        }).catch(err => (console.warn("Face check unavailable on this device", err), null)),
+        PoseLandmarker.createFromOptions(fileset, {
+          baseOptions: { modelAssetPath: `${base}pose_landmarker_lite.task` },
+          runningMode: "IMAGE",
+          numPoses: 3,
+          minPoseDetectionConfidence: 0.5,
+          minPosePresenceConfidence: 0.5,
+        }).catch(err => (console.warn("Body check unavailable on this device", err), null)),
+      ]);
+      return { face, pose };
     } catch (err) {
-      console.warn("Face check unavailable on this device", err);
-      return null;
+      console.warn("Photo check unavailable on this device", err);
+      return { face: null, pose: null };
     }
   })();
-  return detector;
+  return detectors;
 }
 
-/** Start loading the detector early (on the squad step) so the first photo isn't slow. */
+/** Start loading the detectors early (on the squad step) so the first photo isn't slow. */
 export function warmFaceDetector(): void {
-  void faceDetector();
+  void loadDetectors();
 }
 
 function canvas(w: number, h: number): [HTMLCanvasElement, CanvasRenderingContext2D] {
@@ -50,7 +62,35 @@ function canvas(w: number, h: number): [HTMLCanvasElement, CanvasRenderingContex
   return [c, c.getContext("2d", { willReadFrequently: true })!];
 }
 
-export async function processPhoto(file: File, kind: PhotoKind, shirt: string): Promise<ProcessedPhoto> {
+const overlaps = (a: Box, b: Box) => a.x < b.x + b.width && b.x < a.x + a.width && a.y < b.y + b.height && b.y < a.y + a.height;
+
+function detectFaces(det: MpFaceDetector, source: HTMLCanvasElement, dx = 0, dy = 0, scale = 1): FaceBox[] {
+  return det.detect(source).detections.map(d => ({
+    x: dx + (d.boundingBox?.originX ?? 0) / scale, y: dy + (d.boundingBox?.originY ?? 0) / scale,
+    width: (d.boundingBox?.width ?? 0) / scale, height: (d.boundingBox?.height ?? 0) / scale,
+    score: d.categories[0]?.score ?? 0,
+  }));
+}
+
+/**
+ * The face detector is a close-range model, so in a head-to-feet photo it can miss a small face. When the body
+ * was found and no face overlaps its head, look again on a zoomed crop of the head.
+ */
+function facesFor(det: MpFaceDetector, big: HTMLCanvasElement, pose: PoseLandmark[] | null): FaceBox[] {
+  const faces = detectFaces(det, big);
+  const head = pose && headBoxFromPose(pose, big.width, big.height);
+  if (!head || faces.some(f => f.score >= 0.6 && overlaps(f, head))) return faces;
+  const side = Math.min(Math.max(head.width, head.height) * 3, big.width, big.height);
+  const cx = head.x + head.width / 2, cy = head.y + head.height / 2;
+  const x = Math.max(0, Math.min(big.width - side, cx - side / 2)), y = Math.max(0, Math.min(big.height - side, cy - side / 2));
+  const scale = 320 / side;
+  const [crop, ctx] = canvas(320, 320);
+  ctx.drawImage(big, x, y, side, side, 0, 0, 320, 320);
+  return [...faces, ...detectFaces(det, crop, x, y, scale).filter(f => !faces.some(g => overlaps(f, g)))];
+}
+
+/** Draws any image the browser can open onto a canvas no bigger than MAX_LONG_SIDE. */
+async function toCanvas(file: Blob): Promise<HTMLCanvasElement> {
   let bitmap: ImageBitmap;
   try {
     bitmap = await createImageBitmap(file, { imageOrientation: "from-image" });
@@ -58,63 +98,50 @@ export async function processPhoto(file: File, kind: PhotoKind, shirt: string): 
     throw new Error("This browser can't open that photo. Try a JPEG or PNG (on iPhone: share it as 'Most compatible').");
   }
   const scale = Math.min(1, MAX_LONG_SIDE / Math.max(bitmap.width, bitmap.height));
-  const width = Math.round(bitmap.width * scale), height = Math.round(bitmap.height * scale);
-  const [big, bigCtx] = canvas(width, height);
-  bigCtx.drawImage(bitmap, 0, 0, width, height);
+  const [big, ctx] = canvas(Math.round(bitmap.width * scale), Math.round(bitmap.height * scale));
+  ctx.drawImage(bitmap, 0, 0, big.width, big.height);
   bitmap.close();
+  return big;
+}
 
+/** Check one canvas: detections, brightness and blur, then the verdict. */
+async function check(big: HTMLCanvasElement): Promise<Verdict> {
+  const { width, height } = big;
   // Brightness and blur are measured on a small copy: cheap, and blur shows up just as well.
   const sw = 320, sh = Math.max(3, Math.round((height / width) * sw));
   const [, smallCtx] = canvas(sw, sh);
   smallCtx.drawImage(big, 0, 0, sw, sh);
   const small = smallCtx.getImageData(0, 0, sw, sh).data;
 
-  const det = await faceDetector();
-  let faces: FaceBox[] | null = null;
-  if (det) {
+  const det = await loadDetectors();
+  let poses: PoseLandmark[][] | null = null;
+  if (det.pose) {
     try {
-      faces = det.detect(big).detections.map(d => ({
-        x: d.boundingBox?.originX ?? 0, y: d.boundingBox?.originY ?? 0,
-        width: d.boundingBox?.width ?? 0, height: d.boundingBox?.height ?? 0,
-        score: d.categories[0]?.score ?? 0,
-      }));
+      poses = det.pose.detect(big).landmarks.map(lms => lms.map(l => ({ x: l.x, y: l.y, visibility: l.visibility })));
+    } catch (err) {
+      console.warn("Body check failed on this photo", err);
+    }
+  }
+  let faces: FaceBox[] | null = null;
+  if (det.face) {
+    try {
+      faces = facesFor(det.face, big, poses?.length === 1 ? poses[0] : null);
     } catch (err) {
       console.warn("Face check failed on this photo", err);
     }
   }
-  const verdict = judgePhoto({ kind, width, height, faces, brightness: meanBrightness(small), sharpness: laplacianVariance(small, sw, sh) });
-  const blob = await new Promise<Blob>((res, rej) => big.toBlob(b => (b ? res(b) : rej(new Error("Couldn't save the photo."))), "image/jpeg", 0.88));
-  const best = faces?.filter(f => f.score >= 0.6).sort((a, b) => b.width - a.width)[0] ?? null;
-  return { blob, width, height, verdict, face: best, preview: kind === "face" ? pixelPreview(big, best, shirt) : undefined };
+  return judgePhoto({ width, height, faces, poses, brightness: meanBrightness(small), sharpness: laplacianVariance(small, sw, sh) });
 }
 
-/**
- * The "you as a character" moment: the face reduced to 14×14 pixels in the game palette, on a template body
- * in the friend's shirt colour. Clearly a preview, not final art (the page labels it so).
- */
-export function pixelPreview(source: CanvasImageSource & { width: number; height: number }, face: FaceBox | null, shirt: string): string {
-  const crop = faceCrop(source.width, source.height, face);
-  const [faceC, faceCtx] = canvas(14, 14);
-  faceCtx.imageSmoothingQuality = "high";
-  faceCtx.drawImage(source, crop.x, crop.y, crop.size, crop.size, 0, 0, 14, 14);
-  const px = faceCtx.getImageData(0, 0, 14, 14);
-  quantise(px.data);
-  faceCtx.putImageData(px, 0, 0);
+export async function processPhoto(file: File): Promise<ProcessedPhoto> {
+  const big = await toCanvas(file);
+  const verdict = await check(big);
+  const blob = await new Promise<Blob>((res, rej) => big.toBlob(b => (b ? res(b) : rej(new Error("Couldn't save the photo."))), "image/jpeg", 0.88));
+  return { blob, width: big.width, height: big.height, verdict };
+}
 
-  const W = 32, H = 48, S = 4;
-  const [body, ctx] = canvas(W, H);
-  const rect = (x: number, y: number, w: number, h: number, c: string) => { ctx.fillStyle = c; ctx.fillRect(x, y, w, h); };
-  rect(8, 2, 16, 16, "#20242c");       // head outline, one pixel round the face
-  ctx.drawImage(faceC, 9, 3);           // the face
-  rect(13, 18, 6, 2, "#c98f66");       // neck
-  rect(8, 20, 16, 13, "#20242c");      // torso outline
-  rect(9, 20, 14, 12, shirt);           // shirt
-  rect(5, 21, 3, 10, shirt); rect(24, 21, 3, 10, shirt);   // arms
-  rect(5, 31, 3, 2, "#e0a882"); rect(24, 31, 3, 2, "#e0a882"); // hands
-  rect(10, 33, 5, 10, "#2a3a55"); rect(17, 33, 5, 10, "#2a3a55"); // legs
-  rect(9, 43, 6, 3, "#20242c"); rect(17, 43, 6, 3, "#20242c");    // shoes
-  const [out, outCtx] = canvas(W * S, H * S);
-  outCtx.imageSmoothingEnabled = false;
-  outCtx.drawImage(body, 0, 0, W * S, H * S);
-  return out.toDataURL("image/png");
+/** Re-run the check on a photo already stored on this device (drafts saved before the one-photo rule). */
+export async function recheckStoredPhoto(blob: Blob): Promise<{ width: number; height: number; verdict: Verdict }> {
+  const big = await toCanvas(blob);
+  return { width: big.width, height: big.height, verdict: await check(big) };
 }

@@ -3,17 +3,34 @@
 // quotes them itself with prices.ts.
 import { BIG_GAMES, MINIGAMES } from "./catalogue";
 import { ACTIVE_LADDER, EDITION_IDS, LADDERS, MAX_FRIENDS, type AddonId, type Currency, type EditionId, type OrderPicks } from "./prices";
+import { perkActive, perkFree, perkKind } from "./perk";
 import { checkSections, sectionAddons, sectionUploads, type SectionChoices } from "./sections";
 import type { SectionContext, UploadRef } from "./sections/types";
 
-export const PHOTO_KIND_IDS = ["face", "body", "outfit"] as const;
-export type PhotoKindId = (typeof PHOTO_KIND_IDS)[number];
+/** A rectangle in the friend's photo, in its own pixels. */
+export interface PhotoCrop {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+}
+
+/**
+ * What the page worked out about a friend's ONE photo (owner, 15 Sep 2026): its size and where the face and the
+ * full body are. Numbers only; the image itself is uploaded separately, one per friend.
+ */
+export interface FriendPhotoInfo {
+  width: number;
+  height: number;
+  face: PhotoCrop | null;
+  body: PhotoCrop | null;
+}
 
 export interface OrderPayload {
   edition: EditionId;
   currency: Currency;
   country: string;
-  friends: { id: string; name: string }[];
+  friends: { id: string; name: string; photo?: FriendPhotoInfo | null }[];
   bigGames: string[];
   minigames: string[];
   customGame: string;
@@ -30,6 +47,8 @@ export interface OrderPayload {
     photosPermission: boolean;
     startNow: boolean;
   };
+  /** When the beach tour bonus was unlocked (perk.ts). Kept only while still valid when checked. Absent on orders from before the bonus. */
+  perkUnlockedAt?: number | null;
   /** What the page showed, so the Worker can say so if the price moved (e.g. founder spots ran out). */
   shownTotal: number;
 }
@@ -40,8 +59,25 @@ const str = (v: unknown, max: number) => (typeof v === "string" ? v.trim().slice
 const bool = (v: unknown) => v === true;
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const ID = /^[a-z0-9-]{1,40}$/i;
+const MAX_PHOTO_SIDE = 10000;
 
-export function checkPayload(raw: unknown, thisYear = new Date().getFullYear()): Checked<OrderPayload> {
+/** Crop boxes from the browser, kept only when they are whole numbers inside the photo. */
+export function checkPhotoInfo(raw: unknown): FriendPhotoInfo | null {
+  const r = raw as Record<string, unknown> | null;
+  if (!r || typeof r !== "object") return null;
+  const int = (v: unknown) => (typeof v === "number" && Number.isFinite(v) ? Math.round(v) : NaN);
+  const width = int(r.width), height = int(r.height);
+  if (!(width > 0 && width <= MAX_PHOTO_SIDE && height > 0 && height <= MAX_PHOTO_SIDE)) return null;
+  const crop = (b: unknown): PhotoCrop | null => {
+    const c = b as Record<string, unknown> | null;
+    if (!c || typeof c !== "object") return null;
+    const x = int(c.x), y = int(c.y), w = int(c.width), h = int(c.height);
+    return x >= 0 && y >= 0 && w > 0 && h > 0 && x + w <= width && y + h <= height ? { x, y, width: w, height: h } : null;
+  };
+  return { width, height, face: crop(r.face), body: crop(r.body) };
+}
+
+export function checkPayload(raw: unknown, thisYear = new Date().getFullYear(), now = Date.now()): Checked<OrderPayload> {
   if (!raw || typeof raw !== "object") return { ok: false, error: "The order is empty." };
   const r = raw as Record<string, unknown>;
   const edition = r.edition as EditionId;
@@ -50,7 +86,10 @@ export function checkPayload(raw: unknown, thisYear = new Date().getFullYear()):
   if (!["DKK", "GBP", "EUR"].includes(currency)) return { ok: false, error: "Unknown currency." };
   const friendsRaw = Array.isArray(r.friends) ? r.friends : [];
   if (friendsRaw.length < 1 || friendsRaw.length > MAX_FRIENDS) return { ok: false, error: `An order has 1 to ${MAX_FRIENDS} friends.` };
-  const friends = friendsRaw.map(f => ({ id: str((f as Record<string, unknown>)?.id, 40), name: str((f as Record<string, unknown>)?.name, 60) }));
+  const friends = friendsRaw.map(f => {
+    const r = (f ?? {}) as Record<string, unknown>;
+    return { id: str(r.id, 40), name: str(r.name, 60), photo: checkPhotoInfo(r.photo) };
+  });
   if (friends.some(f => !ID.test(f.id) || !f.name)) return { ok: false, error: "Every friend needs a name." };
   if (new Set(friends.map(f => f.id)).size !== friends.length) return { ok: false, error: "Two friends share an id." };
   const known = (list: unknown, ids: Set<string>) => [...new Set((Array.isArray(list) ? list : []).filter((x): x is string => typeof x === "string" && ids.has(x)))];
@@ -80,6 +119,7 @@ export function checkPayload(raw: unknown, thisYear = new Date().getFullYear()):
     value: {
       edition, currency, country: str(r.country, 2).toUpperCase() || "XX", friends, bigGames, minigames, customGame, partyMode,
       flexPass: bool(r.flexPass), directorsCut: bool(r.directorsCut), sections: checkSections(r.sections), organiser,
+      perkUnlockedAt: perkActive(r.perkUnlockedAt, now) ? r.perkUnlockedAt : null,
       shownTotal: Number.isFinite(r.shownTotal) ? Number(r.shownTotal) : 0,
     },
   };
@@ -91,7 +131,7 @@ export function contextFromPayload(p: OrderPayload): SectionContext {
 }
 
 /** The picks prices.ts quotes, rebuilt from a checked payload. */
-export function picksFromPayload(p: OrderPayload): OrderPicks {
+export function picksFromPayload(p: OrderPayload, now = Date.now()): OrderPicks {
   const addons: Partial<Record<AddonId, number>> = {};
   if (p.customGame) addons.big_game_custom = 1;
   if (p.partyMode) addons.party_mode = 1;
@@ -99,7 +139,10 @@ export function picksFromPayload(p: OrderPayload): OrderPicks {
   if (p.directorsCut) addons.directors_cut = 1;
   const { rush, ...fromSections } = sectionAddons(p.sections, contextFromPayload(p));
   for (const [id, n] of Object.entries(fromSections)) addons[id as AddonId] = (addons[id as AddonId] ?? 0) + n;
-  return { edition: p.edition, friends: p.friends.length, bigGames: p.bigGames.length, minigames: p.minigames.length, addons, rush: Boolean(rush) };
+  // The bonus is re-derived here, never taken from the browser's price. The Worker quotes at the moment of paying too,
+  // so a bonus that expired between creating the order and paying for it is dropped (and the price change shown).
+  const free = perkActive(p.perkUnlockedAt, now) ? perkFree(perkKind(p.edition, p.organiser.adultsConfirmed ? "yes" : "no")) : undefined;
+  return { edition: p.edition, friends: p.friends.length, bigGames: p.bigGames.length, minigames: p.minigames.length, addons, rush: Boolean(rush), ...(free ? { free } : {}) };
 }
 
 /** Every section file the order refers to, with ids made safe and unique. */

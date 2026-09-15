@@ -55,12 +55,12 @@ export function renderOffer(offer: Offer, currency: Currency) {
       total.append(document.createTextNode(`${money(ed.founder[currency])} for ${ed.people} friends `), normal);
       card.append(label, price, total, el("p", "worth", `Worth ${worthIn(ed.worthDkk, ed, currency)} as add-ons`));
     } else {
-      // Version B: the total leads; Standard is a gift for two or three and is never split.
+      // Version B: the total leads; Standard is a gift for two and is never split.
       const [n, unit] = bigMoney(ed.founder[currency], currency, "");
       price.append(document.createTextNode(`${n} `));
       if (unit) price.append(el("small", null, unit));
       price.append(normal);
-      total.textContent = ed.people > 3 ? `≈ ${formatMoney(ed.founder[currency] / ed.people, currency, { round: true })} per friend` : "For two or three";
+      total.textContent = ed.people > 3 ? `≈ ${formatMoney(ed.founder[currency] / ed.people, currency, { round: true })} per friend` : "For two";
       card.append(label, price, total);
     }
     const ul = el("ul");

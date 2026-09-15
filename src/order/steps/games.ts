@@ -1,10 +1,13 @@
 // Step 3, Games: two shelves (big games, party minigames) and "invent a game" (plan 07 Q10), with the
 // edition's allowance shown like an inventory and an upgrade hint when a bigger edition costs no more (Q22).
 import { el } from "../../dom";
-import { BIG_GAMES, MINIGAME_GROUPS, orderAsset, visibleMinigames } from "../catalogue";
+import { perkNote } from "./perkNote";
+import { BIG_GAMES, MINIGAME_GROUPS, MINIGAMES, minigameLocked, orderAsset } from "../catalogue";
 import { allowanceChip, checkbox, heading, stepEyebrow, money, type Ctx, type StepView } from "../context";
-import { allowanceUse, chooseEdition, setPartyMode, toggleIn, toPicks } from "../draft";
+import { allowanceUse, chooseEdition, partyModeAvailable, setPartyMode, toggleIn, toggleMinigame, toPicks } from "../draft";
 import { ADDONS, upgradeHint } from "../prices";
+import { GAME_SCENES } from "../preview/gameScenes";
+import { loopPreview, type LoopScene } from "../preview/loop";
 
 export const gamesStep: StepView = (ctx, panel) => {
   const d = ctx.draft();
@@ -33,7 +36,7 @@ export const gamesStep: StepView = (ctx, panel) => {
   bigHead.append(el("h2", null, "Big games"), allowanceChip(use.bigGames.used, use.bigGames.included, money(ctx, ADDONS.big_game.price[cur]), "big games"));
   big.append(bigHead);
   const bigGrid = el("div", "game-grid");
-  for (const g of BIG_GAMES) bigGrid.append(gameCard(ctx, g.name, g.blurb, orderAsset(g.art), d.bigGames.includes(g.id), () => ctx.update(dr => ({ ...dr, bigGames: toggleIn(dr.bigGames, g.id) }))));
+  for (const g of BIG_GAMES) bigGrid.append(gameCard(ctx, g.name, g.blurb, orderAsset(g.art), d.bigGames.includes(g.id), () => ctx.update(dr => ({ ...dr, bigGames: toggleIn(dr.bigGames, g.id) })), "game", GAME_SCENES[g.id]));
   big.append(bigGrid);
 
   const invent = el("div", "invent");
@@ -53,27 +56,68 @@ export const gamesStep: StepView = (ctx, panel) => {
   const miniHead = el("div", "shelf-head");
   miniHead.append(el("h2", null, "Party minigames"), allowanceChip(use.minigames.used, use.minigames.included, money(ctx, ADDONS.minigame.price[cur]), "minigames"));
   mini.append(miniHead);
+  // Party Mode (18+): the drinking games are always on the shelf, greyed out until it's ticked (owner, 2026-09-15).
+  // A group that said on the consent screen that not everyone is 18+ can't tick it at all.
   const party = el("div", "party");
-  party.append(checkbox(`Party Mode (18+) · ${money(ctx, ADDONS.party_mode.price[cur])}: drinking stakes on the minigames, sips on wins and a Drunk Meter. Adds King's Cup and The Bus.`, d.partyMode, v => ctx.update(dr => setPartyMode(dr, v))));
+  const partyPrice = money(ctx, ADDONS.party_mode.price[cur]);
+  const canParty = partyModeAvailable(d);
+  const partyBox = checkbox(`Party Mode (18+) · ${partyPrice}: drinking stakes on the minigames, sips on wins and a Drunk Meter. Unlocks King's Cup and The Bus.`, d.partyMode, v => ctx.update(dr => setPartyMode(dr, v)));
+  const noAdults = "Party Mode is only for groups where everyone is 18 or over. You told us not everyone is, so it stays off.";
+  if (!canParty) {
+    partyBox.classList.add("disabled");
+    partyBox.title = noAdults;
+    partyBox.querySelector("input")!.disabled = true;
+  }
+  party.append(partyBox);
+  if (!canParty) {
+    const why = el("p", "party-why", `${noAdults} `);
+    const change = el("button", "link-btn", "Change your answer");
+    change.type = "button";
+    change.onclick = () => ctx.openConsent();
+    why.append(change);
+    party.append(why);
+  }
   mini.append(party);
-  const shown = visibleMinigames(d.partyMode);
+  // Beach tour bonus (plan 18): all 12 minigames free below Ultimate, Party Mode free on it.
+  for (const kind of ["minigames", "party_mode"] as const) { const n = perkNote(ctx, kind); if (n) mini.append(n); }
   for (const group of MINIGAME_GROUPS) {
-    const items = shown.filter(m => m.group === group);
+    const items = MINIGAMES.filter(m => m.group === group);
     if (!items.length) continue;
     mini.append(el("h3", "group", group));
     const grid = el("div", "mini-grid");
-    for (const m of items) grid.append(gameCard(ctx, m.name, m.drinking ? "Party Mode" : "", orderAsset(m.art), d.minigames.includes(m.id), () => ctx.update(dr => ({ ...dr, minigames: toggleIn(dr.minigames, m.id) })), "mini"));
+    for (const m of items) {
+      const locked = minigameLocked(m, d.partyMode);
+      const tag = !m.drinking ? "" : locked ? (canParty ? `18+ · tap to add Party Mode (${partyPrice})` : "18+ · locked") : "18+ · Party Mode";
+      const card = gameCard(ctx, m.name, tag, orderAsset(m.art), d.minigames.includes(m.id), () => {
+        if (!locked) return ctx.update(dr => toggleMinigame(dr, m.id));
+        if (!canParty) return ctx.notify(noAdults, "error");
+        ctx.update(dr => setPartyMode(dr, true));
+        ctx.notify(`Party Mode (18+) is on (${partyPrice}). Tap ${m.name} again to add it.`);
+      }, "mini");
+      if (locked) {
+        card.classList.add("locked");
+        card.title = canParty ? `A drinking game. Tick Party Mode (18+) to unlock it.` : noAdults;
+        card.setAttribute("aria-disabled", String(!canParty));
+        card.querySelector(".tick")!.textContent = "18+";
+      }
+      grid.append(card);
+    }
     mini.append(grid);
   }
   panel.append(mini);
 };
 
-function gameCard(_ctx: Ctx, name: string, blurb: string, art: string, on: boolean, toggle: () => void, cls = "game"): HTMLElement {
+function gameCard(_ctx: Ctx, name: string, blurb: string, art: string, on: boolean, toggle: () => void, cls = "game", scene?: LoopScene): HTMLElement {
   const b = el("button", `${cls}${on ? " on" : ""}`);
   b.type = "button";
   b.setAttribute("aria-pressed", String(on));
   const img = el("span", "art");
   img.style.backgroundImage = `url(${art})`;
+  if (scene) {
+    // A moving loop of the mechanic; the still stays as its poster (autoplays on screen, see preview/loop.ts).
+    img.style.position = "relative";
+    img.append(loopPreview(scene, { poster: art, label: `${name}: gameplay preview` }));
+  }
   const text = el("span", "game-text");
   text.append(el("b", null, name));
   if (blurb) text.append(el("span", null, blurb));

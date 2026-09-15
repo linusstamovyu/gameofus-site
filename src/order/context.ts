@@ -15,6 +15,8 @@ export interface Ctx {
   founderSpotsLeft(): number | null;
   shopOpen(): boolean;
   go(step: StepId): void;
+  /** Show the consent screen again (it normally only comes up once, before step 1). */
+  openConsent(): void;
   notify(message: string, tone?: "info" | "error"): void;
 }
 

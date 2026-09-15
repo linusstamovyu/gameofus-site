@@ -13,7 +13,7 @@ export interface Minigame {
   name: string;
   group: MinigameGroup;
   art: string;
-  /** A drinking game: only offered when Party Mode (18+) is on. */
+  /** A drinking game: shown to everyone, pickable only when Party Mode (18+) is on. */
   drinking?: boolean;
 }
 
@@ -48,8 +48,14 @@ export const MINIGAMES: Minigame[] = [
   { id: "tic-tac-toe", name: "Tic-Tac-Toe", group: "Strategy", art: "mini_tic-tac-toe.webp" },
 ];
 
-export function visibleMinigames(partyMode: boolean): Minigame[] {
-  return MINIGAMES.filter(m => partyMode || !m.drinking);
+/** A drinking game is always shown, but greyed out (locked) until Party Mode (18+) is on. */
+export function minigameLocked(m: Minigame, partyMode: boolean): boolean {
+  return Boolean(m.drinking) && !partyMode;
+}
+
+/** The minigames that can actually be picked (and charged for) with Party Mode on or off. */
+export function selectableMinigames(partyMode: boolean): Minigame[] {
+  return MINIGAMES.filter(m => !minigameLocked(m, partyMode));
 }
 
 export const orderAsset = (file: string) => `order-assets/${file}`;

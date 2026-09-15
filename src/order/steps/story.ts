@@ -1,7 +1,6 @@
 // Step 7, Your story: the memory (typed or as a voice note), tone, language, villain, key moments and the ending.
 // The rules and prices live in ../sections/story; this file only lays them out.
 import { el } from "../../dom";
-import { orderAsset } from "../catalogue";
 import { allowanceChip, checkbox, heading, money, sectionHandle, stepEyebrow, type StepView } from "../context";
 import { ADDONS } from "../prices";
 import {
@@ -11,6 +10,7 @@ import {
 import type { UploadRef } from "../sections/types";
 import { fileButton, removeUpload, uploadUrl } from "../upload";
 import "./story.css";
+import { loopBox, slideshow, type Scene } from "./loops";
 
 const newMomentId = () => `m-${(crypto.randomUUID?.() ?? `${Date.now()}${Math.random()}`).replace(/[^a-zA-Z0-9-]/g, "").slice(0, 36)}`;
 
@@ -43,7 +43,7 @@ export const storyStep: StepView = (ctx, panel) => {
   const memHead = el("div", "shelf-head");
   memHead.append(el("h2", null, "The memory"));
   mem.append(memHead);
-  mem.append(banner(orderAsset("story_plate.webp"), "Your memory, told in the game's own pictures."));
+  mem.append(loopBanner(slideshow("story-plate", [1, 2, 3, 4].map(i => ({ file: `loop_story_plate_${i}.webp`, hold: 1.25 })), "Your memory, told in the game's own pictures: a bartender shakes, pours and serves a drink.", { w: 480, h: 160 })));
   const memLabel = el("label", "field");
   memLabel.append(el("span", null, "The night everyone still talks about"));
   const memText = el("textarea", "s-story-text");
@@ -121,7 +121,7 @@ export const storyStep: StepView = (ctx, panel) => {
   const bossHead = el("div", "shelf-head");
   bossHead.append(el("h2", null, "The boss"));
   boss.append(bossHead);
-  boss.append(banner(orderAsset("story_boss.webp"), "Every quest needs someone, or something, to beat."));
+  boss.append(loopBanner(slideshow("story-boss", [{ file: "loop_story_boss_1.webp", hold: 1.6 }, { file: "loop_story_boss_2.webp", hold: 1.3 }, { file: "loop_story_boss_3.webp", hold: 1.5 }], "Every quest needs someone, or something, to beat: a boss sizing you up.", { w: 480, h: 160 })));
   const bossLabel = el("label", "field");
   bossLabel.append(el("span", null, "Who or what the squad is up against (optional)"));
   const bossIn = el("input");
@@ -141,7 +141,7 @@ export const storyStep: StepView = (ctx, panel) => {
   moHead.append(el("h2", null, "Key moments"), allowanceChip(cuts, sctx.includes.cutscenes, money(ctx, ADDONS.cutscene.price[cur]), "cutscenes"));
   mo.append(moHead);
   mo.append(el("p", "rules", `Up to ${MAX_MOMENTS} beats the story has to hit. Mark one as a cutscene and we'll draw it as an illustrated scene.`));
-  mo.append(banner(orderAsset("story_cutscene.webp"), "A moment drawn as a cutscene."));
+  mo.append(loopBanner(slideshow("story-cutscene", [1, 2, 3, 4].map(i => ({ file: `loop_story_cut_${i}.webp`, hold: 2.2 })), "A moment drawn as a cutscene: the lads run for a flight, take off and land by the pool.", { w: 480, h: 160, fade: 0.5, push: true })));
   const list = el("ol", "s-story-moments");
   c.moments.forEach((m, i) => {
     const li = el("li", "s-story-moment");
@@ -250,13 +250,9 @@ function choiceChip(label: string, blurb: string, on: boolean, pick: () => void)
   return b;
 }
 
-function banner(src: string, alt: string): HTMLElement {
+/** A banner that plays the game's own plates (./loops) instead of one still. */
+function loopBanner(scene: Scene): HTMLElement {
   const fig = el("figure", "s-story-art");
-  const img = el("img");
-  img.src = src;
-  img.alt = alt;
-  img.loading = "lazy";
-  img.addEventListener("error", () => fig.remove());
-  fig.append(img);
+  fig.append(loopBox(scene, "s-story-loop"));
   return fig;
 }

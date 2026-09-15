@@ -1,0 +1,22 @@
+/* The consent screen before step 1, and the locked (18+) minigame cards on the Games step. */
+.consent-card{background:#fffaf0;border:3px solid #d9c9a3;border-radius:10px;padding:14px 16px;margin-top:14px}
+.consent-card h2{font-size:22px;margin:0 0 8px}
+.consent-list{margin:0 0 6px;padding-left:20px;font-size:15px;line-height:1.45}
+.consent-list li{margin:4px 0}
+.consent-links{font-size:14px;margin:4px 0 0;color:#5a4a36}
+.consent-links a{color:var(--teal-dark)}
+.consent-choices{display:flex;flex-wrap:wrap;gap:10px;margin:10px 0 4px}
+.consent-choice{font:inherit;font-weight:700;padding:12px 18px;min-height:48px;border-radius:8px;border:3px solid #d9c9a3;background:#fff;color:var(--ink);cursor:pointer}
+.consent-choice.on{border-color:var(--teal);background:#e3f4f1;box-shadow:0 0 0 3px #bfe6e1}
+.consent-choice:focus-visible{outline:3px solid var(--teal-dark);outline-offset:2px}
+.consent-note{font-size:14px;background:#f6ecd4;border-radius:8px;padding:8px 12px;margin:10px 0 0}
+.consent-foot{margin-top:18px;display:grid;justify-items:start;gap:8px}
+.consent-summary{font-size:15px;margin:6px 0}
+
+.check.disabled{cursor:not-allowed;opacity:.6}
+.party-why{font-size:14px;margin:6px 0 0;color:#5a4a36}
+.mini.locked{cursor:pointer}
+.mini.locked .art{filter:grayscale(1) brightness(.75)}
+.mini.locked .game-text{opacity:.6}
+.mini.locked[aria-disabled="true"]{cursor:not-allowed}
+.mini.locked .tick{width:auto;padding:0 7px;border-radius:14px;font-size:12px;background:#b03a2e;color:#fff;border-color:#7d2419}

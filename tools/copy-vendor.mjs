@@ -1,6 +1,7 @@
 // Copies MediaPipe's WASM runtime out of node_modules into public/vendor so the photo check is
 // self-hosted (plan 17: friends' photos never go to a third party, and no CDN is involved either).
-// Runs before dev and build; the copy is gitignored, the face model next to it is committed.
+// Runs before dev and build; the copy is gitignored, the face and pose models next to it are committed
+// (blaze_face_short_range.tflite 230 KB, pose_landmarker_lite.task 5.8 MB, both Apache 2.0 from Google MediaPipe).
 import { copyFileSync, mkdirSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";

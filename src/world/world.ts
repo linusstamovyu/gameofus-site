@@ -3,12 +3,17 @@ import type { Offer, SquadMember, Stop } from "../content/types";
 import { $, asset, el, photoPair } from "../dom";
 import { ACTIVE_LADDER, LADDERS, formatMoney } from "../order/prices";
 import { currentCurrency } from "../shared/countryPicker";
+import { track } from "../shared/analytics";
+import { loadVisited, saveVisited, unlockPerk } from "../shared/tourProgress";
+import { perkActive, perkDaysLeft } from "../order/perk";
 import { drawCharacter, drawMarker, drawPrompt, drawTarget } from "./draw";
 import { BeachMap, Ground, H, PALMS, PARASOLS, W, groundAt } from "./map";
+import { OUTFITS } from "./outfits";
 import { paintStaticLayer } from "./paint";
 import { THEMES, themeById, type Theme } from "./themes";
 import type { View } from "./themes/kit";
 import { Player, type Facing } from "./player";
+import { Showcase } from "./showcase";
 
 const LOW_FPS = 24;          // below this, sea and palms stop animating
 const FPS_SAMPLE_SECONDS = 4;
@@ -22,7 +27,8 @@ export class BeachWorld {
   private readonly player: Player;
   private readonly squad = new Map<string, SquadMember>();
   private readonly sprites = new Map<string, HTMLImageElement>();
-  private readonly visited = new Set<string>();
+  /** Stops talked to, in any order, remembered on this device (plan 18: any order counts towards 7/7). */
+  private readonly visited = new Set<string>(loadVisited());
   private readonly keys = new Set<string>();
   private T = 48; private dpr = 1; private vw = 0; private vh = 0;
   private layer: HTMLCanvasElement | null = null;
@@ -58,14 +64,14 @@ export class BeachWorld {
   step(dt = 1 / 60) { this.dt = dt; this.update(); this.render(); }
 
   /* ---------- setup ---------- */
-  private loadSprite(key: string, file: string) {
+  private loadSprite(key: string, file: string, url = asset(file)) {
     if (this.sprites.has(key)) return;
-    const img = new Image(); img.src = asset(file); this.sprites.set(key, img);
+    const img = new Image(); img.src = url; this.sprites.set(key, img);
   }
   /** A theme's own art and its dressed walk sheets, fetched the first time it is picked. */
   private loadThemeFiles(t: Theme) {
     for (const [key, file] of Object.entries(t.files ?? {})) this.loadSprite(`${t.id}:${key}`, file);
-    for (const [who, file] of Object.entries(t.outfits ?? {})) this.loadSprite(`${t.id}:walk:${who}`, file);
+    for (const [who, file] of Object.entries(OUTFITS[t.id] ?? {})) this.loadSprite(`${t.id}:walk:${who}`, file, file);
   }
   private walkSprite(who: string) {
     const dressed = this.sprites.get(`${this.theme.id}:walk:${who}`);
@@ -86,7 +92,7 @@ export class BeachWorld {
   private bindWorldPicker() {
     const select = $<HTMLSelectElement>("#worldSelect");
     if (!select) return;
-    THEMES.forEach(t => { const o = el("option", null, `${t.label} · ${t.blurb}`); o.value = t.id; select.append(o); });
+    THEMES.forEach(t => { const o = el("option", null, t.label); o.value = t.id; o.title = t.blurb; select.append(o); });
     select.value = this.theme.id;
     this.paintSwatch();
     select.addEventListener("change", () => this.setTheme(select.value));
@@ -170,14 +176,18 @@ export class BeachWorld {
   }
   private renderTour() {
     const s = this.stops[this.tourIndex];
-    $("#tourStep").textContent = s ? `Stop ${this.tourIndex + 1} of ${this.stops.length}` : "Guided tour";
+    const found = this.stops.filter(x => this.visited.has(x.id)).length;
+    const progress = `${found}/${this.stops.length} discovered`;
+    $("#tourStep").textContent = s ? `Stop ${this.tourIndex + 1} · ${progress}` : found ? progress : "Guided tour";
     $("#tourName").textContent = s ? s.title : `${this.stops.length} stops · ${this.theme.label}`;
     ($("#prev") as HTMLButtonElement).disabled = this.tourIndex <= 0;
     $("#next").textContent = this.tourIndex < 0 ? "Start ▶" : this.tourIndex >= this.stops.length - 1 ? "Replay ↺" : "Next ▶";
-    [...$("#dots").children].forEach((d, i) => d.classList.toggle("on", i <= this.tourIndex));
+    // A dot per stop, lit once that stop has been found, so wandering fills them in too.
+    [...$("#dots").children].forEach((d, i) => { d.classList.toggle("on", this.visited.has(this.stops[i].id)); d.classList.toggle("here", i === this.tourIndex); });
   }
   private tourGo(i: number) {
     this.hideTitle();
+    if (this.tourIndex < 0) track("tour_start");
     this.tourIndex = i >= this.stops.length ? 0 : Math.max(0, i);
     this.closeCard(); this.renderTour();
     if (!this.player.walkToStop(this.stops[this.tourIndex])) this.toast("No way through from here");
@@ -186,13 +196,19 @@ export class BeachWorld {
   /* ---------- cards ---------- */
   private cardOpen() { return !$("#card").hidden; }
   private openCard(s: Stop) {
+    const firstTime = !this.visited.has(s.id);
     this.visited.add(s.id);
+    saveVisited(this.visited);
+    track("tour_stop", { id: s.id, first: firstTime, found: this.visited.size });
+    const complete = this.stops.every(x => this.visited.has(x.id));
+    if (complete && firstTime) track("tour_complete");
     this.player.cancelRoute();
     this.tourIndex = this.stops.indexOf(s); this.renderTour();
     const card = $("#card");
     card.replaceChildren();
 
-    const art = el("div", "art"); art.style.backgroundImage = `url(${asset(s.art)})`;
+    // Beach art lives in assets/; a stop can borrow the order page's art by giving its path.
+    const art = el("div", "art"); art.style.backgroundImage = `url(${s.art.includes("/") ? s.art : asset(s.art)})`;
     const close = el("button", "close", "✕"); close.setAttribute("aria-label", "Close"); close.onclick = () => this.closeCard();
     art.append(close);
     const body = el("div", "body");
@@ -219,21 +235,35 @@ export class BeachWorld {
       s.steps.forEach(([b, t]) => { const li = el("li"), d = el("div"); d.append(el("b", null, b), document.createTextNode(t)); li.append(d); ol.append(li); });
       body.append(ol);
     }
-    if (s.showTiers) {
-      const g = el("div", "tiers");
-      this.offer.tiers.forEach(t => {
-        const d = el("div", t.star ? "star" : null);
-        d.append(el("b", null, t.short), el("span", null, formatMoney(LADDERS[ACTIVE_LADDER].editions[t.id].founder[currentCurrency()], currentCurrency())), el("em", null, t.copy[ACTIVE_LADDER].friends));
-        g.append(d);
-      });
-      body.append(g);
-    }
+    // The finale is on the card that found the 7th stop, and on the last stop for anyone coming back to it.
+    const finale = complete && (firstTime || !!s.last);
+    // Straight under the title, so the bonus and Start building are in view without scrolling the card.
+    if (finale) h.after(this.finale());
+    else if (s.showTiers) body.append(this.tiers());
+
     const acts = el("div", "actions");
-    if (s.last) { const a = el("a", "btn", "See all prices ↓"); a.href = "#prices"; acts.append(a); }
-    else { const n = el("button", "btn", "Next stop ▶"); n.onclick = () => this.tourGo(this.tourIndex + 1); acts.append(n); }
-    const keep = el("button", "btn ghost", "Keep exploring");
-    keep.onclick = () => { this.closeCard(); this.stage.focus({ preventScroll: true }); };
-    acts.append(keep);
+    const nextMissing = () => {
+      // Next stop in tour order; past the last one, the first stop not found yet.
+      const after = this.stops.slice(this.tourIndex + 1).find(x => !this.visited.has(x.id));
+      return this.stops.indexOf(after ?? this.stops.find(x => !this.visited.has(x.id)) ?? this.stops[0]);
+    };
+    if (!finale && !(complete && s.last)) {
+      const n = el("button", "btn", s.last ? "Find the ones you missed ▶" : "Next stop ▶");
+      n.onclick = () => this.tourGo(s.last ? nextMissing() : this.tourIndex + 1);
+      acts.append(n);
+    }
+    if (s.step) {
+      const add = el("a", "btn ghost", s.add ?? "Add this to my game");
+      add.href = `order.html?from=beach&step=${encodeURIComponent(s.step)}`;
+      add.dataset.track = "tour_add";
+      add.dataset.trackStop = s.id;
+      acts.append(add);
+    }
+    const all = el("a", "link-btn card-all", "See all ▶");
+    all.href = s.tab ? `explore.html#${encodeURIComponent(s.tab)}` : "explore.html";
+    all.dataset.track = "tour_see_all";
+    all.dataset.trackStop = s.id;
+    acts.append(all);
     body.append(acts);
 
     card.append(art, body);
@@ -242,6 +272,44 @@ export class BeachWorld {
     // Keyboard and screen-reader users land on the card's first action, not somewhere behind it.
     acts.querySelector<HTMLElement>(".btn")?.focus({ preventScroll: true });
   }
+  /** The three editions, with founder prices in the visitor's currency. */
+  private tiers(): HTMLElement {
+    const g = el("div", "tiers");
+    this.offer.tiers.forEach(t => {
+      const d = el("div", t.star ? "star" : null);
+      d.append(el("b", null, t.short), el("span", null, formatMoney(LADDERS[ACTIVE_LADDER].editions[t.id].founder[currentCurrency()], currentCurrency())), el("em", null, t.copy[ACTIVE_LADDER].friends));
+      g.append(d);
+    });
+    return g;
+  }
+
+  /** Shown on any card once all 7 have been found: the bonus, the prices and the way in. */
+  private finale(): HTMLElement {
+    const unlocked = unlockPerk();
+    const box = el("div", "finale");
+    box.append(el("p", "eyebrow", `Tour complete · ${this.stops.length}/${this.stops.length}`));
+    if (perkActive(unlocked)) {
+      const days = perkDaysLeft(unlocked);
+      box.append(el("b", null, "Beach tour bonus unlocked"));
+      box.append(el("p", null, `Order within ${days} day${days === 1 ? "" : "s"} and all 12 party minigames come at no extra cost. Ultimate already has all 12, so there Party Mode is free instead (or 3 custom items, if not everyone is 18+). It's applied for you when you order.`));
+    } else {
+      // Once per device: a tour walked again after the 7 days is still a tour, just without a second bonus.
+      box.append(el("b", null, "You've seen it all"));
+      box.append(el("p", null, "The beach tour bonus is one per device and this one has been used. Everything else is still on the table."));
+    }
+    box.append(this.tiers());
+    const row = el("div", "finale-row");
+    const watch = el("button", "btn ghost", "Watch it play ▶");
+    watch.type = "button";
+    watch.onclick = () => { this.closeCard(); new Showcase(this.stage, () => this.stage.focus({ preventScroll: true })).open(); };
+    const go = el("a", "btn", "Start building ▶");
+    go.href = "order.html?from=beach";
+    go.dataset.track = "tour_to_builder";
+    row.append(watch, go);
+    box.append(row);
+    return box;
+  }
+
   private closeCard() {
     const card = $("#card");
     const hadFocus = card.contains(document.activeElement);

@@ -7,6 +7,7 @@ import { ADDONS } from "../prices";
 import { MAX_OWN_CARS, OWN_CAR_DESCRIPTION_MAX, VEHICLE_TYPES, vehiclesSection, type OwnCar, type VehiclesChoices } from "../sections/vehicles";
 import { fileButton, removeUpload, uploadUrl } from "../upload";
 import "./vehicles.css";
+import { carScene, loopBox } from "./loops";
 
 const newCarId = () => `car-${(crypto.randomUUID?.() ?? `${Date.now()}${Math.random()}`).replace(/[^a-zA-Z0-9]/g, "").slice(0, 20)}`;
 
@@ -38,8 +39,10 @@ export const vehiclesStep: StepView = (ctx, panel) => {
     const b = el("button", `game${on ? " on" : ""}`);
     b.type = "button";
     b.setAttribute("aria-pressed", String(on));
-    const art = el("span", "art");
-    art.style.backgroundImage = `url(${orderAsset(v.art)})`;
+    // Cars and taxis drive on their own 12-frame bob (./loops); the rest are still art for now.
+    const loop = v.id === "car" || v.id === "taxi" ? loopBox(carScene(`vehicles-${v.id}`, `loop_veh_${v.id}.webp`, v.art, `${v.name} driving`), "art") : null;
+    const art = loop ?? el("span", "art");
+    if (!loop) art.style.backgroundImage = `url(${orderAsset(v.art)})`;
     const text = el("span", "game-text");
     text.append(el("b", null, v.name), el("span", null, v.blurb));
     b.append(art, text, el("span", "tick", on ? "✓" : "+"));

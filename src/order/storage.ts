@@ -1,6 +1,6 @@
 // Saves the draft and its photos on this device only (plan 07 Q15), in IndexedDB. Nothing uploads until the
 // order is sent. If IndexedDB is unavailable (some private windows), the order still works for this visit.
-import { newDraft, reviveDraft, type Draft } from "./draft";
+import { legacyPhotoKeys, newDraft, reviveDraft, type Draft } from "./draft";
 
 const DB = "gameofus-order";
 const DRAFT_KEY = "current";
@@ -36,7 +36,11 @@ function run<T>(store: "drafts" | "photos", mode: IDBTransactionMode, fn: (s: ID
 }
 
 export async function loadDraft(): Promise<Draft> {
-  return reviveDraft(await run("drafts", "readonly", s => s.get(DRAFT_KEY)));
+  const raw = await run("drafts", "readonly", s => s.get(DRAFT_KEY));
+  const draft = reviveDraft(raw);
+  // A draft from before the one-photo rule keeps one photo per friend; the other photos' blobs go.
+  for (const key of legacyPhotoKeys(raw, draft)) void deletePhoto(key);
+  return draft;
 }
 
 export async function saveDraft(d: Draft): Promise<void> {

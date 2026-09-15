@@ -4,9 +4,13 @@
     --paper:#fdf6e3; --ink:#20242c; --teal:#1a9e95; --teal-dark:#127269; --cyan:#7fd6e4; --muted:#6b5a45;
     --chill:#3a8fd6; --speed:#e0a21c; --charm:#e05a9b;
     --pixel:"Pixelify Sans","Courier New",monospace;
+    /* numbers: Pixelify's 2/8, 3/9, 5/8 and € blur at price sizes (see /font-lab.html) */
+    --num:"Chakra Petch","Trebuchet MS",sans-serif;
     --body:"Trebuchet MS","Segoe UI",system-ui,sans-serif;
   }
   *{box-sizing:border-box}
+  /* Pixelify Sans joins "fi" into a glyph that reads as "A" ("final" -> "Anal") */
+  body{font-variant-ligatures:none}
   /* components set display:flex/grid, which would otherwise beat the hidden attribute */
   [hidden]{display:none!important}
   html{scroll-behavior:smooth}
@@ -103,7 +107,7 @@
   .thumbs span{display:block;font-size:11px;color:var(--muted);margin-top:3px}
   ol.steps{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:8px;counter-reset:s}
   ol.steps li{display:grid;grid-template-columns:28px 1fr;gap:10px;font-size:14px;line-height:1.4}
-  ol.steps li::before{counter-increment:s;content:counter(s);font-family:var(--pixel);font-weight:700;width:28px;height:28px;border-radius:50%;
+  ol.steps li::before{counter-increment:s;content:counter(s);font-family:var(--num);font-weight:700;width:28px;height:28px;border-radius:50%;
     background:var(--ink);color:var(--paper);display:flex;align-items:center;justify-content:center}
   ol.steps b{display:block}
   .tiers{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
@@ -147,7 +151,7 @@
   .squad{padding:90px 0}
   .squad .eyebrow{color:var(--teal-dark);margin-bottom:10px}
   .squad .sec-head p{color:#4a4036}
-  .roster{display:grid;grid-template-columns:repeat(5,1fr);gap:14px}
+  .roster{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
   .lad{background:var(--paper);border:3px solid var(--ink);border-radius:10px;overflow:hidden;display:flex;flex-direction:column}
   .pair{position:relative;height:190px;background:linear-gradient(var(--sea) 0 58%, var(--sand-2) 58%)}
   .pair .ref{right:auto;left:10px;bottom:20px}
@@ -166,7 +170,7 @@
   .steps3{display:grid;grid-template-columns:repeat(3,1fr);gap:0;counter-reset:st;border:3px solid var(--ink);border-radius:12px;overflow:hidden}
   .step{padding:26px 26px 28px;display:flex;flex-direction:column;gap:12px;background:#fffaf0}
   .step+.step{border-left:3px dashed #d6c39b}
-  .step .num{counter-increment:st;font-family:var(--pixel);font-weight:700;font-size:15px;color:var(--paper);background:var(--ink);align-self:start;padding:3px 10px;border-radius:4px}
+  .step .num{counter-increment:st;font-family:var(--num);font-weight:700;font-size:15px;color:var(--paper);background:var(--ink);align-self:start;padding:3px 10px;border-radius:4px}
   .step .num::before{content:"Step " counter(st)}
   .step h3{font-size:24px}
   .step p{margin:0;color:#4a4036;font-size:15px}
@@ -182,7 +186,7 @@
   .cart.star .label{background:var(--teal);color:#fff}
   .cart .label h3{font-size:24px}
   .cart .tag{font-family:var(--pixel);font-size:11px;letter-spacing:.12em;text-transform:uppercase;background:var(--ink);color:var(--paper);padding:2px 7px;border-radius:3px}
-  .cart .price{padding:18px 20px 6px;font-family:var(--pixel);font-size:34px;font-variant-numeric:tabular-nums}
+  .cart .price{padding:18px 20px 6px;font-family:var(--num);font-weight:700;font-size:34px;font-variant-numeric:tabular-nums}
   .cart .price small{font-size:14px;color:var(--muted);font-family:var(--body)}
   .cart .price .founder{font-family:var(--body);font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--teal-dark)}
   .cart .total{margin:0;padding:0 20px;font-size:14.5px;font-variant-numeric:tabular-nums}
@@ -266,3 +270,37 @@
     .world-label{display:none}
     .world-pick select{font-size:13px;max-width:46vw}
   }
+
+  /* ---------- plan 18: Explore links on the home page ---------- */
+  .hero-walk{color:inherit;font-size:inherit;padding:0}
+  .how-explore{display:flex;flex-wrap:wrap;align-items:center;gap:10px 16px;margin:28px 0 0;font-size:16px}
+  @media (max-width:980px){ .nav ul{display:flex} .nav ul li:not(.keep){display:none} }
+  .nav ul a{white-space:nowrap}
+  @media (max-width:1180px){ .nav ul{gap:16px} .nav ul li.wide{display:none} }
+  /* A phone has room for the logo and one button: Explore is in the hero and the bar there instead. */
+  @media (max-width:560px){ .nav ul{display:none!important} }
+
+  /* ---------- plan 18 phase 2: tour progress, stop card links, finale ---------- */
+  .dots i.here{outline:2px solid var(--ink);outline-offset:1px}
+  .actions .card-all{flex-basis:100%;text-align:center;color:var(--teal-dark);font-size:14px}
+  .finale{display:flex;flex-direction:column;gap:8px;border:3px solid var(--gold);background:#fff4dc;border-radius:10px;padding:12px}
+  .finale .eyebrow{color:#9a5b12}
+  .finale b{font-family:var(--pixel);font-size:20px}
+  .finale p{margin:0;font-size:14px}
+  .finale .btn{justify-content:center}
+  @media (max-width:700px){
+    /* A thumb-sized Next: on a phone the tour is the easiest way round the beach. */
+    .tour #next{min-height:52px;min-width:120px;font-size:18px}
+  }
+  .finale-row{display:flex;gap:8px;flex-wrap:wrap}
+  .finale-row .btn{flex:1}
+
+  /* ---------- plan 18 phase 3: the showcase over the beach ---------- */
+  .showcase{position:absolute;inset:0;z-index:8;display:flex;flex-direction:column;background:var(--night);outline:none}
+  .showcase .sc-head{display:flex;justify-content:space-between;align-items:center;padding:8px 12px;color:var(--paper);font-family:var(--pixel);font-size:16px}
+  .showcase .close{background:var(--paper);color:var(--ink);border:0;border-radius:6px;width:34px;height:34px;font-size:16px;cursor:pointer}
+  .showcase .sc-canvas{position:relative;flex:1;min-height:0}
+  .showcase canvas{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;display:block}
+  .showcase .sc-actions{display:flex;flex-wrap:wrap;justify-content:center;align-items:center;gap:8px;padding:10px 12px}
+  .showcase .sc-hint{color:#c9b28b;font-size:13px}
+  .showcase .sc-steer{min-width:120px;min-height:48px;touch-action:none;user-select:none}

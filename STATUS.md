@@ -19,6 +19,7 @@ _Last updated: 15 Sep 2026_
 | Speed pass: WebP art, lazy images, cache headers | 3 | ✅ Done | First load 400 KB (was 1.2 MB); whole site 672 KB |
 | Card focus + keyboard return | 3 | ✅ Done | First action focused on open; focus returns to the beach on close |
 | Deploy prep: `_headers`, `robots.txt`, 404 page, CI workflow, DEPLOY.md | – | ✅ Done | Cloudflare Pages settings written out; deploys the moment the repo is connected |
+| GitHub repo (private, published) | – | ✅ Done | https://github.com/linusstamovyu/gameofus-site |
 | Low-power fallback | 3 | ✅ Done | Sea and palms stop animating under 24 fps or with reduced motion; page never waits for the world |
 
 Verified in the browser: tour walks Rico to Kai and opens his card with the real photo; roster shows all 5 photo → game pairs; 3 tiers, 6 FAQs, no broken images, no console errors.
@@ -28,7 +29,6 @@ Verified in the browser: tour walks Rico to Kai and opens his card with the real
 | Task | Needed from you | Unblocks |
 |---|---|---|
 | Domain + trademark check | Search DKPTO / EUIPO / USPTO, buy the domain | Deploy on the real address, `siteUrl` |
-| GitHub repo | Create a private repo, give the URL | `git push` (local repo is already committed) |
 | Cloudflare account | Create it; connect the GitHub repo to Pages | Preview URL, analytics token |
 | Tally order form | Build it from plan 07 v0 | `orderFormUrl` |
 | Stripe deposit links | Create the account and links | Real deposits, test payment |

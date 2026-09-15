@@ -7,6 +7,7 @@ import { SECTIONS } from "../src/order/sections";
 import type { OrderRecord } from "./orders";
 
 const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
+const box = (b: { x: number; y: number; width: number; height: number } | null) => (b ? `x${b.x} y${b.y} ${b.width}×${b.height}` : "not found");
 
 export function ownerEmail(o: OrderRecord, siteUrl: string): { subject: string; text: string } {
   const p = o.payload;
@@ -33,7 +34,8 @@ export function ownerEmail(o: OrderRecord, siteUrl: string): { subject: string; 
     "Price lines:",
     ...o.quote.lines.map(l => `  ${l.label} × ${l.qty}: ${formatMoney(l.total, o.quote.currency)}`),
     "",
-    `Photos are in the R2 bucket under orders/${o.id}/photos/ (${p.friends.length * 3} files).`,
+    `Photos are in the R2 bucket under orders/${o.id}/photos/ (one per friend, ${p.friends.length} files, named by friend id).`,
+    ...p.friends.map(f => `  ${f.id} ${f.name}: ${f.photo ? `${f.photo.width}×${f.photo.height}, face ${box(f.photo.face)}, full body ${box(f.photo.body)}` : "no crop data"}`),
     "Next: send each friend the consent form before starting (templates/consent-form.md).",
     `Stripe session: ${o.stripeSessionId ?? "none"} · Site: ${siteUrl}`,
   ];

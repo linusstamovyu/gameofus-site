@@ -2,7 +2,7 @@
 // fakes. Rules: the Worker prices every order itself with prices.ts; photos go to a private bucket under
 // pending/<id>/ until the order is paid or sent as a request, then move to orders/<id>/; an R2 lifecycle rule
 // deletes pending/ after 2 days.
-import { checkPayload, payloadUploads, PHOTO_KIND_IDS, picksFromPayload, type OrderPayload } from "../src/order/payload";
+import { checkPayload, payloadUploads, picksFromPayload, type OrderPayload } from "../src/order/payload";
 import { FOUNDER_SPOTS, quote, type Quote } from "../src/order/prices";
 import { customerEmail, ownerEmail, sendEmail } from "./email";
 import type { Env, ExecutionContext, KVNamespace, R2Bucket } from "./env";
@@ -113,11 +113,12 @@ export async function handleCreate(request: Request, env: Env, newId: () => stri
   return json({ id: record.id, total: q.total, currency: q.currency, isRequest: q.isRequest, priceChanged: q.total !== payload.shownTotal });
 }
 
-export async function handlePhoto(request: Request, env: Env, id: string, friendId: string, kind: string): Promise<Response> {
+/** A friend's one photo (owner, 15 Sep 2026: one per character; the face and body crops are numbers in the payload). */
+export async function handlePhoto(request: Request, env: Env, id: string, friendId: string): Promise<Response> {
   if (!shopOpen(env)) return fail(503, "Ordering isn't open yet.");
   const found = await readRecord(env.ORDERS, id);
   if (!found || found[1] !== "pending" || found[0].status !== "pending") return fail(404, "That order can't take photos any more.");
-  if (!found[0].payload.friends.some(f => f.id === friendId) || !(PHOTO_KIND_IDS as readonly string[]).includes(kind)) return fail(400, "Unknown photo.");
+  if (!found[0].payload.friends.some(f => f.id === friendId)) return fail(400, "Unknown photo.");
   const type = (request.headers.get("content-type") ?? "").split(";")[0].trim();
   if (!PHOTO_TYPES.has(type)) return fail(400, "Photos must be JPEG, PNG or WebP.");
   const declared = Number(request.headers.get("content-length") ?? "0");
@@ -126,8 +127,8 @@ export async function handlePhoto(request: Request, env: Env, id: string, friend
   if (body.byteLength === 0 || body.byteLength > MAX_PHOTO_BYTES) return fail(413, "That photo is empty or too large.");
   const ext = type === "image/png" ? "png" : type === "image/webp" ? "webp" : "jpg";
   // Replace any earlier upload of the same photo with a different extension.
-  await env.ORDERS.delete(["jpg", "png", "webp"].filter(e => e !== ext).map(e => `pending/${id}/photos/${friendId}-${kind}.${e}`));
-  await env.ORDERS.put(`pending/${id}/photos/${friendId}-${kind}.${ext}`, body, { httpMetadata: { contentType: type } });
+  await env.ORDERS.delete(["jpg", "png", "webp"].filter(e => e !== ext).map(e => `pending/${id}/photos/${friendId}.${e}`));
+  await env.ORDERS.put(`pending/${id}/photos/${friendId}.${ext}`, body, { httpMetadata: { contentType: type } });
   return json({ ok: true });
 }
 
@@ -161,7 +162,7 @@ export async function handleSubmit(request: Request, env: Env, id: string, ctx?:
   if (prefix !== "pending") return fail(400, "This order has already been sent.");
   const photos = await env.ORDERS.list({ prefix: `pending/${id}/photos/` });
   const files = await env.ORDERS.list({ prefix: `pending/${id}/files/` });
-  const needed = record.payload.friends.length * PHOTO_KIND_IDS.length + payloadUploads(record.payload).length;
+  const needed = record.payload.friends.length + payloadUploads(record.payload).length;
   const arrived = photos.objects.length + files.objects.length;
   if (arrived < needed) return fail(400, `Some photos or files didn't arrive (${arrived} of ${needed}). Please send the order again.`);
   const site = siteUrl(env, request);

@@ -3,11 +3,15 @@
 import { el } from "../../dom";
 import { BIG_GAMES, MINIGAMES } from "../catalogue";
 import { checkbox, heading, money, stepEyebrow, type StepView } from "../context";
-import { problems, sectionContext, shareMessage, type Organiser } from "../draft";
+import { problems, sectionContext, shareMessage, squadFriends, type Organiser } from "../draft";
+import { tierPill } from "../tier";
 import { SECTIONS } from "../sections";
+import { track } from "../../shared/analytics";
+import { perkDaysLeft } from "../perk";
 import { createOrder, OrderError, submitOrder, toPayload, uploadPhotos } from "../api";
 import { ADDONS, LADDERS, ACTIVE_LADDER } from "../prices";
-import { clearAll } from "../storage";
+import { faceCrop, type Box } from "../photoRules";
+import { clearAll, loadPhoto } from "../storage";
 
 export const reviewStep: StepView = (ctx, panel) => {
   const d = ctx.draft();
@@ -20,13 +24,14 @@ export const reviewStep: StepView = (ctx, panel) => {
   const squad = el("section", "review-squad");
   squad.append(el("h2", null, "Your squad"));
   const row = el("div", "select-row");
-  for (const f of d.friends) {
+  for (const f of squadFriends(d)) {
     const tile = el("figure", "select-tile");
-    if (f.preview) {
-      const img = el("img");
-      img.src = f.preview;
-      img.alt = "";
-      tile.append(img);
+    // The face from the friend's one photo (the pixel preview is gone, owner 15 Sep 2026).
+    if (f.photo) {
+      const c = el("canvas", "select-face");
+      c.width = c.height = 96;
+      tile.append(c);
+      void drawFaceTile(c, f.photo.key, f.photo.face);
     } else tile.append(el("span", "select-blank", "?"));
     tile.append(el("figcaption", null, f.name || "Unnamed"));
     row.append(tile);
@@ -36,7 +41,9 @@ export const reviewStep: StepView = (ctx, panel) => {
 
   // What's in it.
   const games = el("section", "review-list");
-  games.append(el("h2", null, `${name} edition`));
+  const edHead = el("h2", "review-edition");
+  edHead.append(tierPill(d.edition ?? "standard", `${name} edition`));
+  games.append(edHead);
   const picked = [
     ...d.bigGames.map(id => BIG_GAMES.find(g => g.id === id)?.name),
     ...(d.customGame.trim() ? ["Your own game (we'll quote it)"] : []),
@@ -70,6 +77,13 @@ export const reviewStep: StepView = (ctx, panel) => {
     tr.append(el("td", null, line.qty > 1 ? `${line.label} × ${line.qty}` : line.label), el("td", "num", ADDONS[line.id as keyof typeof ADDONS]?.custom ? `from ${money(ctx, line.total)}` : money(ctx, line.total)));
     table.append(tr);
   }
+  if (q.bonus > 0) {
+    // What the beach tour bonus took off: shown so the saving is visible, never a charged line.
+    const tr = el("tr", "bonus-row");
+    const days = d.perkUnlockedAt !== null ? perkDaysLeft(d.perkUnlockedAt) : 0;
+    tr.append(el("td", null, `Beach tour bonus (${days} day${days === 1 ? "" : "s"} left)`), el("td", "num", `−${money(ctx, q.bonus)}`));
+    table.append(tr);
+  }
   const totalRow = el("tr", "total-row");
   const totalCell = el("td", "num");
   totalCell.append(el("strong", null, money(ctx, q.total)));
@@ -80,7 +94,7 @@ export const reviewStep: StepView = (ctx, panel) => {
   const worthDkk = LADDERS[ACTIVE_LADDER].editions[d.edition ?? "standard"].worthDkk;
   if (cur === "DKK") bill.append(el("p", "save", `Bought as separate add-ons, what's in your edition would cost about ${worthDkk.toLocaleString("en-US")} DKK.`));
   bill.append(checkbox(`Add a Flex Pass · ${money(ctx, ADDONS.flex_pass.price[cur])}: an extra round of changes, swap a photo or a friend before we start, and move your delivery date once.`, d.flexPass, v => ctx.update(dr => ({ ...dr, flexPass: v }))));
-  const share = shareMessage(d.friends.map(f => f.name.trim()), money(ctx, q.total), money(ctx, q.perFriend, true), name);
+  const share = shareMessage(squadFriends(d).map(f => f.name.trim()), money(ctx, q.total), money(ctx, q.perFriend, true), name);
   const shareBox = el("div", "share");
   shareBox.append(el("b", null, "Splitting it? Send this to the group chat after you've paid:"), el("p", "share-text", share));
   const copy = el("button", "btn ghost small", "Copy message");
@@ -94,7 +108,7 @@ export const reviewStep: StepView = (ctx, panel) => {
     }
   };
   shareBox.append(copy);
-  if (d.friends.length > 1) bill.append(shareBox);
+  if (squadFriends(d).length > 1) bill.append(shareBox);
   bill.append(el("p", "guarantee", "Love the preview or your money back: you'll see your characters within 5 days, and if you don't like them we refund you in full before we build the game."));
   panel.append(bill);
 
@@ -113,10 +127,15 @@ export const reviewStep: StepView = (ctx, panel) => {
   };
   form.append(field("Your name", "name", "text", { autocomplete: "name", maxLength: 80 }));
   form.append(field("Email, for your receipt and the preview", "email", "email", { autocomplete: "email", maxLength: 200 }));
-  if (d.partyMode) {
-    form.append(field("Your birth year (Party Mode is 18+)", "birthYear", "text", { inputMode: "numeric", maxLength: 4, placeholder: "1995" }));
-    form.append(checkbox("Everyone who'll play Party Mode is 18 or over.", d.organiser.adultsConfirmed, v => ctx.update(dr => ({ ...dr, organiser: { ...dr.organiser, adultsConfirmed: v } }), { rerender: false })));
-  }
+  if (d.partyMode) form.append(field("Your birth year (Party Mode is 18+)", "birthYear", "text", { inputMode: "numeric", maxLength: 4, placeholder: "1995" }));
+  // The 18+ answer comes from the consent screen before step 1; it's changed there, not with a second checkbox.
+  const ages = el("p", "consent-summary", d.consent.adults === "yes" ? "Everyone in your group is 18 or over."
+    : d.consent.adults === "no" ? "Not everyone in your group is 18 or over, so Party Mode is off." : "You haven't told us whether everyone is 18 or over.");
+  const changeAges = el("button", "link-btn", "Change");
+  changeAges.type = "button";
+  changeAges.onclick = () => ctx.openConsent();
+  ages.append(" ", changeAges);
+  form.append(ages);
   form.append(checkbox("Everyone in the photos has agreed to be in the game. They'll each get a consent form from us before we start.", d.organiser.photosPermission, v => ctx.update(dr => ({ ...dr, organiser: { ...dr.organiser, photosPermission: v } }), { rerender: false })));
   const terms = el("label", "check");
   const tbox = el("input");
@@ -152,6 +171,7 @@ export const reviewStep: StepView = (ctx, panel) => {
     }
     list.hidden = true;
     button.disabled = true;
+    track("checkout_start", { request: q.isRequest });
     try {
       const now = ctx.draft();
       const live = ctx.quote(now);
@@ -180,3 +200,18 @@ export const reviewStep: StepView = (ctx, panel) => {
   send.append(list, button, methods, status);
   panel.append(send);
 };
+
+async function drawFaceTile(c: HTMLCanvasElement, key: string, face: Box | null): Promise<void> {
+  const blob = await loadPhoto(key);
+  if (!blob) return;
+  try {
+    const img = await createImageBitmap(blob);
+    const crop = faceCrop(img.width, img.height, face);
+    const ctx = c.getContext("2d")!;
+    ctx.imageSmoothingQuality = "high";
+    ctx.drawImage(img, crop.x, crop.y, crop.size, crop.size, 0, 0, c.width, c.height);
+    img.close();
+  } catch {
+    /* leave the tile blank */
+  }
+}

@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Game Of Us — colourful logo lockups</title>
+  <style>
+    :root { --ink:#201a3b; --coral:#ff5c77; --orange:#ff9f1c; --blue:#3a86ff; --lime:#c8f04b; --butter:#fff3b0; --paper:#fffaf0; }
+    *{box-sizing:border-box} body{margin:0;background:#ede9f5;color:var(--ink);font-family:Arial,Helvetica,sans-serif}
+    main{width:min(1500px,calc(100% - 48px));margin:38px auto 72px} header{display:flex;gap:28px;justify-content:space-between;align-items:end;margin-bottom:25px} h1{font-size:clamp(33px,5vw,60px);letter-spacing:-.075em;line-height:.88;margin:0} header p{max-width:485px;margin:0;line-height:1.4;font-size:15px;color:#4d4665}.meta{border-top:2px solid var(--ink);border-bottom:2px solid var(--ink);display:flex;justify-content:space-between;padding:11px 0;margin-bottom:22px;font-size:11px;font-weight:800;letter-spacing:.12em;text-transform:uppercase}
+    h2{font-size:20px;letter-spacing:-.03em;margin:36px 0 13px}.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:15px}.card{position:relative;min-height:286px;border-radius:18px;overflow:hidden;padding:16px;display:flex;flex-direction:column;isolation:isolate}.card::before{content:"";position:absolute;inset:0;z-index:-1;background:var(--paper)}.id{font-size:11px;font-weight:800;letter-spacing:.14em}.mark{height:128px;display:grid;place-items:center;margin:0 0 5px}.mark img{height:132px;width:132px;object-fit:contain}.locks{margin-top:auto;display:grid;gap:7px}.lock{min-height:45px;display:flex;align-items:center;gap:11px;white-space:nowrap}.lock img{width:35px;height:35px;object-fit:contain;flex:none}.normal,.caps{font-weight:800;letter-spacing:-.05em;line-height:1}.normal{font-size:clamp(27px,3vw,43px)}.caps{font-size:clamp(22px,2.5vw,35px);letter-spacing:.06em}.tag{font-size:10px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;opacity:.65;min-width:52px}.one::before{background:var(--butter)}.two::before{background:var(--coral)}.three::before{background:var(--blue)}.four::before{background:var(--ink)}.four{color:var(--paper)}.five::before{background:var(--lime)}.six::before{background:linear-gradient(135deg,var(--orange) 0 42%,var(--butter) 42% 100%)}.seven::before{background:#fff}.seven{border:2px solid var(--ink)}.eight::before{background:var(--ink)}.eight{color:var(--butter)}.nine::before{background:linear-gradient(135deg,#f8d7ff,#c8f04b)}.ten::before{background:var(--orange)}.side .locks{grid-template-columns:1fr 1fr;gap:14px}.side .lock{flex-direction:column;align-items:flex-start;justify-content:center}.side .lock img{width:43px;height:43px}.split .mark{justify-items:start}.split .mark img{height:118px;width:118px;margin-left:16%}.banner .mark{height:105px}.banner .mark img{height:115px;width:115px}.banner .locks{background:rgba(255,255,255,.35);padding:8px 12px;border-radius:10px}.line .lock{border-bottom:2px solid currentColor;padding-bottom:5px}.line .lock:last-child{border:0}.compact .mark{height:98px}.compact .mark img{height:104px;width:104px}.compact .locks{max-width:70%;margin-left:auto}.caps-first .locks .lock:first-child{order:2}.caps-first .locks .lock:last-child{order:1}.orbit .mark img{filter:none}.collision .mark img{filter:saturate(1.07) contrast(1.03)}footer{font-size:12px;color:#4d4665;margin-top:25px}@media(max-width:760px){main{width:min(100% - 28px,720px);margin-top:27px}header{display:block}header p{margin-top:16px}.meta{gap:10px;font-size:9px}.grid{grid-template-columns:1fr}.normal{font-size:37px}.caps{font-size:29px}}
+  </style>
+</head>
+<body><main>
+  <header><h1>Game Of Us<br>colour lockups</h1><p>Two expressive image marks, each explored through ten logo systems. Every option includes title case and all caps, using exact native typography so the name is readable at every size.</p></header>
+  <div class="meta"><span>20 directions</span><span>10 universe orbit · 10 creative collision</span><span>title case + all caps</span></div>
+  <h2>01 — Universe orbit</h2>
+  <section class="grid orbit" id="orbit"></section>
+  <h2>02 — Creative collision</h2>
+  <section class="grid collision" id="collision"></section>
+  <footer>Artwork is generated concept art; typography and layouts are editable native web artwork. A selected direction can be turned into a final logo set with a vector redraw of its mark.</footer>
+</main>
+<script>
+const orbit='generated-concepts/concept-01-universe-orbit.png';
+const collision='generated-concepts/concept-03-creative-collision.png';
+const layouts=['one','two side','three split','four','five compact','six','seven banner','eight caps-first','nine line','ten side'];
+const labels=['World builder','Story orbit','Portal left','Night universe','Personal planet','Bright field','Gallery edition','Game title','Studio line','Gift card'];
+function card(src,n,group){const cl=layouts[n-1];const label=labels[n-1];return `<article class="card ${cl}"><span class="id">${group}-${String(n).padStart(2,'0')} · ${label}</span><div class="mark"><img src="${src}" alt="${group==='U'?'Universe orbit':'Creative collision'} symbol"></div><div class="locks"><div class="lock"><img src="${src}" alt=""><span class="tag">Title</span><span class="normal">Game Of Us</span></div><div class="lock"><img src="${src}" alt=""><span class="tag">Caps</span><span class="caps">GAME OF US</span></div></div></article>`}
+document.querySelector('#orbit').innerHTML=Array.from({length:10},(_,i)=>card(orbit,i+1,'U')).join('');
+document.querySelector('#collision').innerHTML=Array.from({length:10},(_,i)=>card(collision,i+1,'C')).join('');
+</script></body></html>

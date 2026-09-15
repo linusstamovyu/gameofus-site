@@ -3,7 +3,7 @@ import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 import offer from "../src/content/offer.json";
 import {
-  ACTIVE_LADDER, ADDONS, CURRENCIES, EDITION_IDS, FOUNDER_SPOTS, LADDERS, formatMoney, quote, smallestEditionFor, upgradeHint,
+  ACTIVE_LADDER, ADDONS, CURRENCIES, EDITION_IDS, FOUNDER_SPOTS, LADDERS, downgradeHint, formatMoney, quote, smallestEditionFor, upgradeHint,
   type AddonId, type Currency, type LadderId,
 } from "../src/order/prices";
 
@@ -106,12 +106,24 @@ describe("quote", () => {
   });
 
   it("pre-selects the smallest edition that fits and hints an upgrade that costs no more", () => {
-    expect(smallestEditionFor(3, "B")).toBe("standard");
+    // Standard holds 2 characters on both ladders (owner, 15 Sep 2026).
+    for (const l of ladders) expect(LADDERS[l].editions.standard.includes.characters, l).toBe(2);
+    expect(smallestEditionFor(2, "B")).toBe("standard");
+    expect(smallestEditionFor(3, "B")).toBe("deluxe");
     expect(smallestEditionFor(3, "A")).toBe("deluxe");
     expect(smallestEditionFor(12, "B")).toBe("ultimate");
     const heavy = { edition: "standard" as const, friends: 6, bigGames: 3, minigames: 6 };
     expect(upgradeHint(heavy, "DKK", 0, "B")?.edition).toBe("deluxe");
     expect(upgradeHint(base, "DKK", 0, "B")).toBeNull();
+  });
+
+  it("suggests a smaller edition only when slots were removed below the cast and it costs less", () => {
+    const small = { edition: "deluxe" as const, friends: 2, bigGames: 1, minigames: 3 };
+    expect(downgradeHint(small, "DKK", 0, "B")?.edition).toBe("standard");
+    expect(downgradeHint({ ...small, friends: 6 }, "DKK", 0, "B")).toBeNull();
+    expect(downgradeHint({ ...small, edition: "standard", friends: 1 }, "DKK", 0, "B")).toBeNull();
+    // Five friends and Deluxe's games: Standard plus three extras and two games costs more, so no hint.
+    expect(downgradeHint({ edition: "deluxe", friends: 5, bigGames: 3, minigames: 6 }, "DKK", 0, "B")).toBeNull();
   });
 
   it("formats each currency the way the page shows it", () => {

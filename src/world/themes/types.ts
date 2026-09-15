@@ -35,10 +35,4 @@ export interface Theme {
   lights?(ctx: Ctx, T: number, time: number, animated: boolean, v: View): void;
   /** Weather in screen space: rain, snow. */
   screen?(ctx: Ctx, vw: number, vh: number, time: number, animated: boolean): void;
-
-  /**
-   * Walk sheets dressed for this world: squad id -> file in public/assets.
-   * A lad with no entry walks in his normal clothes.
-   */
-  outfits?: Record<string, string>;
 }

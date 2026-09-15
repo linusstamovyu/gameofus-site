@@ -14,7 +14,7 @@
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect x='3' y='3' width='10' height='10' transform='rotate(45 8 8)' fill='%231a9e95' stroke='%23fdf6e3' stroke-width='2'/%3E%3C/svg%3E">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Pixelify+Sans:wght@500;700&display=swap">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Pixelify+Sans:wght@500;700&family=Chakra+Petch:wght@600;700&display=swap">
   <script type="module" src="/src/main.ts"></script>
 </head>
 <body>
@@ -26,10 +26,11 @@
     <span class="draft-flag" data-draft>Draft</span>
     <ul>
       <li><a href="#features">The game</a></li>
-      <li><a href="#squad">The squad</a></li>
+      <li class="keep"><a href="explore.html" data-track="nav_explore">Explore</a></li>
+      <li class="wide"><a href="#squad">The squad</a></li>
       <li><a href="#how">How it works</a></li>
       <li><a href="#prices">Prices</a></li>
-      <li><a href="#faq">FAQ</a></li>
+      <li class="wide"><a href="#faq">FAQ</a></li>
     </ul>
     <span data-country-slot></span>
     <span id="navOrder"></span>
@@ -45,10 +46,10 @@
         <h1>Your friends. Your places. <em>Your game.</em></h1>
         <p>We turn your group's real photos, places and in-jokes into a game you play together. This beach is a real one: walk around and meet the squad.</p>
         <div class="row">
-          <button class="btn" id="heroTour" type="button">Take the tour ▶</button>
-          <button class="btn ghost" id="heroWalk" type="button">Walk around</button>
+          <button class="btn" id="heroTour" type="button" data-track="hero_cta" data-track-which="tour">Take the tour ▶</button>
+          <a class="btn ghost" href="explore.html" data-track="hero_cta" data-track-which="explore">See everything in it</a>
         </div>
-        <small>Tap or click the sand to walk · <kbd>WASD</kbd> <kbd>Shift</kbd> <kbd>E</kbd> after clicking the world</small>
+        <small><button class="link-btn hero-walk" id="heroWalk" type="button" data-track="hero_cta" data-track-which="walk">Or just walk around</button> · Tap or click the sand to walk · <kbd>WASD</kbd> <kbd>Shift</kbd> <kbd>E</kbd> after clicking the world</small>
       </div>
       <button class="mini-title" id="miniTitle" type="button" hidden>◀ Game of Us</button>
       <label class="world-pick">
@@ -127,13 +128,14 @@
         <p>You bring the stories. We do the building, and you see the game twice before it's finished.</p>
       </div>
       <div class="steps3">
-        <div class="step"><span class="num"></span><h3>Tell us about your group</h3><p>A short questionnaire and a 20-minute call.</p>
-          <ul><li>3–5 photos of each friend</li><li>Your places, as photos or map pins</li><li>The in-jokes and the night everyone remembers</li></ul><span class="when">Day 1–5</span></div>
+        <div class="step"><span class="num"></span><h3>Tell us about your group</h3><p>Build your order online, then a 20-minute call.</p>
+          <ul><li>One photo of each friend, head to feet</li><li>Your places, as photos or map pins</li><li>The in-jokes and the night everyone remembers</li></ul><span class="when">Day 1–5</span></div>
         <div class="step"><span class="num"></span><h3>We build it</h3><p>You approve the cast first, then play a preview.</p>
           <ul><li>Character select preview to check the faces</li><li>A playable preview link</li><li>Two rounds of changes included</li></ul><span class="when">Day 5–26</span></div>
         <div class="step"><span class="num"></span><h3>Play it together</h3><p>A private link that runs in the browser, nothing to install.</p>
           <ul><li>Play on one laptop or everyone on the same wifi</li><li>A 60-second trailer to share</li><li>Bugs fixed free for 30 days</li></ul><span class="when">Day 28</span></div>
       </div>
+      <p class="how-explore">Want to see what can go in it first? <a class="btn ghost" href="explore.html" data-track="how_explore">Explore every game, vehicle and extra ▶</a></p>
     </div>
   </section>
 

@@ -20,7 +20,12 @@ import re
 import sys
 from pathlib import Path
 
+import numpy as np
 from PIL import Image, ImageDraw, ImageFont, ImageOps
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from cut_portrait_backdrop import cut as cut_backdrop  # noqa: E402
+from recut_outfit_sheets import OVERRIDES, override_cell  # noqa: E402
 
 SITE = Path(__file__).resolve().parent.parent
 GAME = SITE.parent / "polishedcrystal-master" / "public" / "assets"
@@ -31,7 +36,10 @@ PHOTOS = SITE / "source" / "photos"
 BUDGET_BYTES = 3 * 1024 * 1024  # plan 16: first load <= 3 MB (share.jpg is not loaded by the page)
 
 # Squad members drawn on the site. Folder = the game's character folder.
-SQUAD = {"rico": "Rico", "kai": "Kai", "elias": "Elias", "ethan": "Ethan", "nala": "Nala"}
+SQUAD = {"rico": "Rico", "kai": "Kai", "elias": "Elias", "ethan": "Ethan", "nala": "Nala", "coco": "Coco"}
+
+# Game portraits painted on a backdrop (the rest are already transparent): cut it out for the site.
+PAINTED_BACKDROP = {"coco"}
 
 # Real-photo headshot crops, as (left, top, right, bottom) in the upright source.
 # Measured by eye against each photo on 2026-09-15; re-measure if a photo changes.
@@ -41,10 +49,11 @@ PHOTO_CROPS = {
     "ethan": ("ethan.jpg", (360, 80, 960, 680)),
     "elias": ("elias.png", (390, 240, 790, 640)),
     "nala": ("nala.png", (80, 620, 880, 1420)),
+    "coco": ("coco.png", (60, 10, 340, 290)),
 }
 
 # Battle plates used as card art (game key -> site file).
-PLATES = ["beach", "harbour", "oura_street", "gym1_interior", "kai_gym_mid", "marina_street"]
+PLATES = ["beach", "harbour", "oura_street", "gym1_interior", "kai_gym_mid", "marina_street", "nightclub_exterior"]
 
 # The order page's art (plan 07 Q12: existing game art as stills for now; the owner replaces look-alike
 # art later). It lives in its own folder with its own budget, loaded only on /order, so the home page's
@@ -85,11 +94,19 @@ def build_squad() -> None:
         walk = src(GAME / "characters" / folder / "Runtime" / f"{sid}_walk_runtime.png")
         if walk:
             im = Image.open(walk).convert("RGBA")
+            # A regenerated standing frame for the beach (source/outfits/regen-requests) replaces its cell.
+            for ov in sorted(OVERRIDES.glob(f"{sid}_walk_beach_cell*.png")):
+                i = int(ov.stem.rsplit("cell", 1)[1])
+                a = np.asarray(im)[:, :, 3] > 40
+                side = [c for c in range(9) if c // 3 == i // 3 and c != i]
+                hs = [np.ptp(np.nonzero(a[:, c * 128:(c + 1) * 128].any(axis=1))[0]) + 1 for c in side]
+                im.paste((0, 0, 0, 0), (i * 128, 0, (i + 1) * 128, 256))
+                im.alpha_composite(override_cell(ov, int(np.median(hs))), (i * 128, 0))
             # 9 cells of 128x256 -> 64x128: the beach draws one tile at <= 66 px.
             save_webp(im.resize((im.width // 2, im.height // 2), Image.LANCZOS), f"{sid}_walk.webp")
         face = src(GAME / "characters" / folder / "Portrait" / f"{sid}_portrait.png")
         if face:
-            im = Image.open(face).convert("RGBA")
+            im = cut_backdrop(str(face)) if sid in PAINTED_BACKDROP else Image.open(face).convert("RGBA")
             im.thumbnail((256, 256), Image.LANCZOS)
             save_webp(im, f"{sid}_face.webp")
         file, box = PHOTO_CROPS[sid]
@@ -140,23 +157,11 @@ SECTION_ART = {
     "phone_maps.webp": ("phone/app_icons/maps.png", "prop"),
     "phone_news.webp": ("phone/news/jonesy_wanted.png", "prop"),
     "phone_caller.webp": ("cutscene/call_portraits/rico.png", "cover"),
-    # story
-    "story_cutscene.webp": ("cutscene/poolside_11_cover.jpg", "cover"),
-    "story_plate.webp": ("cutscene/rico-mexibar/rico_mexibar_03_pour.png", "cover"),
-    "story_boss.webp": ("cutscene/chris-room/manager/01-manager.png", "cover"),
+    # story, the extras step and the trailer card play loops instead: tools/build_order_loops.py
     # extras
-    "extras_evo_1.webp": ("characters/Rico/Portrait/rico_portrait.png", "prop"),
-    "extras_evo_2.webp": ("characters/RicoMidEvo/Portrait/ricomidevo_portrait.png", "prop"),
-    "extras_evo_3.webp": ("characters/RicoFinalEvo/Portrait/ricofinalevo_portrait.png", "prop"),
-    "extras_talk_rest.webp": ("characters/Chris/Talk/chris_speak_rest.png", "prop"),
-    "extras_talk_open.webp": ("characters/Chris/Talk/chris_speak_open.png", "prop"),
-    "extras_move.webp": ("vfx/make_it_rain.png", "cell:256,256,256,256"),
     "extras_item_drink.webp": ("items/sangria_bucket.png", "prop"),
     "extras_item_can.webp": ("items/cold_one.png", "prop"),
-    "extras_recruit.webp": ("vfx/vfx_catch_cold_one_throw_sheet.png", "cell:384,0,128,128"),
-    "extras_multiplayer.webp": ("../../art-drafts/multiplayer-car-share-demo/two-players-one-car-demo.gif", "gif"),
     # keepsakes
-    "keep_trailer.webp": ("cutscene/poolside_11_cover.jpg", "cover"),
 }
 
 
@@ -260,6 +265,109 @@ def check_content_refs() -> None:
                 errors.append(f"{jf.name} names {token}, which was not built")
 
 
+# Moving previews on the Games step (src/order/preview). Two kinds of input:
+#  * BACKGROUNDS are the game's own zones rendered by the game's own tile painters at 32 px a tile, saved
+#    once into source/previews/ (see its README.md for how they were baked). Cropped here in TILE units.
+#  * SPRITES come straight from the game tree, shrunk to what a 360x240 card can show at 2x.
+PREVIEW_SRC = SITE / "source" / "previews"
+PT = 32  # px per tile in the baked zone PNGs
+PREVIEW_BACKGROUNDS = {
+    # name: (baked file, (x0, y0, x1, y1) in tiles, scale)
+    "pv_gym_bg.webp": ("gym1_interior.png", (0.375, 2.5, 11.625, 10), 1),
+    "pv_gym_gate.webp": ("gym1_interior_open.png", (1, 2.5, 11, 4.5), 1),
+    "pv_kart_bg.webp": ("kart_track.png", (0, 14, 38, 54), 0.75),
+    "pv_build_bg.webp": ("kai_gym.png", (3.875, 26, 15.125, 39), 1),
+    "pv_craft_bg.webp": ("minecraft_station_b.png", (1.875, 1.5, 13.125, 10.5), 1),
+    "pv_escort_bg.webp": ("ber_kiez.png", (15.875, 5, 27.125, 17), 1),
+    "pv_chase_bg.webp": ("harbour.png", (4, 23.5, 22, 31), 1),
+}
+# name: (game file, crop box in px or None, output size)
+PREVIEW_SPRITES = {
+    "pv_rico_walk.webp": ("characters/Rico/Runtime/rico_walk_runtime.png", None, (576, 128)),
+    "pv_rico_run.webp": ("characters/Rico/Runtime/rico_run_runtime.png", None, (576, 128)),
+    "pv_rico_build.webp": ("characters/Rico/Runtime/rico_walk_build_runtime.png", None, (576, 128)),
+    "pv_morten_crutch.webp": ("characters/Morten/Runtime/morten_crutches_walk_runtime.png", None, (576, 128)),
+    "pv_jonesy_walk.webp": ("characters/Jonesy/Runtime/jonesy_walk_runtime.png", None, (576, 128)),
+    "pv_car_red.webp": ("vehicles/cars/sport_red.png", (0, 0, 400, 400), (400, 400)),  # 4 bob frames x 4 facings
+    "pv_car_blue.webp": ("vehicles/cars/sport_blue.png", (0, 0, 400, 400), (400, 400)),  # 4 bob frames x 4 facings
+    "pv_car_white.webp": ("vehicles/cars/sedan_white.png", (0, 0, 400, 400), (400, 400)),  # 4 bob frames x 4 facings
+    "pv_fuel.webp": ("props/fuel_can.png", None, (64, 64)),
+    "pv_ramp_ghost.webp": ("props/jonesy_ramp_v2/jonesy_ramp_full_blue.png", None, (80, 130)),
+    "pv_ramp_blueprint.webp": ("props/jonesy_ramp_v2/jonesy_ramp_up_blueprint.png", None, (80, 130)),
+    "pv_ramp_partial.webp": ("props/jonesy_ramp_v2/jonesy_ramp_up_partial.png", None, (80, 130)),
+    "pv_ramp_complete.webp": ("props/jonesy_ramp_v2/jonesy_ramp_up_complete.png", None, (80, 130)),
+    "pv_rail_v.webp": ("station-a/rails/rail_straight_vertical.png", (0, 0, 203, 213), (64, 67)),
+    "pv_cart_up.webp": ("vehicles/riders/rico_minecart_up.png", None, (118, 184)),
+    "pv_caro.webp": ("cutscene/caro-tower/caro_subject.jpg", None, (437, 600)),
+    "pv_kid.webp": ("cutscene/caro-tower/kid_run_strip.png", None, (1024, 128)),
+    "pv_coffee_bg.webp": ("cutscene/berlin-coffee/coffee_barista.png", (131, 0, 1541, 941), (540, 360)),
+    "pv_arcade_bg.webp": ("fighter/stages/arcade_near.png", (320, 0, 1280, 640), (540, 360)),
+    "pv_spark.webp": ("vfx/fighter_hit_heavy.png", None, (512, 512)),
+}
+# Only the fighter cells the brawler loop plays: idle 0-3, walk 4-7, heavy punch 24-27, hit 36,
+# knockdown 38, downed 39, win 42-43 (FIGHTER_CELLS in the game's data/fighterMoves.ts). Packed 9 x 2 at 128.
+PREVIEW_FIGHTER_CELLS = [0, 1, 2, 3, 4, 5, 6, 7, 24, 25, 26, 27, 36, 38, 39, 42, 43]
+
+
+def build_previews() -> None:
+    for name, (file, (x0, y0, x1, y1), scale) in PREVIEW_BACKGROUNDS.items():
+        f = src(PREVIEW_SRC / file)
+        if not f:
+            continue
+        im = Image.open(f).convert("RGB").crop((round(x0 * PT), round(y0 * PT), round(x1 * PT), round(y1 * PT)))
+        if scale != 1:
+            im = im.resize((round(im.width * scale), round(im.height * scale)), Image.LANCZOS)
+        im.save(ORDER_OUT / name, "WEBP", quality=78, method=6)
+    for name, (rel, box, size) in PREVIEW_SPRITES.items():
+        f = src(GAME / rel)
+        if not f:
+            continue
+        im = Image.open(f)
+        im = im.convert("RGBA") if im.mode in ("RGBA", "LA", "P") else im.convert("RGB")
+        if box:
+            im = im.crop(box)
+        im.resize(size, Image.LANCZOS).save(ORDER_OUT / name, "WEBP", quality=82, method=6)
+    for sid in ("rico", "seb"):
+        f = src(GAME / "fighter" / f"{sid}_fighter_runtime.png")
+        if not f:
+            continue
+        sheet = Image.open(f).convert("RGBA")
+        atlas = Image.new("RGBA", (9 * 128, 2 * 128))
+        for i, cell in enumerate(PREVIEW_FIGHTER_CELLS):
+            c = sheet.crop(((cell % 8) * 256, (cell // 8) * 256, (cell % 8 + 1) * 256, (cell // 8 + 1) * 256))
+            atlas.paste(c.resize((128, 128), Image.LANCZOS), ((i % 9) * 128, (i // 9) * 128))
+        atlas.save(ORDER_OUT / f"pv_{sid}_fighter.webp", "WEBP", quality=82, method=6)
+
+
+# Plan 18 (beach tour): the bonus's example item icons, and the end-of-tour showcase's blackjack cards and whole
+# kart circuit. Cards are Kenney's CC0 pack from the game's shared minigame deck (64 px pixel art, kept as is).
+PERK_ITEMS = ["vortes_magazine", "moped_keys", "key_card", "wristband", "bucket_hat", "lucky_euro", "designer_shades",
+              "sangria_bucket", "strong_coffee", "map"]
+SHOWCASE_CARDS = [("spades", "10"), ("hearts", "6"), ("clubs", "9"), ("hearts", "K"), ("diamonds", "7"),
+                  ("clubs", "5"), ("diamonds", "6"), ("hearts", "10"), ("spades", "A"), ("clubs", "8")]
+
+
+def build_showcase() -> None:
+    for name in PERK_ITEMS:
+        f = src(GAME / "items" / f"{name}.png")
+        if f:
+            im = Image.open(f).convert("RGBA")
+            im.thumbnail((96, 96), Image.LANCZOS)
+            im.save(ORDER_OUT / f"item_{name}.webp", "WEBP", quality=90, method=6)
+    deck = GAME / "minigames" / "cards"
+    for suit, rank in SHOWCASE_CARDS:
+        f = src(deck / "cards" / suit / f"{rank}.png")
+        if f:
+            Image.open(f).convert("RGBA").save(ORDER_OUT / f"card_{suit}_{rank}.webp", "WEBP", lossless=True)
+    f = src(deck / "backs" / "default.png")
+    if f:
+        Image.open(f).convert("RGBA").save(ORDER_OUT / "card_back.webp", "WEBP", lossless=True)
+    f = src(PREVIEW_SRC / "kart_track.png")
+    if f:
+        im = Image.open(f).convert("RGB")
+        im.resize((im.width // 2, im.height // 2), Image.LANCZOS).save(ORDER_OUT / "pv_kart_full.webp", "WEBP", quality=74, method=6)
+
+
 def main() -> int:
     for folder in (OUT, ORDER_OUT):
         folder.mkdir(parents=True, exist_ok=True)
@@ -269,7 +377,12 @@ def main() -> int:
     build_world()
     build_order_art()
     build_section_art()
+    build_previews()
+    build_showcase()
     build_share_image()
+    sys.path.insert(0, str(Path(__file__).resolve().parent))
+    import build_order_loops  # the order page's looping previews (loop_*), see that file
+    errors.extend(build_order_loops.build())
     check_content_refs()
 
     total = sum(p.stat().st_size for p in OUT.glob("*") if p.name != "share.jpg")

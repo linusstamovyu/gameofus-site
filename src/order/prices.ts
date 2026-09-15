@@ -7,6 +7,8 @@
 // Director's Cut). The owner hasn't decided. Screenshots and the reasoning for both are in
 // "Game of Us/pricing-versions/README.md"; git tags pricing-a-per-person-first and pricing-b-total-first
 // mark each site version. Switching the site is this one constant.
+import type { PerkFree } from "./perk";
+
 export const ACTIVE_LADDER: LadderId = "A";
 
 export type LadderId = "A" | "B";
@@ -75,8 +77,9 @@ export const LADDERS: Record<LadderId, Ladder> = {
     id: "B",
     display: "totalFirst",
     editions: {
-      standard: { id: "standard", founder: m(799, 89.99, 99.99), normal: m(1049, 119.99, 139.99), people: 3, worthDkk: 2800,
-        includes: { characters: 3, bigGames: 1, minigames: 3, vehicles: 1, phonePhotos: 3, phoneBeats: 0, zones: 1, evolutions: 0, cutscenes: 0, movesPerCharacter: 1, voiceLines: 0, revisions: 1 } },
+      // Standard is 2 characters on both ladders (owner, 15 Sep 2026); B used to say "up to 3".
+      standard: { id: "standard", founder: m(799, 89.99, 99.99), normal: m(1049, 119.99, 139.99), people: 2, worthDkk: 2300,
+        includes: { characters: 2, bigGames: 1, minigames: 3, vehicles: 1, phonePhotos: 3, phoneBeats: 0, zones: 1, evolutions: 0, cutscenes: 0, movesPerCharacter: 1, voiceLines: 0, revisions: 1 } },
       deluxe: { id: "deluxe", founder: m(1299, 149.99, 174.99), normal: m(1699, 199.99, 229.99), people: 6, worthDkk: 9100,
         includes: { characters: 6, bigGames: 3, minigames: 6, vehicles: 3, phonePhotos: 6, phoneBeats: 1, zones: 3, evolutions: 1, cutscenes: 1, movesPerCharacter: 1, voiceLines: 1, revisions: 2 } },
       ultimate: { id: "ultimate", founder: m(1999, 229.99, 269.99), normal: m(2599, 299.99, 349.99), people: 10, worthDkk: 16800,
@@ -157,6 +160,8 @@ export interface OrderPicks {
   addons?: Partial<Record<AddonId, number>>;
   /** Rush delivery: +50% of everything else (plan 03). */
   rush?: boolean;
+  /** Units the beach tour bonus makes free (perk.ts). Taken off before charging; never below zero. */
+  free?: PerkFree;
 }
 
 export interface LineItem {
@@ -180,6 +185,8 @@ export interface Quote {
   isRequest: boolean;
   /** Minor units per friend, for the share message. */
   perFriend: number;
+  /** What the beach tour bonus took off, in minor units (0 when none applied). Shown, never charged. */
+  bonus: number;
 }
 
 export const MAX_FRIENDS = 12;
@@ -202,15 +209,22 @@ export function quote(picks: OrderPicks, currency: Currency, paidOrders: number,
   // Extras over the allowance, at the add-on price. Every extra friend is drawn from their photos.
   push("character_custom", ADDONS.character_custom.name, Math.max(0, friends - ed.includes.characters), ADDONS.character_custom.price[currency]);
   push("big_game", ADDONS.big_game.name, Math.max(0, clampInt(picks.bigGames, 0, 99) - ed.includes.bigGames), ADDONS.big_game.price[currency]);
-  push("minigame", ADDONS.minigame.name, Math.max(0, clampInt(picks.minigames, 0, 12) - ed.includes.minigames), ADDONS.minigame.price[currency]);
+  const free = picks.free ?? {};
+  let bonus = 0;
+  const extraMinigames = Math.max(0, clampInt(picks.minigames, 0, 12) - ed.includes.minigames);
+  const freeMinigames = Math.min(extraMinigames, clampInt(free.minigame ?? 0, 0, 12));
+  bonus += freeMinigames * ADDONS.minigame.price[currency];
+  push("minigame", ADDONS.minigame.name, extraMinigames - freeMinigames, ADDONS.minigame.price[currency]);
 
   let isRequest = false;
   for (const [id, n] of Object.entries(picks.addons ?? {}) as [AddonId, number][]) {
     const a = ADDONS[id];
     if (!a || (a.ladders && !a.ladders.includes(ladderId))) continue; // unknown or not on this ladder: ignored, never charged
-    const qty = clampInt(n, 0, 99);
-    if (qty > 0 && a.custom) isRequest = true;
-    push(id, a.name, qty, a.price[currency]);
+    const wanted = clampInt(n, 0, 99);
+    if (wanted > 0 && a.custom) isRequest = true;
+    const gift = id === "party_mode" || id === "item" ? Math.min(wanted, clampInt(free[id] ?? 0, 0, 99)) : 0;
+    bonus += gift * a.price[currency];
+    push(id, a.name, wanted - gift, a.price[currency]);
   }
 
   let total = lines.reduce((s, l) => s + l.total, 0);
@@ -221,7 +235,7 @@ export function quote(picks: OrderPicks, currency: Currency, paidOrders: number,
     total += rush;
     normalTotal += Math.round(normalTotal * RUSH_SHARE);
   }
-  return { ladder: ladderId, currency, edition: ed.id, founder, lines, total, normalTotal, isRequest, perFriend: Math.round(total / friends) };
+  return { ladder: ladderId, currency, edition: ed.id, founder, lines, total, normalTotal, isRequest, perFriend: Math.round(total / friends), bonus };
 }
 
 /** The smallest edition whose cast fits the group (the configurator's pre-selection). */
@@ -237,6 +251,22 @@ export function upgradeHint(picks: OrderPicks, currency: Currency, paidOrders: n
   for (const id of EDITION_IDS.slice(EDITION_IDS.indexOf(picks.edition) + 1)) {
     const t = quote({ ...picks, edition: id }, currency, paidOrders, ladderId).total;
     if (t <= now && (!best || now - t > best.saves)) best = { edition: id, saves: now - t };
+  }
+  return best;
+}
+
+/**
+ * A smaller edition that covers the same picks for less, or null. Only offered while the squad is smaller than
+ * the current edition's cast (someone removed slots), so it never suggests shrinking a squad that fills it.
+ */
+export function downgradeHint(picks: OrderPicks, currency: Currency, paidOrders: number, ladderId: LadderId = ACTIVE_LADDER): { edition: EditionId; saves: number } | null {
+  const eds = LADDERS[ladderId].editions;
+  if (picks.friends >= eds[picks.edition].includes.characters) return null;
+  const now = quote(picks, currency, paidOrders, ladderId).total;
+  let best: { edition: EditionId; saves: number } | null = null;
+  for (const id of EDITION_IDS.slice(0, EDITION_IDS.indexOf(picks.edition))) {
+    const t = quote({ ...picks, edition: id }, currency, paidOrders, ladderId).total;
+    if (t < now && (!best || now - t > best.saves)) best = { edition: id, saves: now - t };
   }
   return best;
 }

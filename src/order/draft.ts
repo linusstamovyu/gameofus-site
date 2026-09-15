@@ -1,10 +1,11 @@
 // The order being built, as plain data (plan 07). Pure functions only, so every rule is testable: the page
 // (steps/*.ts) renders a Draft and replaces it through these functions; storage.ts saves it on this device.
 // Nothing here knows a price: prices come from prices.ts through toPicks().
-import { BIG_GAMES, MINIGAMES, visibleMinigames } from "./catalogue";
+import { BIG_GAMES, MINIGAMES, minigameLocked, selectableMinigames } from "./catalogue";
 import { checkSections, defaultSections, sectionAddons, sectionById, SECTIONS, type SectionChoices } from "./sections";
 import type { SectionContext, SectionId } from "./sections/types";
-import { ACTIVE_LADDER, EDITION_IDS, LADDERS, MAX_FRIENDS, smallestEditionFor, type AddonId, type EditionId, type LadderId, type OrderPicks } from "./prices";
+import { perkActive, perkFree, perkKind } from "./perk";
+import { ACTIVE_LADDER, EDITION_IDS, LADDERS, MAX_FRIENDS, type AddonId, type EditionId, type LadderId, type OrderPicks } from "./prices";
 
 export type StepId = "squad" | "edition" | "games" | SectionId | "review";
 export const STEPS: { id: StepId; label: string }[] = [
@@ -17,15 +18,21 @@ export const STEPS: { id: StepId; label: string }[] = [
 const SECTION_IDS = new Set<string>(SECTIONS.map(s => s.id));
 export const isSectionStep = (id: StepId): id is SectionId => SECTION_IDS.has(id);
 
-export type PhotoKind = "face" | "body" | "outfit";
-export const PHOTO_KINDS: { kind: PhotoKind; label: string; hint: string }[] = [
-  { kind: "face", label: "Face", hint: "Close-up, looking at the camera, good light" },
-  { kind: "body", label: "Full body", hint: "Head to toe, standing" },
-  { kind: "outfit", label: "Outfit", hint: "What they'd wear in the game" },
-];
-
 export type CheckStatus = "ok" | "warn" | "fail" | "unchecked";
 
+/** A rectangle in the photo's own pixels. */
+export interface PhotoBox {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+}
+
+/**
+ * ONE photo per character (owner, 15 Sep 2026, replacing face + full body + outfit): it has to show one person
+ * with a clear face and the whole body, head to feet. The "Full body" and "Face" boxes on the squad step are
+ * crops of this one image, kept as numbers; nothing else is stored or uploaded.
+ */
 export interface PhotoMeta {
   /** Key of the resized image blob in this device's storage. */
   key: string;
@@ -33,18 +40,18 @@ export interface PhotoMeta {
   height: number;
   status: CheckStatus;
   note: string;
-  /** Where the face was found (face photos), so a changed shirt colour redraws the same preview crop. */
-  face?: { x: number; y: number; width: number; height: number; score: number } | null;
+  /** Where the face is, for the "Face" box. */
+  face: (PhotoBox & { score: number }) | null;
+  /** Where the person is, head to feet, for the "Full body" box. */
+  body: PhotoBox | null;
+  /** Carried over from a three-photo draft: the squad step checks it again before it counts. */
+  recheck?: boolean;
 }
 
 export interface Friend {
   id: string;
   name: string;
-  /** Shirt colour on the preview body. */
-  colour: string;
-  photos: Partial<Record<PhotoKind, PhotoMeta>>;
-  /** Small PNG data URL of the pixel preview, made from the face photo. */
-  preview?: string;
+  photo: PhotoMeta | null;
 }
 
 export interface Organiser {
@@ -55,6 +62,21 @@ export interface Organiser {
   photosPermission: boolean;
   startNow: boolean;
 }
+
+/** The answers on the consent screen shown before step 1 (it is a gate, not a step). */
+export interface Consent {
+  /** "Is everyone in your group 18 or over?" Unanswered until the visitor picks one. */
+  adults: "yes" | "no" | null;
+  /** When the consent screen was last completed; null means it still has to be shown. */
+  answeredAt: number | null;
+}
+
+/**
+ * OFF (owner, 2026-09-15): answering Yes only UNLOCKS Party Mode (18+); the customer ticks it themselves. It is a
+ * paid add-on, and EU consumer law (CRD art. 22) does not allow pre-ticked boxes for extra payments. Kept as a
+ * switch so the rule is written down in one place, not so it can be turned back on.
+ */
+export const PRETICK_PARTY_MODE_ON_ADULTS = false;
 
 export interface Draft {
   version: 1;
@@ -72,10 +94,11 @@ export interface Draft {
   /** Steps 4–9, one entry per section (sections/*.ts). */
   sections: SectionChoices;
   organiser: Organiser;
+  consent: Consent;
+  /** When the beach tour bonus was unlocked on this device (perk.ts), or null. Only counts while perkActive. */
+  perkUnlockedAt: number | null;
   updatedAt: number;
 }
-
-export const SHIRT_COLOURS = ["#1a9e95", "#d39a4a", "#3a8fd6", "#e05a9b", "#7a4a26", "#6b8e23", "#8a5cc2", "#d64545"];
 
 export function newDraft(now = Date.now()): Draft {
   return {
@@ -92,6 +115,8 @@ export function newDraft(now = Date.now()): Draft {
     directorsCut: false,
     sections: defaultSections(),
     organiser: { name: "", email: "", birthYear: "", adultsConfirmed: false, photosPermission: false, startNow: false },
+    consent: { adults: null, answeredAt: null },
+    perkUnlockedAt: null,
     updatedAt: now,
   };
 }
@@ -102,17 +127,113 @@ export function reviveDraft(raw: unknown): Draft {
   if (!d || d.version !== 1 || !Array.isArray(d.friends)) return newDraft();
   const base = newDraft(d.updatedAt ?? Date.now());
   const known = new Set(STEPS.map(s => s.id));
-  return {
+  const organiser = { ...base.organiser, ...(d.organiser ?? {}) };
+  const consent = reviveConsent(d.consent, organiser);
+  const revived: Draft = {
     ...base,
     ...d,
     step: known.has(d.step as StepId) ? (d.step as StepId) : "squad",
     edition: EDITION_IDS.includes(d.edition as EditionId) ? (d.edition as EditionId) : null,
-    friends: d.friends.slice(0, MAX_FRIENDS),
+    friends: d.friends.slice(0, MAX_FRIENDS).map(reviveFriend),
     bigGames: (d.bigGames ?? []).filter(id => BIG_GAMES.some(g => g.id === id)),
     minigames: (d.minigames ?? []).filter(id => MINIGAMES.some(g => g.id === id)),
     sections: checkSections(d.sections),
-    organiser: { ...base.organiser, ...(d.organiser ?? {}) },
+    organiser: { ...organiser, adultsConfirmed: consent.adults === "yes" },
+    consent,
+    perkUnlockedAt: typeof d.perkUnlockedAt === "number" && Number.isFinite(d.perkUnlockedAt) ? d.perkUnlockedAt : null,
   };
+  // A "no" answer can never carry Party Mode or a drinking game, whatever the save says.
+  return revived.consent.adults === "no" || !revived.partyMode ? { ...revived, partyMode: false, minigames: revived.minigames.filter(id => selectableMinigames(false).some(m => m.id === id)) } : revived;
+}
+
+const numBox = (b: unknown): PhotoBox | null => {
+  const r = b as Record<string, unknown> | null;
+  if (!r || typeof r !== "object") return null;
+  const n = (v: unknown) => (typeof v === "number" && Number.isFinite(v) ? v : NaN);
+  const box = { x: n(r.x), y: n(r.y), width: n(r.width), height: n(r.height) };
+  return Object.values(box).every(Number.isFinite) && box.width > 0 && box.height > 0 ? box : null;
+};
+
+/**
+ * One friend from a stored draft. Drafts from before the one-photo rule had up to three photos (face, body,
+ * outfit) and none of them was checked for a whole body. The full-body photo is the one most likely to pass, so it
+ * is kept (then the face photo, then the outfit one) and marked for a re-check; the squad step checks it again on
+ * this device and, if it fails, asks for a new photo with the reason. The other two are dropped (see
+ * legacyPhotoKeys, which lets the page delete their blobs).
+ */
+export function reviveFriend(raw: unknown): Friend {
+  const f = (raw ?? {}) as Record<string, unknown>;
+  const id = typeof f.id === "string" ? f.id : "";
+  const name = typeof f.name === "string" ? f.name : "";
+  const photoOf = (p: unknown, recheck: boolean): PhotoMeta | null => {
+    const r = p as Record<string, unknown> | null;
+    if (!r || typeof r.key !== "string" || typeof r.width !== "number" || typeof r.height !== "number") return null;
+    const status = (["ok", "warn", "fail", "unchecked"] as const).includes(r.status as CheckStatus) ? (r.status as CheckStatus) : "unchecked";
+    const face = numBox(r.face);
+    const score = typeof (r.face as Record<string, unknown> | null)?.score === "number" ? Number((r.face as Record<string, unknown>).score) : 0;
+    return recheck
+      ? { key: r.key, width: r.width, height: r.height, status: "unchecked", note: "Checking this photo again…", face: null, body: null, recheck: true }
+      : { key: r.key, width: r.width, height: r.height, status, note: typeof r.note === "string" ? r.note : "", face: face && { ...face, score }, body: numBox(r.body), ...(r.recheck === true ? { recheck: true } : {}) };
+  };
+  if ("photo" in f) return { id, name, photo: photoOf(f.photo, false) };
+  const old = (f.photos ?? {}) as Record<string, unknown>;
+  return { id, name, photo: photoOf(old.body, true) ?? photoOf(old.face, true) ?? photoOf(old.outfit, true) };
+}
+
+/** Blob keys a three-photo draft referred to that the revived draft no longer uses (safe to delete). */
+export function legacyPhotoKeys(raw: unknown, revived: Draft): string[] {
+  const friends = Array.isArray((raw as Partial<Draft> | null)?.friends) ? ((raw as { friends: unknown[] }).friends) : [];
+  const kept = new Set(revived.friends.map(f => f.photo?.key).filter(Boolean));
+  return friends.flatMap(f => Object.values(((f as Record<string, unknown>)?.photos ?? {}) as Record<string, { key?: unknown } | null>))
+    .map(p => p?.key).filter((k): k is string => typeof k === "string" && !kept.has(k));
+}
+
+/**
+ * Drafts saved before the consent screen existed have no answers: the screen is shown to them once. An old
+ * "everyone playing Party Mode is 18+" tick carries over as a Yes, so they only have to confirm it.
+ */
+function reviveConsent(raw: unknown, organiser: Organiser): Consent {
+  const c = (raw ?? {}) as Partial<Consent>;
+  const adults = c.adults === "yes" || c.adults === "no" ? c.adults : organiser.adultsConfirmed ? "yes" : null;
+  const answeredAt = typeof c.answeredAt === "number" && adults !== null ? c.answeredAt : null;
+  return { adults, answeredAt };
+}
+
+/** What stops the consent screen from being done. Empty means the order can start. */
+export function consentProblems(d: Draft): string[] {
+  const out: string[] = [];
+  if (!d.organiser.photosPermission) out.push("Confirm that everyone in the photos has agreed to be in the game.");
+  if (d.consent.adults === null) out.push("Tell us whether everyone in your group is 18 or over.");
+  return out;
+}
+
+/** The consent screen is shown until it has been completed once; after that only when asked for (review). */
+export function needsConsent(d: Draft): boolean {
+  return d.consent.answeredAt === null || consentProblems(d).length > 0;
+}
+
+/** Record one answer on the consent screen. Yes unlocks Party Mode (never ticks it); No switches it off and locks it. */
+export function setAdults(d: Draft, adults: "yes" | "no"): Draft {
+  const was = d.consent.adults;
+  let next = touch(d, { consent: { ...d.consent, adults }, organiser: { ...d.organiser, adultsConfirmed: adults === "yes" } });
+  if (adults === "no") next = setPartyMode(next, false);
+  else if (was !== "yes" && PRETICK_PARTY_MODE_ON_ADULTS) next = setPartyMode(next, true);
+  return next;
+}
+
+export function setPhotosPermission(d: Draft, v: boolean): Draft {
+  return touch(d, { organiser: { ...d.organiser, photosPermission: v } });
+}
+
+/** Finish the consent screen. Refused (draft unchanged) while an answer is missing. */
+export function completeConsent(d: Draft, now = Date.now()): Draft {
+  if (consentProblems(d).length) return d;
+  return touch(d, { consent: { ...d.consent, answeredAt: now } });
+}
+
+/** Party Mode can only be switched on once the group has said everyone is 18 or over. */
+export function partyModeAvailable(d: Draft): boolean {
+  return d.consent.adults !== "no";
 }
 
 /** Replace one section's choices. */
@@ -123,45 +244,89 @@ export function setSection<T>(d: Draft, id: SectionId, value: T): Draft {
 /** What a section is told about the rest of the order. */
 export function sectionContext(d: Draft, currency: SectionContext["currency"] = "DKK", ladder: LadderId = activeLadder()): SectionContext {
   const edition = d.edition ?? "standard";
-  return { edition, includes: LADDERS[ladder].editions[edition].includes, friends: d.friends.map(f => f.name.trim()), partyMode: d.partyMode, currency };
+  return { edition, includes: LADDERS[ladder].editions[edition].includes, friends: squadFriends(d).map(f => f.name.trim()), partyMode: d.partyMode, currency };
 }
 
 const touch = (d: Draft, patch: Partial<Draft>): Draft => ({ ...d, ...patch, updatedAt: Date.now() });
 
 export function addFriend(d: Draft, id: string): Draft {
   if (d.friends.length >= MAX_FRIENDS) return d;
-  const colour = SHIRT_COLOURS[d.friends.length % SHIRT_COLOURS.length];
-  return autoEdition(touch(d, { friends: [...d.friends, { id, name: "", colour, photos: {} }] }));
+  return touch(d, { friends: [...d.friends, { id, name: "", photo: null }] });
 }
 
+/** Removing a slot never takes the squad below MIN_FRIENDS (the last slot can be cleared, not removed). */
 export function removeFriend(d: Draft, id: string): Draft {
-  return autoEdition(touch(d, { friends: d.friends.filter(f => f.id !== id) }));
+  if (d.friends.length <= MIN_FRIENDS) return d;
+  return touch(d, { friends: d.friends.filter(f => f.id !== id) });
 }
 
 export function updateFriend(d: Draft, id: string, patch: Partial<Friend>): Draft {
   return touch(d, { friends: d.friends.map(f => (f.id === id ? { ...f, ...patch } : f)) });
 }
 
-export function setPhoto(d: Draft, friendId: string, kind: PhotoKind, meta: PhotoMeta | null): Draft {
-  return touch(d, {
-    friends: d.friends.map(f => {
-      if (f.id !== friendId) return f;
-      const photos = { ...f.photos };
-      if (meta) photos[kind] = meta;
-      else delete photos[kind];
-      return { ...f, photos, preview: kind === "face" && !meta ? undefined : f.preview };
-    }),
-  });
+/** Set or clear a friend's one photo. */
+export function setPhoto(d: Draft, friendId: string, meta: PhotoMeta | null): Draft {
+  return touch(d, { friends: d.friends.map(f => (f.id === friendId ? { ...f, photo: meta } : f)) });
 }
 
-/** Until the visitor picks an edition, it follows the squad size (plan 07 Q16). */
-function autoEdition(d: Draft, ladder: LadderId = activeLadder()): Draft {
-  if (d.editionChosen) return d;
-  return { ...d, edition: d.friends.length ? smallestEditionFor(d.friends.length, ladder) : null };
+// ---------- squad slots (owner, 15 Sep 2026) ----------
+// The squad step opens with one slot per character the edition includes (Deluxe: 6), so you "have" what you
+// buy. The edition drives the slot count, not the other way round: picking an edition pads or trims EMPTY
+// slots, and adding past the allowance is an extra character at the add-on price (prices.ts), never a
+// silent change of edition.
+// EVERY SLOT MUST BE FILLED (owner, 15 Sep 2026, replacing "an empty slot is an open seat, not charged"): an
+// empty slot blocks step 1 and the send, and it counts in the price, so the total never changes by surprise
+// when the last friend is typed in. The way out is to fill it, remove it, or pick a smaller edition.
+// The minimum is ONE character, not the edition's count: a Deluxe order with four friends is allowed (the
+// edition price stays), and the squad step suggests the smaller edition when that would cost less
+// (prices.downgradeHint) rather than forcing it. Standard below 2 has nothing smaller to suggest.
+
+/** The fewest slots a squad can be taken down to. */
+export const MIN_FRIENDS = 1;
+
+/** The edition a fresh order opens on (the recommended, gold one). */
+export const DEFAULT_EDITION: EditionId = "deluxe";
+
+const slotId = () => (globalThis.crypto?.randomUUID?.() ?? `${Date.now()}-${Math.random()}`).replace(/[^a-z0-9-]/gi, "").slice(0, 36);
+
+/** A slot nobody has started: no name, no photo. It blocks the order until it is filled or removed. */
+export const isEmptySlot = (f: Friend): boolean => !f.name.trim() && !f.photo;
+/** Older name for isEmptySlot, kept for callers that still use it. */
+export const isOpenSlot = isEmptySlot;
+
+/** The friends someone has started (name or photo), for name lists and previews. Empty slots are left out. */
+export const squadFriends = (d: Draft): Friend[] => d.friends.filter(f => !isEmptySlot(f));
+
+/** Every slot in the order, empty or not: what is charged and what has to be filled. */
+export const squadSize = (d: Draft): number => d.friends.length;
+
+/** 1-based numbers of the empty slots. */
+export const emptySlots = (d: Draft): number[] => d.friends.flatMap((f, i) => (isEmptySlot(f) ? [i + 1] : []));
+
+/**
+ * Pad with empty slots up to the edition's characters, and drop empty slots beyond it (the last ones first,
+ * wherever they sit). Started friends are never dropped, so a squad bigger than the edition stays as extras.
+ */
+export function fitSlots(d: Draft, makeId: () => string = slotId, ladder: LadderId = activeLadder()): Draft {
+  const want = Math.min(MAX_FRIENDS, LADDERS[ladder].editions[d.edition ?? DEFAULT_EDITION].includes.characters);
+  let next = d;
+  while (next.friends.length < want) next = addFriend(next, makeId());
+  while (next.friends.length > want) {
+    const last = next.friends.map(isEmptySlot).lastIndexOf(true);
+    if (last < 0) break;
+    next = { ...next, friends: next.friends.filter((_, i) => i !== last) };
+  }
+  return next;
 }
 
-export function chooseEdition(d: Draft, edition: EditionId): Draft {
-  return touch(d, { edition, editionChosen: true });
+/** A draft with no squad yet opens on the default edition with its slots ready (also normalises old empty drafts). */
+export function prefillSquad(d: Draft, makeId: () => string = slotId): Draft {
+  if (d.friends.length) return d;
+  return fitSlots({ ...d, edition: d.edition ?? DEFAULT_EDITION }, makeId);
+}
+
+export function chooseEdition(d: Draft, edition: EditionId, makeId: () => string = slotId): Draft {
+  return fitSlots(touch(d, { edition, editionChosen: true }), makeId);
 }
 
 export function toggleIn(list: string[], id: string): string[] {
@@ -169,9 +334,17 @@ export function toggleIn(list: string[], id: string): string[] {
 }
 
 export function setPartyMode(d: Draft, on: boolean): Draft {
-  // Turning Party Mode off takes the drinking games back out rather than charging for games that vanish.
-  const allowed = new Set(visibleMinigames(on).map(m => m.id));
+  if (on && !partyModeAvailable(d)) return d;
+  // Turning Party Mode off takes the drinking games back out rather than charging for games that are locked.
+  const allowed = new Set(selectableMinigames(on).map(m => m.id));
   return touch(d, { partyMode: on, minigames: d.minigames.filter(id => allowed.has(id)) });
+}
+
+/** Pick or drop a minigame. A drinking game is locked (no change) until Party Mode is on. */
+export function toggleMinigame(d: Draft, id: string): Draft {
+  const m = MINIGAMES.find(g => g.id === id);
+  if (!m || (minigameLocked(m, d.partyMode) && !d.minigames.includes(id))) return d;
+  return touch(d, { minigames: toggleIn(d.minigames, id) });
 }
 
 /** The counts prices.ts needs. Party Mode, Flex Pass, Director's Cut and a custom game are add-ons. */
@@ -185,12 +358,20 @@ export function toPicks(d: Draft): OrderPicks {
   for (const [id, n] of Object.entries(fromSections)) addons[id as AddonId] = (addons[id as AddonId] ?? 0) + n;
   return {
     edition: d.edition ?? "standard",
-    friends: Math.max(1, d.friends.length),
+    friends: Math.max(MIN_FRIENDS, squadSize(d)),
     bigGames: d.bigGames.length,
     minigames: d.minigames.length,
     addons,
     rush: Boolean(rush),
+    ...(perkActive(d.perkUnlockedAt) ? { free: perkFree(perkKind(d.edition ?? "standard", d.consent.adults)) } : {}),
   };
+}
+
+/** Carry a bonus unlocked on the beach into the order. Keeps the earliest unlock, so it can't be re-extended. */
+export function withPerk(d: Draft, unlockedAt: number | null): Draft {
+  if (unlockedAt === null || !perkActive(unlockedAt)) return d;
+  if (d.perkUnlockedAt !== null && perkActive(d.perkUnlockedAt) && d.perkUnlockedAt <= unlockedAt) return d;
+  return { ...d, perkUnlockedAt: unlockedAt };
 }
 
 export interface StepProblem {
@@ -207,13 +388,15 @@ export function problems(d: Draft, step: StepId, thisYear = new Date().getFullYe
   if (step === "squad") {
     if (!d.friends.length) say("Add at least one friend.");
     d.friends.forEach((f, i) => {
+      // Every slot the order has must be filled: an empty one is either a friend still to add or a slot to remove.
+      // The last slot can't be removed (MIN_FRIENDS), so it isn't offered as a way out there.
+      if (isEmptySlot(f)) return say(d.friends.length > MIN_FRIENDS ? `Slot ${i + 1} is empty — add a friend or remove the slot.` : `Slot ${i + 1} is empty — add a friend.`);
       const who = f.name.trim() || `Friend ${i + 1}`;
       if (!f.name.trim()) say(`Friend ${i + 1} needs a name.`);
-      for (const { kind, label } of PHOTO_KINDS) {
-        const p = f.photos[kind];
-        if (!p) say(`${who}: add ${/^[aeiou]/i.test(label) ? "an" : "a"} ${label.toLowerCase()} photo.`);
-        else if (p.status === "fail") say(`${who}: the ${label.toLowerCase()} photo won't work. ${p.note}`);
-      }
+      const p = f.photo;
+      if (!p) say(`${who}: add a photo (one clear face, head to feet).`);
+      else if (p.recheck) say(`${who}: we're still checking the photo.`);
+      else if (p.status === "fail") say(`${who}: the photo won't work. ${p.note}`);
     });
   }
   if (step === "edition" && !d.edition) say("Pick an edition.");
@@ -234,10 +417,23 @@ export function problems(d: Draft, step: StepId, thisYear = new Date().getFullYe
       if (!/^\d{4}$/.test(o.birthYear) || thisYear - year < 18 || year < thisYear - 110) say("Party Mode is 18+: add your birth year.");
       if (!o.adultsConfirmed) say("Confirm that everyone playing Party Mode is 18 or over.");
     }
+    if (d.consent.adults === null) say("Tell us whether everyone in your group is 18 or over.");
     if (!o.photosPermission) say("Confirm that everyone in the photos agreed to be in the game.");
     if (!o.startNow) say("Tick that we can start work straight away.");
   }
   return out;
+}
+
+/**
+ * Steps that can be left unfinished while building (plan 18 §3, owner 15 Sep 2026): the squad's photos are the
+ * hardest part, so they come last. Their problems still show on the step and still block Review, which re-checks
+ * every step before anything can be paid or sent, so an order can never go without them.
+ */
+export const DEFERRED_STEPS: ReadonlySet<StepId> = new Set<StepId>(["squad"]);
+
+/** What stops Next (and the stepper) moving past this step. Empty for a deferred step. */
+export function blockingProblems(d: Draft, step: StepId): StepProblem[] {
+  return DEFERRED_STEPS.has(step) ? [] : problems(d, step);
 }
 
 export function stepDone(d: Draft, step: StepId): boolean {
@@ -248,7 +444,7 @@ export function stepDone(d: Draft, step: StepId): boolean {
 export function allowanceUse(d: Draft, ladder: LadderId = activeLadder()) {
   const inc = LADDERS[ladder].editions[d.edition ?? "standard"].includes;
   return {
-    friends: { used: d.friends.length, included: inc.characters },
+    friends: { used: squadSize(d), included: inc.characters },
     bigGames: { used: d.bigGames.length, included: inc.bigGames },
     minigames: { used: d.minigames.length, included: inc.minigames },
   };

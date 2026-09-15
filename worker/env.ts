@@ -33,6 +33,8 @@ export interface Env {
   ORDERS?: R2Bucket;
   /** Founder counter and idempotency markers. */
   SHOP?: KVNamespace;
+  /** Anonymous logo-vote records. Keep this separate from customer orders. */
+  VOTES?: R2Bucket;
   STRIPE_SECRET_KEY?: string;
   STRIPE_WEBHOOK_SECRET?: string;
   RESEND_API_KEY?: string;

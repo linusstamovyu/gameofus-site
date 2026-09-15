@@ -1,0 +1,5 @@
+/* Section-step looping previews (./loops.ts onto ../preview/loop). The box keeps the scene's aspect; the shared
+   player's host fills it. Inside a card it takes the place of the .art span and so takes whatever size the card
+   gives its art (the shared .art rule fixes a height), and the canvas crops to that box rather than stretching. */
+.loop-box{position:relative;display:block;width:100%;overflow:hidden;background:var(--night-2)}
+.loop-box .loop-preview canvas{object-fit:cover}

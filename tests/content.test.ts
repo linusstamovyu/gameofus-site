@@ -31,7 +31,8 @@ describe("assets", () => {
   for (const m of html.matchAll(/assets\/([\w.-]+\.(?:png|jpg|webp))/g)) referenced.add(m[1]);
 
   it("every file the site names has been built (run npm run assets)", () => {
-    for (const f of referenced) expect(existsSync(resolve(assets, f)), f).toBe(true);
+    // A path with a folder in it is relative to public/ (a stop borrowing the order page's art).
+    for (const f of referenced) expect(existsSync(f.includes("/") ? resolve(root, "public", f) : resolve(assets, f)), f).toBe(true);
   });
 
   it("first load stays inside the 3 MB budget", () => {

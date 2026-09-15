@@ -1,0 +1,19 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Game Of Us — 40 generated lockups</title>
+  <style>
+    :root{--ink:#201a3b;--paper:#fffaf1;--pink:#f72585;--lime:#c8f04b;--blue:#3a86ff;--orange:#ff7a00}*{box-sizing:border-box}body{margin:0;background:#eeeaf4;color:var(--ink);font-family:Arial,Helvetica,sans-serif}main{width:min(1640px,calc(100% - 48px));margin:38px auto 80px}header{display:flex;justify-content:space-between;gap:30px;align-items:end;border-bottom:2px solid var(--ink);padding-bottom:20px}h1{font-size:clamp(36px,5vw,64px);letter-spacing:-.075em;line-height:.85;margin:0}header p{max-width:470px;margin:0;font-size:15px;line-height:1.45;color:#514b65}.meta{display:flex;justify-content:space-between;border-bottom:1px solid var(--ink);padding:10px 0;font-size:11px;font-weight:800;letter-spacing:.12em;text-transform:uppercase}h2{margin:42px 0 14px;font-size:23px;letter-spacing:-.04em}.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}.card{background:var(--paper);border:1px solid #d9d1df;border-radius:12px;overflow:hidden}.card header{display:flex;align-items:center;border:0;padding:9px 12px;background:#fff;font-size:11px;font-weight:800;letter-spacing:.1em}.card img{display:block;width:100%;aspect-ratio:16/9;object-fit:contain;background:linear-gradient(135deg,#fff9ef,#f4f0fa);padding:8px}.card a{display:block;color:inherit;text-decoration:none}.card:hover{box-shadow:0 8px 25px #201a3b24;border-color:var(--ink)}footer{margin-top:32px;font-size:12px;color:#514b65}@media(max-width:700px){main{width:min(100% - 28px,700px);margin-top:25px}header{display:block}header p{margin-top:16px}.grid{grid-template-columns:1fr}.meta{font-size:9px;gap:9px}}
+  </style>
+</head>
+<body><main>
+  <header><h1>Game Of Us<br>40 generated lockups</h1><p>Every image is a newly generated logo composition using the selected universe-orbit or creative-collision symbol at left, paired with a matching wordmark at right.</p></header>
+  <div class="meta"><span>40 real image generations</span><span>10 caps + 10 title case per mark</span><span>15 Sep 2026</span></div>
+  <section id="board"></section>
+  <footer>Click any option to open its full-resolution PNG.</footer>
+</main><script>
+const groups=[['Universe orbit · ALL CAPS','universe-caps'],['Universe orbit · Title case','universe-title'],['Creative collision · ALL CAPS','collision-caps'],['Creative collision · Title case','collision-title']];
+document.querySelector('#board').innerHTML=groups.map(([title,dir])=>`<h2>${title}</h2><div class="grid">${Array.from({length:10},(_,i)=>{const n=String(i+1).padStart(2,'0');const src='generated-lockups/'+dir+'/'+n+'.png';return `<article class="card"><a href="${src}"><header>Option ${n}</header><img src="${src}" alt="${title}, option ${n}"></a></article>`}).join('')}</div>`).join('');
+</script></body></html>

@@ -12,7 +12,7 @@
 @media (max-width:1100px){.stepper .l{display:none}.stepper li.on .l{display:inline}.stepper li.on{grid-column:span 3}.stepper button{justify-content:center}}
 .stepper button{width:100%;display:flex;align-items:center;gap:8px;font:inherit;font-size:14px;background:#efe3c6;color:var(--ink);border:2px solid transparent;border-radius:8px;padding:8px 10px;cursor:pointer;text-align:left}
 .stepper button:disabled{opacity:.5;cursor:default}
-.stepper .n{flex:none;width:24px;height:24px;border-radius:50%;display:grid;place-items:center;font-family:var(--pixel);font-size:13px;background:var(--paper);border:2px solid var(--ink)}
+.stepper .n{flex:none;width:24px;height:24px;border-radius:50%;display:grid;place-items:center;font-family:var(--num);font-weight:700;font-size:13px;background:var(--paper);border:2px solid var(--ink)}
 .stepper li.on button{background:var(--paper);border-color:var(--ink);font-weight:700}
 .stepper li.on .n{background:var(--teal);color:#fff;border-color:var(--teal-dark)}
 .stepper li.done .n{background:var(--ink);color:var(--paper)}
@@ -39,30 +39,30 @@
 
 /* squad */
 .friends{display:flex;flex-direction:column;gap:14px}
-.friend{display:grid;grid-template-columns:140px 1fr;gap:18px;border:2px solid #e0cfa8;border-radius:10px;padding:14px;background:#fffaf0}
-.preview{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;background:var(--night-2);border-radius:8px;min-height:190px;padding:10px;text-align:center}
-.preview img{width:96px;height:144px;image-rendering:pixelated}
-.preview-label{font-size:11px;color:#c9d6e2}
-.preview-empty{font-size:13px;color:#c9d6e2}
+.friend{border:2px solid #e0cfa8;border-radius:10px;padding:14px;background:#fffaf0}
 .name-row{display:flex;align-items:flex-end;gap:12px}
 .name-row .field{flex:1;margin:0}
-.colours{display:flex;gap:6px;margin:10px 0 12px;flex-wrap:wrap}
-.swatch{width:26px;height:26px;border-radius:50%;border:3px solid #fff;box-shadow:0 0 0 2px #cdb98f;cursor:pointer;padding:0}
-.swatch.on{box-shadow:0 0 0 3px var(--ink)}
-.photos{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
-.photo{display:grid;grid-template-columns:56px 1fr;grid-template-rows:auto auto;gap:4px 10px;align-items:start;border:2px dashed #d6c39b;border-radius:8px;padding:8px}
-.photo .thumb{grid-row:span 3;width:56px;height:70px;border-radius:5px;background:#efe3c6 center/cover no-repeat}
-.photo.empty .thumb{background-image:linear-gradient(135deg,#efe3c6 25%,#e7d6b1 25%,#e7d6b1 50%,#efe3c6 50%,#efe3c6 75%,#e7d6b1 75%);background-size:14px 14px}
-.photo-text{display:flex;flex-direction:column;font-size:13px;line-height:1.35}
-.photo-text .note{color:var(--muted)}
-.photo .btn,.photo .link-btn{justify-self:start}
-.photo.has{border-style:solid}
-.photo.ok{border-color:var(--teal)}
-.photo.warn{border-color:var(--gold)}
-.photo.warn .note{color:#8a5a12}
-.photo.fail{border-color:#c0392b}
-.photo.fail .note{color:#b03a2e}
-.photo.busy{opacity:.7}
+/* the one photo per friend: a drop zone, then "Full body" and "Face" cut from it (owner, 15 Sep 2026) */
+.shot{margin-top:12px;border:2px dashed #d6c39b;border-radius:8px;padding:10px}
+.shot.drag{border-color:var(--teal);background:#eefaf7}
+.shot.has{border-style:solid}
+.shot.ok,.shot.unchecked{border-color:var(--teal)}
+.shot.warn{border-color:var(--gold)}
+.shot.fail{border-color:#c0392b}
+.shot.busy{opacity:.7}
+.shot-drop{display:flex;flex-direction:column;gap:2px;padding:14px 10px;border-radius:6px;cursor:pointer;background:repeating-linear-gradient(135deg,#f6ecd6 0 10px,#efe3c6 10px 20px);font-size:13px;color:var(--muted)}
+.shot-drop b{font-size:15px;color:var(--ink)}
+.shot-boxes{display:flex;gap:10px;flex-wrap:wrap}
+.shot-box{position:relative;display:block;cursor:pointer;margin:0;border-radius:6px;overflow:hidden;background:var(--night-2)}
+.shot-box canvas{display:block;height:180px;width:auto}
+.shot-box:hover{outline:3px solid var(--teal)}
+.shot-box-label{position:absolute;left:6px;top:6px;font-size:11px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;background:rgba(32,36,44,.82);color:var(--paper);padding:2px 6px;border-radius:3px}
+.shot-box-empty{position:absolute;inset:0;display:grid;place-items:center;font-size:13px;color:#c9d6e2}
+.shot-note{margin:8px 0 6px;font-size:13px;line-height:1.35;color:var(--muted)}
+.shot-note:empty{display:none}
+.shot.warn .shot-note{color:#8a5a12}
+.shot.fail .shot-note{color:#b03a2e}
+.shot-actions{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:8px}
 .add-row{display:flex;align-items:center;gap:14px;margin-top:16px;flex-wrap:wrap}
 .friend-count{font-size:14px;color:var(--muted)}
 
@@ -75,8 +75,8 @@
 .ed-head{display:flex;justify-content:space-between;align-items:center}
 .ed-head b{font-family:var(--pixel);font-size:22px}
 .edition .tag{font-family:var(--pixel);font-size:10px;letter-spacing:.12em;text-transform:uppercase;background:var(--ink);color:var(--paper);padding:2px 6px;border-radius:3px}
-.ed-price strong{font-family:var(--pixel);font-size:30px}
-.ed-price s,.bar-main s,.bill s{color:var(--muted);font-size:.85em}
+.ed-price strong{font-family:var(--num);font-size:30px;font-variant-numeric:tabular-nums}
+.ed-price s,.bar-main s,.bill s{font-family:var(--num);color:var(--muted);font-size:.85em}
 .ed-total{display:block;font-size:14px}
 .ed-fit{font-size:13px;font-weight:700;color:var(--teal-dark)}
 .ed-fit.over{color:#8a5a12}
@@ -110,7 +110,7 @@
 .review-squad h2,.review-list h2,.bill h2,.organiser h2{font-size:22px;margin:22px 0 10px}
 .select-row{display:flex;gap:10px;flex-wrap:wrap}
 .select-tile{margin:0;width:92px;background:var(--night-2);border-radius:8px;padding:6px;text-align:center;color:var(--paper)}
-.select-tile img{width:64px;height:96px;image-rendering:pixelated;display:block;margin:0 auto}
+.select-tile .select-face{width:80px;height:80px;border-radius:6px;display:block;margin:0 auto}
 .select-blank{display:grid;place-items:center;height:96px;font-family:var(--pixel);font-size:30px}
 .select-tile figcaption{font-size:12px;margin-top:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .review-list p{margin:4px 0;font-size:15px}
@@ -126,20 +126,19 @@
 .problems{margin:0 0 14px;padding:10px 14px 10px 30px;background:#fbe3df;border-radius:8px;color:#8e2b20;font-size:14px}
 .methods{font-size:13px;color:var(--muted);margin:8px 0 0}
 .send-status{font-weight:700;min-height:1.5em}
-.order-ref{font-family:var(--pixel);margin:16px 0}
+.order-ref{font-family:var(--num);margin:16px 0}
 
 /* sticky total bar */
 .order-bar{position:fixed;left:0;right:0;bottom:0;z-index:30;background:var(--wood);border-top:4px solid var(--wood-dark);padding:10px 0 calc(10px + env(safe-area-inset-bottom))}
 .order-bar .wrap{max-width:1040px;display:flex;align-items:center;gap:12px}
 .bar-total{flex:1;min-width:0;display:flex;flex-direction:column;color:var(--paper);text-align:center}
-.bar-main strong{font-family:var(--pixel);font-size:22px}
+.bar-main strong{font-family:var(--num);font-size:22px;font-variant-numeric:tabular-nums}
 .bar-label{font-size:13px;color:#f1cf9a}
 .order-page footer{padding-bottom:90px}
 
 @media (max-width:860px){
   .editions,.game-grid{grid-template-columns:1fr 1fr}
   .mini-grid{grid-template-columns:repeat(3,1fr)}
-  .photos{grid-template-columns:1fr}
 }
 @media (max-width:620px){
   .order-title{display:none}
@@ -148,11 +147,82 @@
   .step-head h1{font-size:27px}
   .stepper .l{display:none}
   .stepper button{justify-content:center}
-  .friend{grid-template-columns:1fr}
-  .preview{min-height:0;flex-direction:row}
-  .preview img{width:64px;height:96px}
+  .shot-box canvas{height:150px}
   .editions,.game-grid{grid-template-columns:1fr}
   .mini-grid{grid-template-columns:1fr 1fr}
   .btn.big{width:100%;justify-content:center}
   .order-bar .btn{padding:10px 12px}
 }
+
+/* ===== edition tiers + squad slots (owner, 15 Sep 2026) =====
+   Editions dressed as card rarities: Standard SILVER, Deluxe GOLD (recommended, most attractive), Ultimate a dark
+   holographic SPECIAL. Each tier sets the same custom properties; cards, pills, chips and hints read them.
+   Text on every tier is checked for contrast (dark ink on silver/gold, near-white on the special). */
+.tier-standard{--t-bg:linear-gradient(155deg,#fbfcfd 0%,#dfe3e8 42%,#f1f3f6 58%,#c5ccd4 100%);--t-edge:#8e97a3;--t-ink:#20242c;--t-soft:#4a525d;--t-gem:linear-gradient(135deg,#ffffff,#9aa3ae);--t-glow:rgba(120,130,145,.35)}
+.tier-deluxe{--t-bg:linear-gradient(155deg,#fff6cf 0%,#f4d277 38%,#fde6a3 56%,#dcaa42 100%);--t-edge:#a8761c;--t-ink:#2a1d04;--t-soft:#5a3f08;--t-gem:linear-gradient(135deg,#fff3b0,#c78a14);--t-glow:rgba(214,160,40,.55)}
+.tier-ultimate{--t-bg:linear-gradient(155deg,#35195a 0%,#170c2b 55%,#2d1145 100%);--t-edge:#b98cff;--t-ink:#f5eeff;--t-soft:#d9c8f5;--t-gem:linear-gradient(135deg,#ff8bd8,#7af0ff 50%,#ffe27a);--t-glow:rgba(160,110,255,.5)}
+.tier-gem{display:inline-block;flex:none;width:10px;height:10px;transform:rotate(45deg);background:var(--t-gem);border:1px solid var(--t-edge);margin-right:7px;vertical-align:1px}
+
+/* edition cards */
+.edition[class*="tier-"]{position:relative;overflow:hidden;background:var(--t-bg);color:var(--t-ink);border:3px solid var(--t-edge);box-shadow:0 4px 0 rgba(0,0,0,.12)}
+.edition.tier-ultimate{border-color:transparent;background:var(--t-bg) padding-box,linear-gradient(120deg,#ff8bd8,#7af0ff,#b98cff,#ffe27a,#ff8bd8) border-box}
+.edition.tier-ultimate::before{content:"";position:absolute;inset:0;pointer-events:none;background:linear-gradient(115deg,transparent 30%,rgba(122,240,255,.12) 45%,rgba(255,139,216,.12) 55%,transparent 70%)}
+.edition.tier-deluxe::before{content:"";position:absolute;inset:0;pointer-events:none;background:linear-gradient(115deg,transparent 35%,rgba(255,255,255,.45) 48%,transparent 60%)}
+.edition[class*="tier-"] > *{position:relative}
+.edition.tier-deluxe{box-shadow:0 0 0 1px #f7dc8c,0 8px 22px var(--t-glow)}
+@media (min-width:861px){.edition.tier-deluxe{transform:translateY(-6px)}}
+.edition[class*="tier-"].on{box-shadow:0 0 0 4px var(--teal),0 8px 22px var(--t-glow)}
+.ed-title{display:inline-flex;align-items:center}
+.edition[class*="tier-"] .ed-head b{color:var(--t-ink)}
+.edition[class*="tier-"] .ed-total,.edition[class*="tier-"] ul{color:var(--t-ink)}
+.edition[class*="tier-"] .ed-price s{color:var(--t-soft)}
+.edition[class*="tier-"] .ed-fit{color:var(--t-soft)}
+.edition.tier-ultimate .ed-fit{color:#9ff0e6}
+.edition.tier-ultimate .ed-fit.over{color:#ffd08a}
+.edition.tier-deluxe .ed-fit.over,.edition.tier-standard .ed-fit.over{color:#7a2e00}
+.edition.tier-deluxe .tag{background:#2a1d04;color:#ffe29a}
+.edition.tier-ultimate .tag{background:linear-gradient(90deg,#ff8bd8,#7af0ff,#ffe27a);color:#170c2b}
+.edition.tier-deluxe .ed-pick.ghost{background:#2a1d04;color:#ffe29a;box-shadow:inset 0 -4px 0 #000}
+.edition.tier-ultimate .ed-pick.ghost{background:rgba(255,255,255,.12);color:#f5eeff;box-shadow:inset 0 -4px 0 rgba(0,0,0,.4)}
+.edition.tier-standard .ed-pick.ghost{background:#fff;box-shadow:inset 0 -4px 0 #aeb5be}
+
+/* the pill: sticky bar, squad step, review */
+.tier-pill{display:inline-flex;align-items:center;font-family:var(--pixel);font-size:13px;line-height:1;white-space:nowrap;padding:4px 9px 4px 8px;border-radius:999px;background:var(--t-bg);color:var(--t-ink);border:2px solid var(--t-edge);vertical-align:middle}
+.tier-pill .tier-gem{width:8px;height:8px;margin-right:6px}
+.bar-main .tier-pill{font-size:12px;vertical-align:4px}
+.review-edition .tier-pill{font-size:20px;padding:6px 14px 6px 12px}
+.review-edition .tier-pill .tier-gem{width:12px;height:12px;margin-right:9px}
+
+/* squad step: edition chips */
+.squad-tiers{display:flex;align-items:center;gap:10px 14px;flex-wrap:wrap;margin:0 0 14px}
+.squad-tiers-label{font-family:var(--pixel);font-size:14px;color:var(--muted)}
+.tier-chips{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;flex:1;min-width:260px;max-width:520px}
+.tier-chip{display:flex;flex-wrap:wrap;align-items:center;gap:0 2px;font:inherit;text-align:left;cursor:pointer;background:var(--t-bg);color:var(--t-ink);border:2px solid var(--t-edge);border-radius:8px;padding:7px 10px;opacity:.78}
+.tier-chip b{font-family:var(--pixel);font-size:15px}
+.tier-chip small{flex-basis:100%;font-size:12px;color:var(--t-soft)}
+.tier-chip.tier-ultimate{border-color:transparent;background:var(--t-bg) padding-box,linear-gradient(120deg,#ff8bd8,#7af0ff,#b98cff,#ffe27a) border-box}
+.tier-chip:hover{opacity:1}
+.tier-chip.on{opacity:1;box-shadow:0 0 0 3px var(--teal),0 4px 12px var(--t-glow)}
+
+/* squad step: open slots and the discreet "+" tile */
+.friend.open{border-style:dashed;background:#fffdf7}
+.add-slot{display:flex;flex-direction:column;align-items:flex-start;gap:2px;width:100%;font:inherit;text-align:left;color:var(--muted);background:transparent;border:2px dashed #d6c39b;border-radius:10px;padding:10px 14px;cursor:pointer}
+.add-slot:hover:not(:disabled){border-color:var(--teal);color:var(--teal-dark)}
+.add-slot:disabled{cursor:default;opacity:.6}
+.add-slot-text{font-size:15px;font-weight:700}
+.add-slot-plus{font-family:var(--pixel);font-size:18px}
+.add-slot small{font-size:12.5px}
+.tier-upgrade{background:var(--t-bg);color:var(--t-ink);border-color:var(--t-edge);margin:14px 0 0}
+@media (max-width:620px){.tier-chips{min-width:0;flex-basis:100%}.tier-chip{padding:6px 7px}.tier-chip b{font-size:13px;white-space:nowrap}.tier-chip .tier-gem{display:none}.tier-chip small{font-size:11px}}
+@media (prefers-reduced-motion:no-preference){.edition,.tier-chip{transition:transform .15s,box-shadow .15s,opacity .15s}}
+/* ===== end edition tiers + squad slots ===== */
+
+/* Plan 18 §3: the way out of the squad step to Explore. */
+.squad-skip{margin:-4px 0 14px;font-size:14px;color:var(--muted)}
+.squad-skip .link-btn{color:var(--teal-dark);font-weight:700}
+.bill .bonus-row td{color:#9a5b12;font-weight:700}
+.perk-note{display:flex;flex-wrap:wrap;align-items:center;gap:6px 12px;margin:0 0 14px;padding:10px 12px;border:2px solid var(--gold);background:#fff4dc;border-radius:8px;font-size:14px}
+.perk-note b{font-family:var(--pixel)}
+.perk-items{display:flex;flex-wrap:wrap;gap:8px;margin-top:6px}
+.perk-items figure{margin:0;display:flex;flex-direction:column;align-items:center;width:64px;font-size:11px;text-align:center;line-height:1.2}
+.perk-items img{width:44px;height:44px;image-rendering:pixelated}

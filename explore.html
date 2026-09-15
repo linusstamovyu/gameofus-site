@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Explore everything in your game · Game of Us</title>
+  <meta name="description" content="Browse every game, vehicle, place, phone app and extra that can go in your group's retro RPG. No photos needed to look around.">
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="Explore everything in your game · Game of Us">
+  <meta property="og:description" content="Kart races, a fighting tournament, rental scooters, your own bar as a sign. See what can go in your group's game.">
+  <meta property="og:image" content="assets/share.jpg">
+  <meta name="theme-color" content="#7a4a26">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect x='3' y='3' width='10' height='10' transform='rotate(45 8 8)' fill='%231a9e95' stroke='%23fdf6e3' stroke-width='2'/%3E%3C/svg%3E">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Pixelify+Sans:wght@500;700&family=Chakra+Petch:wght@600;700&display=swap">
+  <script type="module" src="/src/explore/main.ts"></script>
+</head>
+<body class="explore-page">
+<nav class="nav" aria-label="Main">
+  <div class="wrap">
+    <a class="logo" href="./"><i aria-hidden="true"></i>Game of Us</a>
+    <span class="draft-flag" data-draft>Draft</span>
+    <ul>
+      <li><a href="./#features">The game</a></li>
+      <li class="keep"><a href="explore.html" aria-current="page">Explore</a></li>
+      <li><a href="./#how">How it works</a></li>
+      <li><a href="./#prices">Prices</a></li>
+    </ul>
+    <span data-country-slot></span>
+    <a class="btn" href="order.html" data-track="hero_cta" data-track-where="explore_nav">Start your order</a>
+  </div>
+</nav>
+
+<header class="ex-hero">
+  <div class="wrap">
+    <p class="eyebrow">Explore</p>
+    <h1>Everything that can go in your game</h1>
+    <p class="lede">No photos needed to look around. Tap <span class="ex-heart-inline" aria-hidden="true">♥</span> on anything you like, and it's already picked when you start building.</p>
+    <div class="row">
+      <a class="btn ghost" href="./#top" data-track="explore_beach">▶ Or walk the beach tour</a>
+    </div>
+  </div>
+</header>
+
+<nav class="ex-tabs" id="tabs" aria-label="What's in the game"><div class="wrap" id="tabList"></div></nav>
+
+<main class="ex-main" id="catalog"></main>
+
+<section class="cta">
+  <div class="wrap">
+    <div><h2>Seen enough? Put your group in it</h2><p>Pick an edition, add your friends' photos last. It saves on this device as you go.</p></div>
+    <a class="btn dark" href="order.html?from=explore" data-track="explore_to_builder" data-track-where="footer">Start building ▶</a>
+  </div>
+</section>
+
+<div class="ex-bar" id="favBar" hidden>
+  <div class="wrap">
+    <span id="favCount"></span>
+    <span class="ex-bar-actions">
+      <button class="btn ghost" id="listOpen" type="button" hidden>✉ Email me my list</button>
+      <a class="btn" id="favGo" href="order.html?from=explore">Start building ▶</a>
+    </span>
+  </div>
+  <form class="ex-list wrap" id="listForm" hidden novalidate>
+    <label class="ex-list-field"><span>Send the list to</span><input type="email" id="listEmail" autocomplete="email" placeholder="name@example.com" required></label>
+    <label class="ex-list-check"><input type="checkbox" id="listUpdates"> <span>Also tell me when founder spots are running out and about Christmas deadlines</span></label>
+    <button class="btn" type="submit" id="listSend">Send ▶</button>
+    <p class="ex-list-note" id="listNote">One email with your list and a link that brings it back. We don't keep your address unless you tick the box. <a href="privacy.html">Privacy</a></p>
+  </form>
+</div>
+<div class="ex-toast" id="exToast" role="status" hidden></div>
+
+<footer><div class="wrap">
+  <span>© <span id="year">2026</span> Game of Us · custom retro RPGs starring your friends · Copenhagen</span>
+  <span class="legal"><a href="privacy.html">Privacy</a> · <a href="terms.html">Terms of sale</a><span data-draft> · Draft design, not a live shop</span></span>
+</div></footer>
+</body>
+</html>

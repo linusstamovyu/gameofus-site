@@ -1,6 +1,6 @@
 // Talks to the Worker (worker/index.ts). Every call fails soft into a sentence the page can show.
 import type { Draft } from "./draft";
-import { PHOTO_KINDS } from "./draft";
+import { squadFriends } from "./draft";
 import type { CreatedOrder, OrderPayload, SubmitResult } from "./payload";
 import type { Currency } from "./prices";
 import { sectionUploads } from "./sections";
@@ -43,12 +43,19 @@ export async function shopStatus(): Promise<ShopStatus> {
   }
 }
 
+const crop = (b: { x: number; y: number; width: number; height: number } | null) =>
+  b && { x: Math.round(b.x), y: Math.round(b.y), width: Math.round(b.width), height: Math.round(b.height) };
+
 export function toPayload(d: Draft, currency: Currency, country: string, shownTotal: number): OrderPayload {
   return {
     edition: d.edition ?? "standard",
     currency,
     country,
-    friends: d.friends.map(f => ({ id: f.id, name: f.name.trim() })),
+    friends: squadFriends(d).map(f => ({
+      id: f.id,
+      name: f.name.trim(),
+      photo: f.photo ? { width: f.photo.width, height: f.photo.height, face: crop(f.photo.face), body: crop(f.photo.body) } : null,
+    })),
     bigGames: d.bigGames,
     minigames: d.minigames,
     customGame: d.customGame.trim(),
@@ -57,6 +64,7 @@ export function toPayload(d: Draft, currency: Currency, country: string, shownTo
     directorsCut: d.directorsCut,
     sections: d.sections,
     organiser: { ...d.organiser, name: d.organiser.name.trim(), email: d.organiser.email.trim() },
+    perkUnlockedAt: d.perkUnlockedAt,
     shownTotal,
   };
 }
@@ -65,15 +73,16 @@ export async function createOrder(payload: OrderPayload): Promise<CreatedOrder> 
   return call<CreatedOrder>("/api/orders", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(payload) });
 }
 
-/** Uploads every friend photo and every file attached in steps 4–9, reporting progress as 0..1. */
+/** Uploads each friend's one photo and every file attached in steps 4–9, reporting progress as 0..1. */
 export async function uploadPhotos(orderId: string, d: Draft, onProgress: (done: number) => void): Promise<void> {
   const id = encodeURIComponent(orderId);
   const jobs: { path: string; key: string | undefined; missing: string }[] = [
-    ...d.friends.flatMap(f => PHOTO_KINDS.map(({ kind }) => ({
-      path: `/api/orders/${id}/photos/${encodeURIComponent(f.id)}/${kind}`,
-      key: f.photos[kind]?.key,
-      missing: `${f.name || "A friend"}'s ${kind} photo is missing on this device. Add it again on the squad step.`,
-    }))),
+    // One photo per friend (owner, 15 Sep 2026); the face and full-body crops travel as numbers in the order.
+    ...squadFriends(d).map(f => ({
+      path: `/api/orders/${id}/photos/${encodeURIComponent(f.id)}`,
+      key: f.photo?.key,
+      missing: `${f.name || "A friend"}'s photo is missing on this device. Add it again on the squad step.`,
+    })),
     ...sectionUploads(d.sections).map(u => ({
       path: `/api/orders/${id}/files/${encodeURIComponent(u.id)}`,
       key: u.id,

@@ -5,14 +5,12 @@
 .s-extras-intro{display:flex;align-items:center;gap:12px;margin:0 0 12px}
 .s-extras-intro p{margin:0;font-size:14px;color:#3a3530;min-width:0}
 .s-extras-pic{width:64px;height:64px;object-fit:contain;image-rendering:pixelated;flex:none;background:#f6ecd4;border-radius:8px}
-.s-extras-evo,.s-extras-pair{display:flex;align-items:center;gap:4px;flex:none}
-.s-extras-evo .s-extras-pic{width:48px;height:48px}
-.s-extras-arrow{font-weight:700;color:var(--muted)}
-.s-extras-talk{position:relative;width:64px;height:64px;flex:none;background:#f6ecd4;border-radius:8px}
-.s-extras-talk img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;image-rendering:pixelated}
-.s-extras-talk .open{animation:s-extras-talk .5s steps(1) infinite}
-@keyframes s-extras-talk{0%{opacity:0}50%{opacity:1}}
-@media (prefers-reduced-motion:reduce){.s-extras-talk .open{animation:none;opacity:0}}
+.s-extras-pair{display:flex;align-items:center;gap:4px;flex:none}
+/* Looping previews (./loops.ts): a canvas keeps its own 3:2 or 1:1 shape from its width/height attributes. */
+.s-extras-show{display:grid;grid-template-columns:minmax(0,340px) minmax(0,1fr);gap:16px;align-items:center;margin:0 0 14px}
+.s-extras-show p{margin:0;font-size:15px;color:#3a3530}
+.s-extras-loop{display:block;width:100%;height:auto;border-radius:10px;border:3px solid #d9c9a3;background:#223242}
+.s-extras-intro .s-extras-loop-sq{width:112px;flex:none}
 
 .s-extras-row{border:0;margin:0 0 10px;padding:10px 12px;background:#fffaf0;border:2px solid #e3d4b0;border-radius:8px;min-width:0}
 .s-extras-row legend{font-weight:700;padding:0;float:left;width:100%;margin-bottom:6px}
@@ -39,7 +37,11 @@
 .s-extras-sub{font-size:18px;margin:18px 0 10px}
 .s-extras-option:disabled{opacity:.55;cursor:not-allowed}
 .s-extras-option .game-text span{overflow-wrap:anywhere}
+/* Pixelify Sans turns "fi" into one glyph that reads as a capital A ("Same wiA"). */
+.s-extras .game-text b,.s-extras h2,.s-extras h3{font-variant-ligatures:none}
 @media (max-width:620px){
   .s-extras-grid{grid-template-columns:1fr}
   .s-extras-intro{align-items:flex-start}
+  .s-extras-show{grid-template-columns:1fr;gap:10px}
+  .s-extras-show .s-extras-loop{max-width:420px}
 }

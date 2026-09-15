@@ -2,6 +2,7 @@
 // recruiting the rest of the squad and multiplayer. The rules and prices are in ../sections/extras.
 import "./extras.css";
 import { el } from "../../dom";
+import { perkNote } from "./perkNote";
 import { orderAsset } from "../catalogue";
 import { allowanceChip, checkbox, heading, money, sectionHandle, stepEyebrow, type StepView } from "../context";
 import { ADDONS } from "../prices";
@@ -10,6 +11,8 @@ import {
   VOICE_LINE_MAX, type CustomItem, type EvolutionKind, type ExtrasChoices, type MultiplayerMode, type SignatureMove, type VoiceLine,
 } from "../sections/extras";
 import { fileButton, removeUpload, uploadUrl } from "../upload";
+import { catchScene, evolutionScene, moveScene, talkScene, togetherScene } from "./extrasScenes";
+import { loopBox } from "./loops";
 
 const newId = (prefix: string) => `${prefix}-${(crypto.randomUUID?.() ?? `${Date.now()}${Math.random()}`).replace(/[^a-zA-Z0-9]/g, "").slice(0, 24)}`;
 
@@ -57,6 +60,13 @@ export const extrasStep: StepView = (ctx, panel) => {
     s.append(row);
   };
 
+  /** A big looping preview beside the text (owner: "more videos instead of dead photos"). */
+  const show = (s: HTMLElement, art: HTMLElement, text: string) => {
+    const row = el("div", "s-extras-show");
+    row.append(art, el("p", null, text));
+    s.append(row);
+  };
+
   const pic = (file: string, cls = "s-extras-pic") => {
     const img = el("img", cls);
     img.src = orderAsset(file);
@@ -70,10 +80,7 @@ export const extrasStep: StepView = (ctx, panel) => {
   {
     const current = friends.filter(n => Object.prototype.hasOwnProperty.call(c.evolutions, n));
     const s = shelf("Evolutions", allowanceChip(current.length, sc.includes.evolutions, price("evolution"), "evolutions"));
-    const strip = el("div", "s-extras-evo");
-    strip.append(pic("extras_evo_1.webp"), el("span", "s-extras-arrow", "→"), pic("extras_evo_2.webp"), el("span", "s-extras-arrow", "→"), pic("extras_evo_3.webp"));
-    strip.querySelectorAll(".s-extras-arrow").forEach(a => a.setAttribute("aria-hidden", "true"));
-    intro(s, strip, `A friend levels up and turns into a new form mid-battle. Pick a form from our templates (${price("evolution")}) or tell us their idea and we design one (${price("evolution_custom")}). Included evolutions cover designed ones first.`);
+    show(s, loopBox(evolutionScene(), "s-extras-loop"), `A friend levels up and turns into a new form mid-battle. Pick a form from our templates (${price("evolution")}) or tell us their idea and we design one (${price("evolution_custom")}). Included evolutions cover designed ones first.`);
     const options: [EvolutionKind | "none", string][] = [["none", "No evolution"], ["template", "Template form"], ["custom", "Designed from their idea"]];
     for (const name of friends) {
       const row = el("fieldset", "s-extras-row");
@@ -103,9 +110,7 @@ export const extrasStep: StepView = (ctx, panel) => {
   // ---------- talking faces ----------
   {
     const s = shelf("Talking faces");
-    const face = el("span", "s-extras-talk");
-    face.append(pic("extras_talk_rest.webp", "rest"), pic("extras_talk_open.webp", "open"));
-    intro(s, face, `When the game loads in, their mouth moves as they say their line. ${price("talking_face")} each.`);
+    show(s, loopBox(talkScene(), "s-extras-loop"), `When the game loads in, their mouth moves as they say their line. ${price("talking_face")} each.`);
     const list = el("div", "s-extras-checks");
     for (const name of friends) {
       list.append(checkbox(name, c.talkingFaces.includes(name), v => patch(ch => ({
@@ -138,7 +143,7 @@ export const extrasStep: StepView = (ctx, panel) => {
   // ---------- signature moves ----------
   {
     const s = shelf("Signature moves");
-    intro(s, pic("extras_move.webp"), `Name their moves after your in-jokes. ${sc.includes.movesPerCharacter === 1 ? "One move" : `${sc.includes.movesPerCharacter} moves`} per character included; extras are ${price("move")} each, or ${price("move_custom")} with its own custom effect. Included moves cover custom ones first.`);
+    intro(s, loopBox(moveScene(), "s-extras-loop s-extras-loop-sq"), `Name their moves after your in-jokes. ${sc.includes.movesPerCharacter === 1 ? "One move" : `${sc.includes.movesPerCharacter} moves`} per character included; extras are ${price("move")} each, or ${price("move_custom")} with its own custom effect. Included moves cover custom ones first.`);
     const total = c.moves.length;
     for (const name of friends) {
       const mine = c.moves.filter(m => m.friend === name);
@@ -165,6 +170,8 @@ export const extrasStep: StepView = (ctx, panel) => {
     const art = el("span", "s-extras-pair");
     art.append(pic("extras_item_drink.webp"), pic("extras_item_can.webp"));
     intro(s, art, `A drink from your local, a snack only you lot eat, with an effect in battle. ${price("item")} each with a stock icon, or ${price("item_custom")} drawn for you.`);
+    const bonus = perkNote(ctx, "items");
+    if (bonus) s.append(bonus);
     c.items.forEach((it, i) => s.append(itemCard(it, i)));
     if (c.items.length < MAX_ITEMS) {
       const add = el("button", "btn ghost small s-extras-add", c.items.length ? "Add another item" : "Add an item");
@@ -181,9 +188,11 @@ export const extrasStep: StepView = (ctx, panel) => {
   // ---------- recruit + multiplayer ----------
   {
     const s = shelf("Playing together");
+    show(s, loopBox(catchScene(), "s-extras-loop"),
+      "Wear someone down in a battle, throw them a drink, and if it holds they join your squad. Then switch between your friends mid-fight.");
     const grid = el("div", "game-grid s-extras-grid");
     grid.append(optionCard("Recruit your squad", "Meet the rest of the group in battles, recruit them, and switch between them. Free.",
-      "extras_recruit.webp", c.recruit, false, () => patch(ch => ({ ...ch, recruit: !ch.recruit }))));
+      "", c.recruit, false, () => patch(ch => ({ ...ch, recruit: !ch.recruit }))));
     s.append(grid);
 
     s.append(el("h3", "s-extras-sub", "Multiplayer"));
@@ -197,7 +206,7 @@ export const extrasStep: StepView = (ctx, panel) => {
       ["online", "Online", `Play together from anywhere. ${onlineNote}`, false],
     ];
     for (const [id, title, blurb, disabled] of modes) {
-      mgrid.append(optionCard(title, blurb, id === "none" ? "" : "extras_multiplayer.webp", mode === id, disabled,
+      mgrid.append(optionCard(title, blurb, id === "none" ? "" : id, mode === id, disabled,
         () => patch(ch => ({ ...ch, multiplayer: id })), "radio"));
     }
     mgrid.setAttribute("role", "radiogroup");
@@ -345,7 +354,9 @@ export const extrasStep: StepView = (ctx, panel) => {
       b.setAttribute("aria-pressed", String(on));
     }
     b.disabled = disabled;
-    if (art) {
+    if (art === "wifi" || art === "online") {
+      b.append(loopBox(togetherScene(art === "online"), "art"));
+    } else if (art) {
       const img = el("span", "art");
       img.style.backgroundImage = `url(${orderAsset(art)})`;
       b.append(img);

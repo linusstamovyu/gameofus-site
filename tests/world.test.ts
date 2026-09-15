@@ -46,9 +46,39 @@ describe("the beach map", () => {
     for (const s of stops) if (s.kind === "npc") expect(s.who, `${s.id} is a person with no one assigned`).toBeTruthy();
   });
 
-  it("ends the tour on the stop that shows prices", () => {
+  it("ends the tour on one last stop, and shows prices on the first", () => {
     expect(stops.at(-1)?.last).toBe(true);
     expect(stops.filter(s => s.last)).toHaveLength(1);
+    expect(stops[0].showTiers).toBe(true);
+  });
+
+  it("walks the tour as a loop, not back and forth (plan 18: was 49 tiles and 3 turn-backs)", () => {
+    let [x, y] = PLAYER_START;
+    let tiles = 0, turns = 0, dir = 0;
+    for (const s of stops) {
+      const leg = findPath(map, x, y, s.ax, s.ay)!;
+      for (const [nx] of leg) {
+        const d = Math.sign(nx - x);
+        if (d && dir && d !== dir) turns++;
+        if (d) dir = d;
+        x = nx;
+      }
+      tiles += leg.length;
+      [x, y] = [s.ax, s.ay];
+    }
+    expect(tiles).toBeLessThanOrEqual(36);
+    expect(turns).toBeLessThanOrEqual(1);
+    // The finale is back near where you started.
+    expect(Math.abs(stops.at(-1)!.ax - PLAYER_START[0]) + Math.abs(stops.at(-1)!.ay - PLAYER_START[1])).toBeLessThanOrEqual(8);
+  });
+
+  it("points every stop at a real builder step and Explore tab", async () => {
+    const { STEPS } = await import("../src/order/draft");
+    const { EXPLORE_TABS } = await import("../src/explore/catalog");
+    for (const s of stops) {
+      expect(STEPS.some(st => st.id === s.step), s.id).toBe(true);
+      if (s.tab) expect(EXPLORE_TABS.some(t => t.id === s.tab), s.id).toBe(true);
+    }
   });
 });
 

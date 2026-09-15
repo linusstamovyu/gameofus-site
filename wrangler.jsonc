@@ -9,6 +9,8 @@
 //      RESEND_API_KEY (secrets) and ORDER_EMAIL_TO, ORDER_EMAIL_FROM, SITE_URL (text).
 //   5. Stripe → Developers → Webhooks: endpoint https://<your domain>/api/stripe, events
 //      checkout.session.completed and checkout.session.async_payment_succeeded.
+// To open the logo vote form, create a separate private R2 bucket named "gameofus-logo-votes" and uncomment
+// the VOTES binding below. This keeps anonymous survey responses separate from customer orders.
 {
   "name": "gameofus-site",
   "main": "worker/index.ts",
@@ -21,6 +23,9 @@
     "not_found_handling": "404-page",
     "run_worker_first": ["/api/*"]
   }
-  // ,"r2_buckets": [{ "binding": "ORDERS", "bucket_name": "gameofus-orders" }]
+  ,"r2_buckets": [
+  // { "binding": "ORDERS", "bucket_name": "gameofus-orders" },
+  { "binding": "VOTES", "bucket_name": "gameofus-logo-votes" }
+  ]
   // ,"kv_namespaces": [{ "binding": "SHOP", "id": "<paste the KV namespace id>" }]
 }

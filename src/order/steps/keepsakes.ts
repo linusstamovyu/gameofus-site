@@ -1,6 +1,7 @@
 // Step 9, Keepsakes and delivery: the trailer, a printable gift card, rush delivery, the date it's wanted by, and
 // the Flex Pass (a top-level draft field the Review step shows too, so the two stay in sync).
 import "./keepsakes.css";
+import { loopBox, slideshow } from "./loops";
 import { el } from "../../dom";
 import { orderAsset } from "../catalogue";
 import { checkbox, heading, money, sectionHandle, stepEyebrow, type StepView } from "../context";
@@ -33,7 +34,7 @@ export const keepsakesStep: StepView = (ctx, panel) => {
   keep.append(keepHead);
   const grid = el("div", "game-grid s-keepsakes-grid");
   grid.append(
-    card("Trailer video", `A 60-second trailer of your game to share with the group · ${money(ctx, ADDONS.trailer.price[cur])}`, orderAsset("keep_trailer.webp"), c.trailer,
+    card("Trailer video", `A 60-second trailer of your game to share with the group · ${money(ctx, ADDONS.trailer.price[cur])}`, TRAILER, c.trailer,
       () => h.set({ ...h.choices(), trailer: !h.choices().trailer })),
     card("Printable gift card", `A PDF with a QR code to the game, to hand over on the day · ${money(ctx, ADDONS.gift_card.price[cur])}`, orderAsset("keep_giftcard.webp"), c.giftCard.on,
       () => { const now = h.choices(); h.set({ ...now, giftCard: { ...now.giftCard, on: !now.giftCard.on } }); }),
@@ -133,12 +134,18 @@ export const keepsakesStep: StepView = (ctx, panel) => {
   panel.append(peace);
 };
 
+const TRAILER = "loop:trailer";
+const TRAILER_SCENE = () => slideshow("keepsakes-trailer",
+  [["loop_story_cut_1.webp", 1.4], ["loop_story_plate_2.webp", 1.1], ["loop_story_cut_3.webp", 1.4], ["loop_story_boss_3.webp", 1.1], ["loop_story_cut_4.webp", 1.8]].map(([file, hold]) => ({ file: file as string, hold: hold as number })),
+  "A trailer montage of scenes from the game", { fade: 0.35, push: true, trailer: true, w: 480, h: 180 });
+
 function card(name: string, blurb: string, art: string, on: boolean, toggle: () => void): HTMLElement {
   const b = el("button", `game${on ? " on" : ""}`);
   b.type = "button";
   b.setAttribute("aria-pressed", String(on));
-  const img = el("span", "art");
-  img.style.backgroundImage = `url(${art})`;
+  // The trailer card plays a trailer-like montage of the game's own plates (./loops) rather than one still.
+  const img = art === TRAILER ? loopBox(TRAILER_SCENE(), "art") : el("span", "art");
+  if (art !== TRAILER) img.style.backgroundImage = `url(${art})`;
   const text = el("span", "game-text");
   text.append(el("b", null, name), el("span", null, blurb));
   b.append(img, text, el("span", "tick", on ? "✓" : "+"));

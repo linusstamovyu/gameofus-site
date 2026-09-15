@@ -53,8 +53,8 @@ function openEnv() {
 
 async function createWithPhotos(env: Env, body = payload) {
   const created = (await (await route(req("POST", "/api/orders", JSON.stringify(body), { "content-type": "application/json" }), env))!.json()) as { id: string; total: number; priceChanged: boolean; isRequest: boolean };
-  for (const f of body.friends) for (const kind of ["face", "body", "outfit"]) {
-    const r = await route(req("PUT", `/api/orders/${created.id}/photos/${f.id}/${kind}`, new Uint8Array([255, 216, 255, 1, 2, 3]), { "content-type": "image/jpeg" }), env);
+  for (const f of body.friends) {
+    const r = await route(req("PUT", `/api/orders/${created.id}/photos/${f.id}`, new Uint8Array([255, 216, 255, 1, 2, 3]), { "content-type": "image/jpeg" }), env);
     expect(r!.status).toBe(200);
   }
   return created;
@@ -73,13 +73,35 @@ describe("worker: before the shop is open", () => {
   });
 });
 
+describe("worker: logo ratings", () => {
+  it("stores any number of independent 1–5 logo ratings and summarizes them", async () => {
+    const { bucket } = fakeBucket();
+    const env: Env = { ASSETS: { fetch: async () => new Response("asset") }, VOTES: bucket };
+    const first = await route(req("POST", "/api/logo-votes", JSON.stringify({ ratings: { "universe-caps/01": 5, "standalone/universe-orbit": 3 } }), { "content-type": "application/json" }), env);
+    expect(first!.status).toBe(200);
+    const second = await route(req("POST", "/api/logo-votes", JSON.stringify({ ratings: { "universe-caps/01": 4 } }), { "content-type": "application/json" }), env);
+    expect(second!.status).toBe(200);
+    const summary = await (await route(req("GET", "/api/logo-votes/summary"), env))!.json() as { respondents: number; ratedLogos: number; options: { option: string; average: number; ratings: number }[] };
+    expect(summary.respondents).toBe(2);
+    expect(summary.ratedLogos).toBe(2);
+    expect(summary.options[0]).toMatchObject({ option: "universe-caps/01", average: 4.5, ratings: 2 });
+  });
+
+  it("rejects a ratings form with no valid scores", async () => {
+    const { bucket } = fakeBucket();
+    const env: Env = { ASSETS: { fetch: async () => new Response("asset") }, VOTES: bucket };
+    const response = await route(req("POST", "/api/logo-votes", JSON.stringify({ ratings: { "universe-caps/01": 6 } }), { "content-type": "application/json" }), env);
+    expect(response!.status).toBe(400);
+  });
+});
+
 describe("worker: an order from start to paid", () => {
   it("prices the order itself, takes the photos, starts checkout and counts the payment once", async () => {
     const { env, store, kv } = openEnv();
     const created = await createWithPhotos(env);
     expect(created.priceChanged).toBe(false);
     expect(created.total).toBe(quote({ edition: "deluxe", friends: 2, bigGames: 1, minigames: 1, addons: {} }, "DKK", 0).total);
-    expect([...store.keys()].filter(k => k.startsWith(`pending/${created.id}/photos/`))).toHaveLength(6);
+    expect([...store.keys()].filter(k => k.startsWith(`pending/${created.id}/photos/`))).toHaveLength(2);
 
     const fetchMock = vi.spyOn(globalThis, "fetch").mockResolvedValue(new Response(JSON.stringify({ id: "cs_test_1", url: "https://checkout.stripe.com/c/pay/cs_test_1" }), { status: 200 }));
     const submit = await (await route(req("POST", `/api/orders/${created.id}/submit`), env))!.json();
@@ -98,7 +120,7 @@ describe("worker: an order from start to paid", () => {
     expect([...store.keys()].some(k => k.startsWith("pending/"))).toBe(false);
     const record = JSON.parse(new TextDecoder().decode(store.get(`orders/${created.id}/order.json`)!.body));
     expect(record.status).toBe("paid");
-    expect([...store.keys()].filter(k => k.startsWith(`orders/${created.id}/photos/`))).toHaveLength(6);
+    expect([...store.keys()].filter(k => k.startsWith(`orders/${created.id}/photos/`))).toHaveLength(2);
 
     // Stripe retries: the second delivery changes nothing.
     const again = await route(req("POST", "/api/stripe", event, { "stripe-signature": sig }), env);
@@ -130,9 +152,9 @@ describe("worker: an order from start to paid", () => {
     const created = (await (await route(req("POST", "/api/orders", JSON.stringify(payload)), env))!.json()) as { id: string };
     const early = await route(req("POST", `/api/orders/${created.id}/submit`), env);
     expect(early!.status).toBe(400);
-    expect((await early!.json()).message).toMatch(/0 of 6/);
-    expect((await route(req("PUT", `/api/orders/${created.id}/photos/stranger/face`, new Uint8Array([1]), { "content-type": "image/jpeg" }), env))!.status).toBe(400);
-    expect((await route(req("PUT", `/api/orders/${created.id}/photos/f1/face`, "<svg/>", { "content-type": "image/svg+xml" }), env))!.status).toBe(400);
+    expect((await early!.json()).message).toMatch(/0 of 2/);
+    expect((await route(req("PUT", `/api/orders/${created.id}/photos/stranger`, new Uint8Array([1]), { "content-type": "image/jpeg" }), env))!.status).toBe(400);
+    expect((await route(req("PUT", `/api/orders/${created.id}/photos/f1`, "<svg/>", { "content-type": "image/svg+xml" }), env))!.status).toBe(400);
   });
 
   it("takes files named by the order's sections, refuses others, and waits for them before submitting", async () => {
@@ -140,7 +162,7 @@ describe("worker: an order from start to paid", () => {
     const sections = { ...defaultSections(), world: { places: [{ id: "home1", kind: "home", kit: "home", name: "Our flat", mapPin: "", fromPhotos: true, photos: [{ id: "placephoto1", kind: "image", name: "flat.jpg", type: "image/jpeg", size: 6 }], notes: "" }], signs: [] } };
     const created = await createWithPhotos(env, { ...payload, sections } as typeof payload);
     const early = await route(req("POST", `/api/orders/${created.id}/submit`), env);
-    expect((await early!.json()).message).toMatch(/6 of 7/);
+    expect((await early!.json()).message).toMatch(/2 of 3/);
     expect((await route(req("PUT", `/api/orders/${created.id}/files/notinorder`, new Uint8Array([1]), { "content-type": "image/jpeg" }), env))!.status).toBe(400);
     expect((await route(req("PUT", `/api/orders/${created.id}/files/placephoto1`, new Uint8Array([1]), { "content-type": "audio/mpeg" }), env))!.status).toBe(400);
     expect((await route(req("PUT", `/api/orders/${created.id}/files/placephoto1`, new Uint8Array([255, 216, 1]), { "content-type": "image/jpeg" }), env))!.status).toBe(200);

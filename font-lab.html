@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Font lab · numbers</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Pixelify+Sans:wght@500;700&family=Silkscreen:wght@400;700&family=VT323&family=Press+Start+2P&family=Jersey+10&family=Tiny5&family=Handjet:wght@600;700&family=Bungee&family=Chakra+Petch:wght@600;700&family=Space+Mono:wght@700&family=Fredoka:wght@600;700&display=swap">
+<style>
+  :root{--sand:#efdcb3;--paper:#fdf6e3;--ink:#20242c;--teal:#1a9e95;--teal-dark:#127269;--muted:#6b5a45;--wood:#7a4a26;--wood-dark:#4e2e17;
+    --pixel:"Pixelify Sans","Courier New",monospace;--body:"Trebuchet MS","Segoe UI",system-ui,sans-serif}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--sand);color:var(--ink);font-family:var(--body);font-size:16px;line-height:1.5;padding:24px}
+  h1{font-family:var(--pixel);font-weight:700;margin:0 0 4px}
+  .intro{margin:0 0 18px;max-width:900px}
+  .toggle{font-family:var(--pixel);font-size:15px;margin:0 0 18px;display:flex;gap:8px}
+  .toggle button{font:inherit;padding:6px 12px;border:2px solid var(--ink);border-radius:6px;background:var(--paper);cursor:pointer}
+  .toggle button.on{background:var(--ink);color:var(--paper)}
+  .row{display:grid;grid-template-columns:220px minmax(0,1fr);gap:18px;background:var(--paper);border:3px solid var(--ink);border-radius:12px;padding:14px 16px;margin:0 0 12px}
+  .row.base{border-color:var(--teal)}
+  .who b{font-family:var(--pixel);font-size:18px;display:block}
+  .who .rank{font-family:var(--pixel);font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--teal-dark)}
+  .who p{margin:4px 0 0;font-size:13px;color:var(--muted)}
+  .demo{display:grid;grid-template-columns:repeat(3,max-content) minmax(230px,1fr);gap:12px;align-items:start}
+  .card{border:3px solid #d9c9a3;border-radius:10px;background:#fffaf0;padding:10px 12px;white-space:nowrap}
+  .card .head{font-size:22px;font-weight:700;display:block}
+  .price strong{font-size:30px;font-weight:700;line-height:1.2}
+  .price s{color:var(--muted);font-size:.85em}
+  .small{display:block;font-size:14px}
+  .founder{font-weight:700;color:var(--teal-dark);font-size:15px;margin:0}
+  .founder .n{font-size:15px}
+  .bar{background:var(--wood);border-top:4px solid var(--wood-dark);color:var(--paper);padding:8px 14px;border-radius:8px;text-align:center;min-width:190px}
+  .bar strong{font-size:22px;font-weight:700}
+  .bar s{color:#d9c3a3;font-size:.85em}
+  .bar .lab{display:block;font-size:13px;color:#f1cf9a}
+  .steps{display:flex;gap:5px;flex-wrap:wrap;list-style:none;margin:0;padding:0}
+  .steps li{width:24px;height:24px;border-radius:50%;display:grid;place-items:center;font-size:13px;background:var(--paper);border:2px solid var(--ink)}
+  .steps li.on{background:var(--teal);color:#fff;border-color:var(--teal-dark)}
+  .steps li.done{background:var(--ink);color:var(--paper)}
+  .chip{font-size:13px;font-weight:700;background:#e8f5f2;color:var(--teal-dark);border-radius:20px;padding:4px 10px;display:inline-block}
+  .num{font-family:var(--num);font-variant-numeric:tabular-nums;font-size:calc(1em * var(--k,1))}
+  .word{font-family:var(--word)}
+  .col{display:flex;flex-direction:column;gap:8px}
+  @media (max-width:1180px){.row{grid-template-columns:1fr;gap:8px}.demo{grid-template-columns:repeat(2,max-content)}}
+</style>
+</head>
+<body>
+<!-- Dev-only: candidate fonts for the order page's numbers. /font-lab.html (not part of the build) -->
+<h1>Numbers font lab</h1>
+<p class="intro">Every row renders the order page's real number spots at their real sizes: edition price 30px, sticky total 22px, stepper 13px. Numbers are drawn in the row's font; the toggle decides whether the edition name and labels stay in Pixelify Sans (hybrid) or switch too.</p>
+<div class="toggle"><button data-mode="hybrid" class="on">Hybrid: Pixelify words, clear numbers</button><button data-mode="all">Everything in the candidate</button></div>
+<div id="rows"></div>
+<script type="module" src="/src/fontLab.ts"></script>
+</body>
+</html>
