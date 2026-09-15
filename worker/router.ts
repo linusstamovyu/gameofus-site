@@ -3,6 +3,7 @@ import type { Env, ExecutionContext } from "./env";
 import { handleCreate, handleFile, handlePhoto, handleStatus, handleStripeWebhook, handleSubmit, json } from "./orders";
 import { handleList } from "./lists";
 import { handleVote, handleVoteSummary } from "./votes";
+import { handleCartTest, handleCartTestSummary } from "./cartTest";
 
 const ID = "([0-9a-f-]{36})";
 const FRIEND = "([a-zA-Z0-9-]{1,40})";
@@ -21,6 +22,8 @@ export async function route(request: Request, env: Env, ctx?: ExecutionContext):
   if (pathname === "/api/status" && m === "GET") return handleStatus(env);
   if (pathname === "/api/logo-votes" && m === "POST") return handleVote(request, env);
   if (pathname === "/api/logo-votes/summary" && m === "GET") return handleVoteSummary(env);
+  if (pathname === "/api/cart-test" && m === "POST") return handleCartTest(request, env);
+  if (pathname === "/api/cart-test/summary" && m === "GET") return handleCartTestSummary(env);
   if (pathname === "/api/list" && m === "POST") return handleList(request, env);
   if (pathname === "/api/orders" && m === "POST") return handleCreate(request, env);
   if ((match = pathname.match(new RegExp(`^/api/orders/${ID}/photos/${FRIEND}$`))) && m === "PUT") return handlePhoto(request, env, match[1], match[2]);

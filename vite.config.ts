@@ -14,6 +14,7 @@ export default defineConfig({
         order: resolve(__dirname, "order.html"),
         explore: resolve(__dirname, "explore.html"),
         logoVote: resolve(__dirname, "logo-vote.html"),
+        cartTest: resolve(__dirname, "cart-test.html"),
       },
     },
   },

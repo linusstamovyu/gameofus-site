@@ -35,6 +35,8 @@ export interface Env {
   SHOP?: KVNamespace;
   /** Anonymous logo-vote records. Keep this separate from customer orders. */
   VOTES?: R2Bucket;
+  /** Anonymous cart-test answers (cart-test.html). Its own bucket, for the same reason as VOTES. */
+  CART_TESTS?: R2Bucket;
   STRIPE_SECRET_KEY?: string;
   STRIPE_WEBHOOK_SECRET?: string;
   RESEND_API_KEY?: string;

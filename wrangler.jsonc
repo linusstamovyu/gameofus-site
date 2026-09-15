@@ -11,6 +11,8 @@
 //      checkout.session.completed and checkout.session.async_payment_succeeded.
 // To open the logo vote form, create a separate private R2 bucket named "gameofus-logo-votes" and uncomment
 // the VOTES binding below. This keeps anonymous survey responses separate from customer orders.
+// The cart test (cart-test.html) works the same way: create a private bucket "gameofus-cart-tests" for the
+// CART_TESTS binding. Until it exists the page still loads and /api/cart-test answers "not open yet".
 {
   "name": "gameofus-site",
   "main": "worker/index.ts",
@@ -25,7 +27,8 @@
   }
   ,"r2_buckets": [
   // { "binding": "ORDERS", "bucket_name": "gameofus-orders" },
-  { "binding": "VOTES", "bucket_name": "gameofus-logo-votes" }
+  { "binding": "VOTES", "bucket_name": "gameofus-logo-votes" },
+  { "binding": "CART_TESTS", "bucket_name": "gameofus-cart-tests" }
   ]
   // ,"kv_namespaces": [{ "binding": "SHOP", "id": "<paste the KV namespace id>" }]
 }
