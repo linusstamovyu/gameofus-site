@@ -23,18 +23,17 @@ export function renderOffer(offer: Offer, site: SiteConfig) {
     const card = el("article", t.star ? "cart star" : "cart");
     const label = el("div", "label");
     label.append(el("h3", null, t.name), el("span", "tag", t.tag));
-    const each = Math.round(t.founderDkk / t.people);
     const price = el("div", "price");
     price.append(el("span", "founder", "Founder price"), document.createElement("br"));
-    price.append(document.createTextNode(`${formatDkk(each)} `), el("small", null, "DKK per person"));
-    const total = el("p", "total");
-    total.append(document.createTextNode(`${formatDkk(t.founderDkk)} DKK for ${t.people} friends `), el("s", null, `${formatDkk(t.normalDkk)} DKK`));
-    const worth = el("p", "worth", `Worth ${formatDkk(t.worthDkk)} DKK as add-ons`);
+    price.append(document.createTextNode(`${formatDkk(t.founderDkk)} `), el("small", null, "DKK"), el("s", null, `${formatDkk(t.normalDkk)} DKK`));
+    // Standard is a gift for two or three and is never split; group editions show the share (plan 03).
+    const share = t.people > 3 ? `≈ ${formatDkk(Math.round(t.founderDkk / t.people))} DKK per friend` : "For two or three";
+    const total = el("p", "total", share);
     const ul = el("ul");
     t.features.forEach(f => ul.append(el("li", null, f)));
     const foot = el("div", "foot");
     foot.append(orderButton(t.cta, t.id, site, t.star ? "btn" : "btn ghost"));
-    card.append(label, price, total, worth, ul, foot);
+    card.append(label, price, total, ul, foot);
     carts.append(card);
   }
   $("#perFriend").textContent = offer.perFriendNote;

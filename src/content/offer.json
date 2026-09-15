@@ -8,12 +8,12 @@
       "short": "Standard",
       "founderDkk": 799,
       "normalDkk": 1049,
-      "worthDkk": 2300,
-      "people": 2,
+      "worthDkk": 2800,
+      "people": 3,
       "tag": "2 weeks",
-      "friends": "2 friends",
+      "friends": "2–3 friends",
       "features": [
-        "2 characters from your photos",
+        "Up to 3 characters from your photos",
         "1 home zone, 1 big game and 3 minigames",
         "A short story, about 20–30 minutes",
         "1 round of changes"
@@ -25,8 +25,8 @@
       "id": "deluxe",
       "name": "Deluxe",
       "short": "Deluxe",
-      "founderDkk": 1049,
-      "normalDkk": 1399,
+      "founderDkk": 1299,
+      "normalDkk": 1699,
       "worthDkk": 9100,
       "people": 6,
       "tag": "Most picked",
@@ -45,17 +45,17 @@
       "id": "ultimate",
       "name": "Ultimate",
       "short": "Ultimate",
-      "founderDkk": 1399,
-      "normalDkk": 1799,
-      "worthDkk": 27300,
+      "founderDkk": 1999,
+      "normalDkk": 2599,
+      "worthDkk": 16800,
       "people": 10,
-      "tag": "6–10 weeks",
+      "tag": "6–8 weeks",
       "friends": "10 friends",
       "features": [
-        "10 characters, all with evolutions",
-        "6 zones, even a second country",
-        "5 big games and all 12 minigames",
-        "Illustrated cutscenes and online multiplayer",
+        "10 characters, two with evolutions",
+        "5 zones, 5 big games and all 12 minigames",
+        "A multi-act story with 2 cutscenes",
+        "Same-wifi multiplayer",
         "3 rounds of changes"
       ],
       "cta": "Choose Ultimate",
@@ -63,6 +63,10 @@
     }
   ],
   "addons": [
+    [
+      "Director's Cut (evolutions for everyone, more cutscenes, online play)",
+      "799 DKK"
+    ],
     [
       "Extra friend",
       "from 159 DKK"
@@ -76,10 +80,6 @@
       "from 299 DKK"
     ],
     [
-      "Voice line",
-      "129 DKK"
-    ],
-    [
       "Party Mode (18+)",
       "299 DKK"
     ],
@@ -88,7 +88,7 @@
       "129 DKK"
     ]
   ],
-  "perFriendNote": "Split between six friends, a Deluxe game is 175 DKK each. Pay in full at order, or spread it with Klarna.",
+  "perFriendNote": "A Deluxe game for six works out at about 217 DKK each. Pay in full at order, or spread it with Klarna.",
   "deadlines": [
     [
       "Ultimate",

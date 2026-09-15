@@ -172,8 +172,7 @@
   .cart .price small{font-size:14px;color:var(--muted);font-family:var(--body)}
   .cart .price .founder{font-family:var(--body);font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--teal-dark)}
   .cart .total{margin:0;padding:0 20px;font-size:14.5px;font-variant-numeric:tabular-nums}
-  .cart .total s{color:var(--muted);margin-left:4px}
-  .cart .worth{margin:6px 20px 0;font-size:13px;font-weight:700;color:var(--teal-dark)}
+  .cart .price s{font-family:var(--body);font-size:16px;color:var(--muted);margin-left:10px}
   .founder-note{margin:0 0 16px;font-size:14px;color:#4a4036}
   .cart ul{list-style:none;margin:0;padding:8px 20px 18px;display:flex;flex-direction:column;gap:7px;font-size:14.5px;flex:1}
   .cart li{display:grid;grid-template-columns:16px 1fr;gap:8px}
