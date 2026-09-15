@@ -111,6 +111,99 @@ def build_world() -> None:
             save_webp(im, f"bg_{key}.webp", quality=80)
 
 
+# Art for order steps 4–9 (one prefix per section, so each step's agent knows its own files).
+# fit: "cover" crops to the card, "prop" centres a small transparent drawing, "cell:x,y,w,h" cuts one
+# sheet cell first (then treated as a prop), "gif" takes a GIF's first frame.
+SECTION_ART = {
+    # world: place kits
+    "world_home.webp": ("backgrounds/battle/apartment_flat.png", "cover"),
+    "world_town.webp": ("backgrounds/battle/main_street.png", "cover"),
+    "world_beach.webp": ("backgrounds/battle/beach.png", "cover"),
+    "world_harbour.webp": ("backgrounds/battle/harbour.png", "cover"),
+    "world_city.webp": ("backgrounds/battle/ber_kiez.png", "cover"),
+    "world_stadium.webp": ("backgrounds/battle/stadium.png", "cover"),
+    "world_nightlife.webp": ("backgrounds/battle/nightclub_exterior.png", "cover"),
+    "world_countryside.webp": ("backgrounds/battle/high_ground.png", "cover"),
+    "world_shopsign.webp": ("shops/mexibar_banner.png", "cover"),
+    # vehicles
+    "veh_car.webp": ("vehicles/cars/sport_yellow.png", "cell:0,300,100,100"),
+    "veh_taxi.webp": ("vehicles/cars/taxi_stock.png", "cell:0,300,100,100"),
+    "veh_scooter.webp": ("vehicles/riders/rico_scooter_right.png", "prop"),
+    "veh_minecart.webp": ("vehicles/minecart_empty.png", "prop"),
+    "veh_kart.webp": ("props/kart_gantry.png", "cover"),
+    "veh_dealer.webp": ("shops/auto_albufeira_banner.png", "cover"),
+    # phone
+    "phone_call.webp": ("phone/app_icons/phone.png", "prop"),
+    "phone_mail.webp": ("phone/app_icons/mail.png", "prop"),
+    "phone_photos.webp": ("phone/app_icons/photos.png", "prop"),
+    "phone_games.webp": ("phone/app_icons/games.png", "prop"),
+    "phone_maps.webp": ("phone/app_icons/maps.png", "prop"),
+    "phone_news.webp": ("phone/news/jonesy_wanted.png", "prop"),
+    "phone_caller.webp": ("cutscene/call_portraits/rico.png", "cover"),
+    # story
+    "story_cutscene.webp": ("cutscene/poolside_11_cover.jpg", "cover"),
+    "story_plate.webp": ("cutscene/rico-mexibar/rico_mexibar_03_pour.png", "cover"),
+    "story_boss.webp": ("cutscene/chris-room/manager/01-manager.png", "cover"),
+    # extras
+    "extras_evo_1.webp": ("characters/Rico/Portrait/rico_portrait.png", "prop"),
+    "extras_evo_2.webp": ("characters/RicoMidEvo/Portrait/ricomidevo_portrait.png", "prop"),
+    "extras_evo_3.webp": ("characters/RicoFinalEvo/Portrait/ricofinalevo_portrait.png", "prop"),
+    "extras_talk_rest.webp": ("characters/Chris/Talk/chris_speak_rest.png", "prop"),
+    "extras_talk_open.webp": ("characters/Chris/Talk/chris_speak_open.png", "prop"),
+    "extras_move.webp": ("vfx/make_it_rain.png", "cell:256,256,256,256"),
+    "extras_item_drink.webp": ("items/sangria_bucket.png", "prop"),
+    "extras_item_can.webp": ("items/cold_one.png", "prop"),
+    "extras_recruit.webp": ("vfx/vfx_catch_cold_one_throw_sheet.png", "cell:384,0,128,128"),
+    "extras_multiplayer.webp": ("../../art-drafts/multiplayer-car-share-demo/two-players-one-car-demo.gif", "gif"),
+    # keepsakes
+    "keep_trailer.webp": ("cutscene/poolside_11_cover.jpg", "cover"),
+}
+
+
+def fit_card(im: Image.Image, fit: str, card: tuple[int, int]) -> Image.Image:
+    if fit.startswith("cell:"):
+        x, y, w, h = (int(v) for v in fit[5:].split(","))
+        im, fit = im.crop((x, y, x + w, y + h)), "prop"
+    if fit == "gif":
+        im.seek(0)
+        im, fit = im.convert("RGB"), "cover"
+    if fit == "cover":
+        return ImageOps.fit(im.convert("RGB"), card, Image.LANCZOS)
+    out = Image.new("RGB", card, (34, 50, 66))
+    im = im.convert("RGBA")
+    scale = min((card[0] - 40) / im.width, (card[1] - 30) / im.height)
+    resample = Image.NEAREST if max(im.width, im.height) <= 256 else Image.LANCZOS  # keep small pixel art crisp
+    im = im.resize((max(1, round(im.width * scale)), max(1, round(im.height * scale))), resample)
+    out.paste(im, ((card[0] - im.width) // 2, (card[1] - im.height) // 2), im)
+    return out
+
+
+def build_section_art() -> None:
+    for name, (rel, fit) in SECTION_ART.items():
+        f = src(GAME / rel)
+        if f:
+            fit_card(Image.open(f), fit, (360, 240)).save(ORDER_OUT / name, "WEBP", quality=80, method=6)
+    # A printable gift card mock-up for the keepsakes step: drawn, so nothing to license.
+    card = Image.new("RGB", (360, 240), (253, 246, 227))
+    d = ImageDraw.Draw(card)
+    d.rectangle((6, 6, 353, 233), outline=(32, 36, 44), width=4)
+    d.rectangle((6, 6, 353, 60), fill=(26, 158, 149))
+    try:
+        big = ImageFont.truetype("/System/Library/Fonts/Supplemental/Trebuchet MS Bold.ttf", 26)
+        small = ImageFont.truetype("/System/Library/Fonts/Supplemental/Trebuchet MS.ttf", 15)
+    except OSError:
+        big = small = ImageFont.load_default()
+    d.text((20, 18), "Game of Us · Gift card", font=big, fill=(253, 246, 227))
+    d.text((20, 80), "You've been given a game", font=small, fill=(32, 36, 44))
+    d.text((20, 102), "starring your whole squad.", font=small, fill=(32, 36, 44))
+    d.text((20, 190), "Scan to play", font=small, fill=(107, 90, 69))
+    for i in range(7):  # a QR-looking block, not a real code
+        for j in range(7):
+            if (i * 3 + j * 5 + i * j) % 3 != 1 or i in (0, 6) or j in (0, 6):
+                d.rectangle((250 + i * 12, 90 + j * 12, 261 + i * 12, 101 + j * 12), fill=(32, 36, 44))
+    card.save(ORDER_OUT / "keep_giftcard.webp", "WEBP", quality=85, method=6)
+
+
 def build_order_art() -> None:
     card = (360, 240)
     for name, (rel, fit) in BIG_GAMES.items():
@@ -175,6 +268,7 @@ def main() -> int:
     build_squad()
     build_world()
     build_order_art()
+    build_section_art()
     build_share_image()
     check_content_refs()
 

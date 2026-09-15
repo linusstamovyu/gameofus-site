@@ -15,9 +15,19 @@ import { editionStep } from "./steps/edition";
 import { gamesStep } from "./steps/games";
 import { reviewStep } from "./steps/review";
 import { squadStep } from "./steps/squad";
+import { extrasStep } from "./steps/extras";
+import { keepsakesStep } from "./steps/keepsakes";
+import { phoneStep } from "./steps/phone";
+import { storyStep } from "./steps/story";
+import { vehiclesStep } from "./steps/vehicles";
+import { worldStep } from "./steps/world";
 
 const site = siteData as SiteConfig;
-const VIEWS: Record<StepId, StepView> = { squad: squadStep, edition: editionStep, games: gamesStep, review: reviewStep };
+const VIEWS: Record<StepId, StepView> = {
+  squad: squadStep, edition: editionStep, games: gamesStep,
+  world: worldStep, vehicles: vehiclesStep, phone: phoneStep, story: storyStep, extras: extrasStep, keepsakes: keepsakesStep,
+  review: reviewStep,
+};
 
 let draft: Draft;
 let paid = 0;

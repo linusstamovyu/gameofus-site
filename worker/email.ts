@@ -1,7 +1,9 @@
 // The two emails an order sends: one to the owner with everything needed to start, one to the customer.
 // Plain text on purpose: it always renders, and customer-typed text can never become markup.
 import { BIG_GAMES, MINIGAMES } from "../src/order/catalogue";
+import { contextFromPayload, payloadUploads } from "../src/order/payload";
 import { formatMoney } from "../src/order/prices";
+import { SECTIONS } from "../src/order/sections";
 import type { OrderRecord } from "./orders";
 
 const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
@@ -20,6 +22,11 @@ export function ownerEmail(o: OrderRecord, siteUrl: string): { subject: string; 
     `Big games: ${p.bigGames.map(id => BIG_GAMES.find(g => g.id === id)?.name ?? id).join(", ") || "none"}`,
     `Minigames: ${p.minigames.map(id => MINIGAMES.find(g => g.id === id)?.name ?? id).join(", ") || "none"}`,
     p.customGame ? `Custom game idea:\n${p.customGame}` : "",
+    ...SECTIONS.flatMap(s => {
+      const lines = s.summary(p.sections[s.id], contextFromPayload(p));
+      return lines.length ? ["", `${s.label}:`, ...lines.map(l => `  ${l}`)] : [];
+    }),
+    payloadUploads(p).length ? `\nAttached files (orders/${o.id}/files/): ${payloadUploads(p).map(u => `${u.name} [${u.section}]`).join(", ")}` : "",
     p.flexPass ? "Flex Pass: yes" : "",
     p.directorsCut ? "Director's Cut: yes" : "",
     "",

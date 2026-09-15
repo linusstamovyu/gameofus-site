@@ -2,15 +2,20 @@
 // (steps/*.ts) renders a Draft and replaces it through these functions; storage.ts saves it on this device.
 // Nothing here knows a price: prices come from prices.ts through toPicks().
 import { BIG_GAMES, MINIGAMES, visibleMinigames } from "./catalogue";
+import { checkSections, defaultSections, sectionAddons, sectionById, SECTIONS, type SectionChoices } from "./sections";
+import type { SectionContext, SectionId } from "./sections/types";
 import { ACTIVE_LADDER, EDITION_IDS, LADDERS, MAX_FRIENDS, smallestEditionFor, type AddonId, type EditionId, type LadderId, type OrderPicks } from "./prices";
 
-export type StepId = "squad" | "edition" | "games" | "review";
+export type StepId = "squad" | "edition" | "games" | SectionId | "review";
 export const STEPS: { id: StepId; label: string }[] = [
   { id: "squad", label: "Your squad" },
   { id: "edition", label: "Your edition" },
   { id: "games", label: "Games" },
+  ...SECTIONS.map(s => ({ id: s.id as StepId, label: s.label })),
   { id: "review", label: "Review" },
 ];
+const SECTION_IDS = new Set<string>(SECTIONS.map(s => s.id));
+export const isSectionStep = (id: StepId): id is SectionId => SECTION_IDS.has(id);
 
 export type PhotoKind = "face" | "body" | "outfit";
 export const PHOTO_KINDS: { kind: PhotoKind; label: string; hint: string }[] = [
@@ -64,6 +69,8 @@ export interface Draft {
   partyMode: boolean;
   flexPass: boolean;
   directorsCut: boolean;
+  /** Steps 4–9, one entry per section (sections/*.ts). */
+  sections: SectionChoices;
   organiser: Organiser;
   updatedAt: number;
 }
@@ -83,6 +90,7 @@ export function newDraft(now = Date.now()): Draft {
     partyMode: false,
     flexPass: false,
     directorsCut: false,
+    sections: defaultSections(),
     organiser: { name: "", email: "", birthYear: "", adultsConfirmed: false, photosPermission: false, startNow: false },
     updatedAt: now,
   };
@@ -102,8 +110,20 @@ export function reviveDraft(raw: unknown): Draft {
     friends: d.friends.slice(0, MAX_FRIENDS),
     bigGames: (d.bigGames ?? []).filter(id => BIG_GAMES.some(g => g.id === id)),
     minigames: (d.minigames ?? []).filter(id => MINIGAMES.some(g => g.id === id)),
+    sections: checkSections(d.sections),
     organiser: { ...base.organiser, ...(d.organiser ?? {}) },
   };
+}
+
+/** Replace one section's choices. */
+export function setSection<T>(d: Draft, id: SectionId, value: T): Draft {
+  return touch(d, { sections: { ...d.sections, [id]: value } });
+}
+
+/** What a section is told about the rest of the order. */
+export function sectionContext(d: Draft, currency: SectionContext["currency"] = "DKK", ladder: LadderId = activeLadder()): SectionContext {
+  const edition = d.edition ?? "standard";
+  return { edition, includes: LADDERS[ladder].editions[edition].includes, friends: d.friends.map(f => f.name.trim()), partyMode: d.partyMode, currency };
 }
 
 const touch = (d: Draft, patch: Partial<Draft>): Draft => ({ ...d, ...patch, updatedAt: Date.now() });
@@ -161,12 +181,15 @@ export function toPicks(d: Draft): OrderPicks {
   if (d.partyMode) addons.party_mode = 1;
   if (d.flexPass) addons.flex_pass = 1;
   if (d.directorsCut) addons.directors_cut = 1;
+  const { rush, ...fromSections } = sectionAddons(d.sections, sectionContext(d));
+  for (const [id, n] of Object.entries(fromSections)) addons[id as AddonId] = (addons[id as AddonId] ?? 0) + n;
   return {
     edition: d.edition ?? "standard",
     friends: Math.max(1, d.friends.length),
     bigGames: d.bigGames.length,
     minigames: d.minigames.length,
     addons,
+    rush: Boolean(rush),
   };
 }
 
@@ -197,8 +220,12 @@ export function problems(d: Draft, step: StepId, thisYear = new Date().getFullYe
   if (step === "games") {
     if (!d.bigGames.length && !d.customGame.trim()) say("Pick at least one big game, or describe your own.");
   }
+  if (isSectionStep(step)) {
+    const sec = sectionById(step);
+    for (const message of sec.problems(d.sections[step], sectionContext(d))) say(message);
+  }
   if (step === "review") {
-    for (const s of ["squad", "edition", "games"] as StepId[]) out.push(...problems(d, s, thisYear));
+    for (const s of STEPS.filter(x => x.id !== "review").map(x => x.id)) out.push(...problems(d, s, thisYear));
     const o = d.organiser;
     if (!o.name.trim()) say("Add your name.");
     if (!EMAIL.test(o.email.trim())) say("Add an email address we can reach you on.");

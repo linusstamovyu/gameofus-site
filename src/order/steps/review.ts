@@ -2,8 +2,9 @@
 // button that sends it: Pay (Stripe Checkout) or, with a custom item, Send request (plan 07 §10).
 import { el } from "../../dom";
 import { BIG_GAMES, MINIGAMES } from "../catalogue";
-import { checkbox, heading, money, type StepView } from "../context";
-import { problems, shareMessage, type Organiser } from "../draft";
+import { checkbox, heading, money, stepEyebrow, type StepView } from "../context";
+import { problems, sectionContext, shareMessage, type Organiser } from "../draft";
+import { SECTIONS } from "../sections";
 import { createOrder, OrderError, submitOrder, toPayload, uploadPhotos } from "../api";
 import { ADDONS, LADDERS, ACTIVE_LADDER } from "../prices";
 import { clearAll } from "../storage";
@@ -13,7 +14,7 @@ export const reviewStep: StepView = (ctx, panel) => {
   const q = ctx.quote();
   const cur = ctx.currency();
   const name = (d.edition ?? "standard").replace(/^./, c => c.toUpperCase());
-  panel.append(heading("Step 4 of 4", "Check it and send it", "Here's your game. Change anything by going back; nothing is sent until you press the button at the bottom."));
+  panel.append(heading(stepEyebrow("review"), "Check it and send it", "Here's your game. Change anything by going back; nothing is sent until you press the button at the bottom."));
 
   // The squad, like a character-select screen.
   const squad = el("section", "review-squad");
@@ -43,6 +44,21 @@ export const reviewStep: StepView = (ctx, panel) => {
   games.append(el("p", null, `Big games: ${picked.join(", ") || "none yet"}`));
   const minis = d.minigames.map(id => MINIGAMES.find(m => m.id === id)?.name).filter(Boolean);
   games.append(el("p", null, `Party minigames: ${minis.join(", ") || "none"}`));
+  const sctx = sectionContext(d, cur);
+  for (const s of SECTIONS) {
+    const lines = s.summary(d.sections[s.id], sctx);
+    if (!lines.length) continue;
+    const block = el("div", "review-section");
+    const edit = el("button", "link-btn", "Change");
+    edit.type = "button";
+    edit.onclick = () => ctx.go(s.id);
+    const h = el("h3", null, s.label);
+    h.append(" ", edit);
+    const ul = el("ul");
+    lines.forEach(l => ul.append(el("li", null, l)));
+    block.append(h, ul);
+    games.append(block);
+  }
   panel.append(games);
 
   // The bill.

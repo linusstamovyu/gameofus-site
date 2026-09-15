@@ -76,7 +76,7 @@ describe("draft", () => {
   it("turns the draft into the counts prices.ts quotes", () => {
     let d = { ...fullSquad(3), bigGames: toggleIn(toggleIn([], "kart"), "gym"), minigames: ["blackjack"], customGame: "  a thing  ", flexPass: true };
     d = setPartyMode(d, true);
-    expect(toPicks(d)).toEqual({ edition: d.edition, friends: 3, bigGames: 2, minigames: 1, addons: { big_game_custom: 1, party_mode: 1, flex_pass: 1 } });
+    expect(toPicks(d)).toEqual({ edition: d.edition, friends: 3, bigGames: 2, minigames: 1, addons: { big_game_custom: 1, party_mode: 1, flex_pass: 1 }, rush: false });
     expect(allowanceUse(d).bigGames.used).toBe(2);
   });
 
@@ -108,7 +108,7 @@ describe("payload the Worker accepts", () => {
     expect(r.value.bigGames).toEqual(["kart"]);
     expect(r.value.minigames).toEqual(["blackjack"]);
     expect(r.value.country).toBe("DK");
-    expect(picksFromPayload(r.value)).toEqual({ edition: "deluxe", friends: 2, bigGames: 1, minigames: 1, addons: { flex_pass: 1 } });
+    expect(picksFromPayload(r.value)).toEqual({ edition: "deluxe", friends: 2, bigGames: 1, minigames: 1, addons: { flex_pass: 1 }, rush: false });
   });
 
   it.each([

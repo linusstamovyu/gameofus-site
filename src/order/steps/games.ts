@@ -2,7 +2,7 @@
 // edition's allowance shown like an inventory and an upgrade hint when a bigger edition costs no more (Q22).
 import { el } from "../../dom";
 import { BIG_GAMES, MINIGAME_GROUPS, orderAsset, visibleMinigames } from "../catalogue";
-import { allowanceChip, checkbox, heading, money, type Ctx, type StepView } from "../context";
+import { allowanceChip, checkbox, heading, stepEyebrow, money, type Ctx, type StepView } from "../context";
 import { allowanceUse, chooseEdition, setPartyMode, toggleIn, toPicks } from "../draft";
 import { ADDONS, upgradeHint } from "../prices";
 
@@ -10,7 +10,7 @@ export const gamesStep: StepView = (ctx, panel) => {
   const d = ctx.draft();
   const cur = ctx.currency();
   const use = allowanceUse(d);
-  panel.append(heading("Step 3 of 4", "Choose the games",
+  panel.append(heading(stepEyebrow("games"), "Choose the games",
     "Big games are the set pieces a chapter is built around. Party minigames are quick games you play together. Turn-based battles are always in."));
 
   const hint = upgradeHint(toPicks(d), cur, ctx.paidOrders());

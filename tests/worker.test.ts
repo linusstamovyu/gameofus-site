@@ -4,6 +4,7 @@ import { route } from "../worker/router";
 import { checkoutForm, signForTest, verifyStripeSignature } from "../worker/stripe";
 import { customerEmail, ownerEmail } from "../worker/email";
 import { quote, LADDERS, ACTIVE_LADDER } from "../src/order/prices";
+import { defaultSections } from "../src/order/sections";
 
 // ---------- in-memory Cloudflare fakes ----------
 function fakeBucket() {
@@ -38,6 +39,7 @@ const req = (method: string, path: string, body?: BodyInit, headers: Record<stri
 const payload = {
   edition: "deluxe", currency: "DKK", country: "DK", friends: [{ id: "f1", name: "Mads" }, { id: "f2", name: "Rico" }],
   bigGames: ["kart"], minigames: ["blackjack"], customGame: "", partyMode: false, flexPass: false, directorsCut: false,
+  sections: defaultSections(),
   organiser: { name: "Mads Hansen", email: "mads@example.com", birthYear: "", adultsConfirmed: false, photosPermission: true, startNow: true },
   shownTotal: LADDERS[ACTIVE_LADDER].editions.deluxe.founder.DKK,
 };

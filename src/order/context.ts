@@ -1,6 +1,7 @@
 // What every step gets from the order page shell (main.ts).
 import { el } from "../dom";
-import type { Draft, StepId } from "./draft";
+import { sectionContext, setSection, STEPS, type Draft, type StepId } from "./draft";
+import type { SectionContext, SectionId } from "./sections/types";
 import { formatMoney, type Currency, type Quote } from "./prices";
 
 export interface Ctx {
@@ -17,6 +18,16 @@ export interface Ctx {
   notify(message: string, tone?: "info" | "error"): void;
 }
 
+/** A section step's view of the order: its own choices, the context, and a setter. */
+export function sectionHandle<T>(ctx: Ctx, id: SectionId) {
+  return {
+    choices: () => ctx.draft().sections[id] as T,
+    context: (): SectionContext => sectionContext(ctx.draft(), ctx.currency()),
+    /** Save new choices. Pass { rerender: false } while typing so the field keeps focus. */
+    set: (value: T, opts?: { rerender?: boolean }) => ctx.update(d => setSection(d, id, value), opts),
+  };
+}
+
 export type StepView = (ctx: Ctx, panel: HTMLElement) => void | (() => void);
 
 export const money = (ctx: Ctx, minor: number, round = false) => formatMoney(minor, ctx.currency(), { round });
@@ -30,6 +41,11 @@ export function checkbox(label: string, checked: boolean, onChange: (v: boolean)
   box.addEventListener("change", () => onChange(box.checked));
   row.append(box, el("span", null, label));
   return row;
+}
+
+/** "Step 4 of 10", derived from the step list so it never goes stale. */
+export function stepEyebrow(id: StepId): string {
+  return `Step ${STEPS.findIndex(s => s.id === id) + 1} of ${STEPS.length}`;
 }
 
 export function heading(eyebrow: string, title: string, text?: string): HTMLElement {

@@ -7,7 +7,9 @@
 .visually-hidden{position:absolute!important;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
 
 /* stepper */
-.stepper{list-style:none;margin:0 0 18px;padding:0;display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
+.stepper{list-style:none;margin:0 0 18px;padding:0;display:grid;grid-template-columns:repeat(auto-fit,minmax(34px,1fr));gap:6px}
+.stepper .l{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+@media (max-width:1100px){.stepper .l{display:none}.stepper li.on .l{display:inline}.stepper li.on{grid-column:span 3}.stepper button{justify-content:center}}
 .stepper button{width:100%;display:flex;align-items:center;gap:8px;font:inherit;font-size:14px;background:#efe3c6;color:var(--ink);border:2px solid transparent;border-radius:8px;padding:8px 10px;cursor:pointer;text-align:left}
 .stepper button:disabled{opacity:.5;cursor:default}
 .stepper .n{flex:none;width:24px;height:24px;border-radius:50%;display:grid;place-items:center;font-family:var(--pixel);font-size:13px;background:var(--paper);border:2px solid var(--ink)}

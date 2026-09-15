@@ -2,7 +2,7 @@
 // fakes. Rules: the Worker prices every order itself with prices.ts; photos go to a private bucket under
 // pending/<id>/ until the order is paid or sent as a request, then move to orders/<id>/; an R2 lifecycle rule
 // deletes pending/ after 2 days.
-import { checkPayload, PHOTO_KIND_IDS, picksFromPayload, type OrderPayload } from "../src/order/payload";
+import { checkPayload, payloadUploads, PHOTO_KIND_IDS, picksFromPayload, type OrderPayload } from "../src/order/payload";
 import { FOUNDER_SPOTS, quote, type Quote } from "../src/order/prices";
 import { customerEmail, ownerEmail, sendEmail } from "./email";
 import type { Env, ExecutionContext, KVNamespace, R2Bucket } from "./env";
@@ -19,6 +19,8 @@ export interface OrderRecord {
 }
 
 export const MAX_PHOTO_BYTES = 8 * 1024 * 1024;
+export const MAX_AUDIO_BYTES = 15 * 1024 * 1024;
+const AUDIO_EXT: Record<string, string> = { "audio/mp4": "m4a", "audio/x-m4a": "m4a", "audio/mpeg": "mp3", "audio/wav": "wav", "audio/x-wav": "wav", "audio/webm": "webm", "audio/ogg": "ogg", "audio/aac": "aac" };
 const PHOTO_TYPES = new Set(["image/jpeg", "image/png", "image/webp"]);
 const PAID_COUNT = "paid-orders";
 
@@ -129,6 +131,28 @@ export async function handlePhoto(request: Request, env: Env, id: string, friend
   return json({ ok: true });
 }
 
+/** A file attached in steps 4–9. Only ids the order's own sections name are accepted. */
+export async function handleFile(request: Request, env: Env, id: string, fileId: string): Promise<Response> {
+  if (!shopOpen(env)) return fail(503, "Ordering isn't open yet.");
+  const found = await readRecord(env.ORDERS, id);
+  if (!found || found[1] !== "pending" || found[0].status !== "pending") return fail(404, "That order can't take files any more.");
+  const ref = payloadUploads(found[0].payload).find(u => u.id === fileId);
+  if (!ref) return fail(400, "Unknown file.");
+  const type = (request.headers.get("content-type") ?? "").split(";")[0].trim().toLowerCase();
+  const isImage = ref.kind === "image" && PHOTO_TYPES.has(type);
+  const isAudio = ref.kind === "audio" && type in AUDIO_EXT;
+  if (!isImage && !isAudio) return fail(400, ref.kind === "audio" ? "Voice notes must be m4a, mp3, wav, webm, ogg or aac." : "Photos must be JPEG, PNG or WebP.");
+  const limit = isAudio ? MAX_AUDIO_BYTES : MAX_PHOTO_BYTES;
+  if (Number(request.headers.get("content-length") ?? "0") > limit) return fail(413, "That file is too large.");
+  const body = await request.arrayBuffer();
+  if (body.byteLength === 0 || body.byteLength > limit) return fail(413, "That file is empty or too large.");
+  const ext = isAudio ? AUDIO_EXT[type] : type === "image/png" ? "png" : type === "image/webp" ? "webp" : "jpg";
+  const existing = await env.ORDERS.list({ prefix: `pending/${id}/files/${fileId}.` });
+  if (existing.objects.length) await env.ORDERS.delete(existing.objects.map(x => x.key));
+  await env.ORDERS.put(`pending/${id}/files/${fileId}.${ext}`, body, { httpMetadata: { contentType: type } });
+  return json({ ok: true });
+}
+
 export async function handleSubmit(request: Request, env: Env, id: string, ctx?: ExecutionContext): Promise<Response> {
   if (!shopOpen(env)) return fail(503, "Ordering isn't open yet.");
   const found = await readRecord(env.ORDERS, id);
@@ -136,8 +160,10 @@ export async function handleSubmit(request: Request, env: Env, id: string, ctx?:
   const [record, prefix] = found;
   if (prefix !== "pending") return fail(400, "This order has already been sent.");
   const photos = await env.ORDERS.list({ prefix: `pending/${id}/photos/` });
-  const needed = record.payload.friends.length * PHOTO_KIND_IDS.length;
-  if (photos.objects.length < needed) return fail(400, `Some photos didn't arrive (${photos.objects.length} of ${needed}). Please send the order again.`);
+  const files = await env.ORDERS.list({ prefix: `pending/${id}/files/` });
+  const needed = record.payload.friends.length * PHOTO_KIND_IDS.length + payloadUploads(record.payload).length;
+  const arrived = photos.objects.length + files.objects.length;
+  if (arrived < needed) return fail(400, `Some photos or files didn't arrive (${arrived} of ${needed}). Please send the order again.`);
   const site = siteUrl(env, request);
 
   // Re-quote at the moment of paying: the founder count may have moved since the order was created.

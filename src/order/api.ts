@@ -3,6 +3,7 @@ import type { Draft } from "./draft";
 import { PHOTO_KINDS } from "./draft";
 import type { CreatedOrder, OrderPayload, SubmitResult } from "./payload";
 import type { Currency } from "./prices";
+import { sectionUploads } from "./sections";
 import { loadPhoto } from "./storage";
 
 export class OrderError extends Error {
@@ -54,6 +55,7 @@ export function toPayload(d: Draft, currency: Currency, country: string, shownTo
     partyMode: d.partyMode,
     flexPass: d.flexPass,
     directorsCut: d.directorsCut,
+    sections: d.sections,
     organiser: { ...d.organiser, name: d.organiser.name.trim(), email: d.organiser.email.trim() },
     shownTotal,
   };
@@ -63,14 +65,26 @@ export async function createOrder(payload: OrderPayload): Promise<CreatedOrder> 
   return call<CreatedOrder>("/api/orders", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(payload) });
 }
 
-/** Uploads every photo of every friend, reporting progress as 0..1. */
+/** Uploads every friend photo and every file attached in steps 4–9, reporting progress as 0..1. */
 export async function uploadPhotos(orderId: string, d: Draft, onProgress: (done: number) => void): Promise<void> {
-  const jobs = d.friends.flatMap(f => PHOTO_KINDS.map(({ kind }) => ({ f, kind, meta: f.photos[kind] })));
+  const id = encodeURIComponent(orderId);
+  const jobs: { path: string; key: string | undefined; missing: string }[] = [
+    ...d.friends.flatMap(f => PHOTO_KINDS.map(({ kind }) => ({
+      path: `/api/orders/${id}/photos/${encodeURIComponent(f.id)}/${kind}`,
+      key: f.photos[kind]?.key,
+      missing: `${f.name || "A friend"}'s ${kind} photo is missing on this device. Add it again on the squad step.`,
+    }))),
+    ...sectionUploads(d.sections).map(u => ({
+      path: `/api/orders/${id}/files/${encodeURIComponent(u.id)}`,
+      key: u.id,
+      missing: `"${u.name}" is missing on this device. Attach it again on the ${u.section} step.`,
+    })),
+  ];
   let done = 0;
-  for (const { f, kind, meta } of jobs) {
-    const blob = meta && (await loadPhoto(meta.key));
-    if (!blob) throw new OrderError(`${f.name || "A friend"}'s ${kind} photo is missing on this device. Add it again on the squad step.`);
-    await call(`/api/orders/${encodeURIComponent(orderId)}/photos/${encodeURIComponent(f.id)}/${kind}`, { method: "PUT", headers: { "content-type": blob.type || "image/jpeg" }, body: blob });
+  for (const job of jobs) {
+    const blob = job.key && (await loadPhoto(job.key));
+    if (!blob) throw new OrderError(job.missing);
+    await call(job.path, { method: "PUT", headers: { "content-type": blob.type || "application/octet-stream" }, body: blob });
     onProgress(++done / jobs.length);
   }
 }

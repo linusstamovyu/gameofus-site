@@ -1,7 +1,7 @@
 // Step 1, Your squad: a slot per friend with a name, a shirt colour and three photos (plan 07 Q13), each
 // checked in the browser, and a pixel preview from the face photo (Q4).
 import { el } from "../../dom";
-import { heading, type Ctx, type StepView } from "../context";
+import { heading, stepEyebrow, type Ctx, type StepView } from "../context";
 import { addFriend, PHOTO_KINDS, removeFriend, setPhoto, SHIRT_COLOURS, updateFriend, type Friend, type PhotoKind } from "../draft";
 import { pixelPreview, processPhoto, warmFaceDetector } from "../photo";
 import { MAX_FRIENDS } from "../prices";
@@ -14,7 +14,7 @@ const STATUS_PREFIX = { ok: "", warn: "Check this: ", fail: "Won't work: ", unch
 export const squadStep: StepView = (ctx, panel) => {
   warmFaceDetector();
   const urls: string[] = [];
-  panel.append(heading("Step 1 of 4", "Who's in the game?",
+  panel.append(heading(stepEyebrow("squad"), "Who's in the game?",
     "Add each friend with three photos: their face, their full body and an outfit. You'll see a quick pixel preview; the final character is drawn by hand."));
 
   const rules = el("p", "rules");

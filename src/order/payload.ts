@@ -2,7 +2,9 @@
 // The Worker never trusts a count or a total from the browser: it rebuilds the picks from the lists and
 // quotes them itself with prices.ts.
 import { BIG_GAMES, MINIGAMES } from "./catalogue";
-import { EDITION_IDS, MAX_FRIENDS, type AddonId, type Currency, type EditionId, type OrderPicks } from "./prices";
+import { ACTIVE_LADDER, EDITION_IDS, LADDERS, MAX_FRIENDS, type AddonId, type Currency, type EditionId, type OrderPicks } from "./prices";
+import { checkSections, sectionAddons, sectionUploads, type SectionChoices } from "./sections";
+import type { SectionContext, UploadRef } from "./sections/types";
 
 export const PHOTO_KIND_IDS = ["face", "body", "outfit"] as const;
 export type PhotoKindId = (typeof PHOTO_KIND_IDS)[number];
@@ -18,6 +20,8 @@ export interface OrderPayload {
   partyMode: boolean;
   flexPass: boolean;
   directorsCut: boolean;
+  /** Steps 4–9; re-checked with each section's own check() on arrival. */
+  sections: SectionChoices;
   organiser: {
     name: string;
     email: string;
@@ -75,10 +79,15 @@ export function checkPayload(raw: unknown, thisYear = new Date().getFullYear()):
     ok: true,
     value: {
       edition, currency, country: str(r.country, 2).toUpperCase() || "XX", friends, bigGames, minigames, customGame, partyMode,
-      flexPass: bool(r.flexPass), directorsCut: bool(r.directorsCut), organiser,
+      flexPass: bool(r.flexPass), directorsCut: bool(r.directorsCut), sections: checkSections(r.sections), organiser,
       shownTotal: Number.isFinite(r.shownTotal) ? Number(r.shownTotal) : 0,
     },
   };
+}
+
+/** What each section is told about a checked payload (the Worker's twin of draft.sectionContext). */
+export function contextFromPayload(p: OrderPayload): SectionContext {
+  return { edition: p.edition, includes: LADDERS[ACTIVE_LADDER].editions[p.edition].includes, friends: p.friends.map(f => f.name), partyMode: p.partyMode, currency: p.currency };
 }
 
 /** The picks prices.ts quotes, rebuilt from a checked payload. */
@@ -88,7 +97,15 @@ export function picksFromPayload(p: OrderPayload): OrderPicks {
   if (p.partyMode) addons.party_mode = 1;
   if (p.flexPass) addons.flex_pass = 1;
   if (p.directorsCut) addons.directors_cut = 1;
-  return { edition: p.edition, friends: p.friends.length, bigGames: p.bigGames.length, minigames: p.minigames.length, addons };
+  const { rush, ...fromSections } = sectionAddons(p.sections, contextFromPayload(p));
+  for (const [id, n] of Object.entries(fromSections)) addons[id as AddonId] = (addons[id as AddonId] ?? 0) + n;
+  return { edition: p.edition, friends: p.friends.length, bigGames: p.bigGames.length, minigames: p.minigames.length, addons, rush: Boolean(rush) };
+}
+
+/** Every section file the order refers to, with ids made safe and unique. */
+export function payloadUploads(p: OrderPayload): (UploadRef & { section: string })[] {
+  const seen = new Set<string>();
+  return sectionUploads(p.sections).filter(u => /^[a-zA-Z0-9-]{1,40}$/.test(u.id) && !seen.has(u.id) && seen.add(u.id));
 }
 
 export interface CreatedOrder {

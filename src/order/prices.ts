@@ -155,6 +155,8 @@ export interface OrderPicks {
   minigames: number;
   /** Everything else, by add-on id and quantity. */
   addons?: Partial<Record<AddonId, number>>;
+  /** Rush delivery: +50% of everything else (plan 03). */
+  rush?: boolean;
 }
 
 export interface LineItem {
@@ -181,6 +183,7 @@ export interface Quote {
 }
 
 export const MAX_FRIENDS = 12;
+export const RUSH_SHARE = 0.5;
 
 export function isFounder(paidOrders: number): boolean {
   return paidOrders < FOUNDER_SPOTS;
@@ -210,8 +213,14 @@ export function quote(picks: OrderPicks, currency: Currency, paidOrders: number,
     push(id, a.name, qty, a.price[currency]);
   }
 
-  const total = lines.reduce((s, l) => s + l.total, 0);
-  const normalTotal = total - base + ed.normal[currency];
+  let total = lines.reduce((s, l) => s + l.total, 0);
+  let normalTotal = total - base + ed.normal[currency];
+  if (picks.rush) {
+    const rush = Math.round(total * RUSH_SHARE);
+    push("rush", "Rush delivery (+50%)", 1, rush);
+    total += rush;
+    normalTotal += Math.round(normalTotal * RUSH_SHARE);
+  }
   return { ladder: ladderId, currency, edition: ed.id, founder, lines, total, normalTotal, isRequest, perFriend: Math.round(total / friends) };
 }
 

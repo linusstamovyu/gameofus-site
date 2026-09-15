@@ -1,6 +1,6 @@
 // Maps /api paths to handlers. Kept apart from index.ts so tests can drive it without the ASSETS binding.
 import type { Env, ExecutionContext } from "./env";
-import { handleCreate, handlePhoto, handleStatus, handleStripeWebhook, handleSubmit, json } from "./orders";
+import { handleCreate, handleFile, handlePhoto, handleStatus, handleStripeWebhook, handleSubmit, json } from "./orders";
 
 const ID = "([0-9a-f-]{36})";
 const FRIEND = "([a-zA-Z0-9-]{1,40})";
@@ -21,6 +21,7 @@ export async function route(request: Request, env: Env, ctx?: ExecutionContext):
   if ((match = pathname.match(new RegExp(`^/api/orders/${ID}/photos/${FRIEND}/(face|body|outfit)$`))) && m === "PUT") {
     return handlePhoto(request, env, match[1], match[2], match[3]);
   }
+  if ((match = pathname.match(new RegExp(`^/api/orders/${ID}/files/([a-zA-Z0-9-]{1,40})$`))) && m === "PUT") return handleFile(request, env, match[1], match[2]);
   if ((match = pathname.match(new RegExp(`^/api/orders/${ID}/submit$`))) && m === "POST") return handleSubmit(request, env, match[1], ctx);
   if (pathname === "/api/stripe" && m === "POST") return handleStripeWebhook(request, env, ctx);
   return null;

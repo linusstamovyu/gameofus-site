@@ -3,7 +3,7 @@
 import { el } from "../../dom";
 import offerData from "../../content/offer.json";
 import type { Offer } from "../../content/types";
-import { checkbox, heading, money, type StepView } from "../context";
+import { checkbox, heading, money, stepEyebrow, type StepView } from "../context";
 import { chooseEdition } from "../draft";
 import { ACTIVE_LADDER, ADDONS, EDITION_IDS, FOUNDER_SPOTS, isFounder, LADDERS } from "../prices";
 
@@ -15,7 +15,7 @@ export const editionStep: StepView = (ctx, panel) => {
   const cur = ctx.currency();
   const founder = isFounder(ctx.paidOrders());
   const spots = ctx.founderSpotsLeft();
-  panel.append(heading("Step 2 of 4", "Pick your edition",
+  panel.append(heading(stepEyebrow("edition"), "Pick your edition",
     `You have ${d.friends.length} ${d.friends.length === 1 ? "friend" : "friends"} in the squad. Every edition is the same kind of game; bigger ones hold more people, places and games.`));
   if (founder) {
     panel.append(el("p", "founder-line", spots === null
