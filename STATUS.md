@@ -34,7 +34,6 @@ Verified in the browser: tour walks Rico to Kai and opens his card with the real
 | Stripe deposit links | Create the account and links | Real deposits, test payment |
 | Contact email | Pick the address | Legal pages, footer |
 | Legal gaps | Your full name; CVR later; storage provider; AI training settings | Removing the draft notes |
-| Google Calendar | Press Connect on the Google Calendar connector | Timeline in your calendar |
 
 ## Still to do (not blocked)
 
