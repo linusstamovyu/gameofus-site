@@ -26,8 +26,8 @@
   /* ---------- nav ---------- */
   .nav{position:sticky;top:0;z-index:30;background:var(--wood);border-bottom:4px solid var(--wood-dark)}
   .nav .wrap{display:flex;align-items:center;gap:26px;height:62px}
-  .logo{font-family:var(--pixel);font-weight:700;font-size:24px;color:var(--paper);text-decoration:none;display:flex;align-items:center;gap:10px;white-space:nowrap}
-  .logo i{width:22px;height:22px;background:var(--teal);border:3px solid var(--paper);transform:rotate(45deg);display:block}
+  .logo{display:flex;align-items:center;flex:0 0 auto;text-decoration:none}
+  .logo img{display:block;width:178px;height:50px;max-width:none;object-fit:contain;object-position:left center}
   .nav ul{display:flex;gap:22px;list-style:none;margin:0 0 0 auto;padding:0}
   .nav ul a{font-family:var(--pixel);font-size:15px;color:#f1cf9a;text-decoration:none}
   .nav ul a:hover{color:var(--paper)}
@@ -244,7 +244,7 @@
     .sec-head h2{font-size:34px}
     .nav .draft-flag{display:none}
     .nav .wrap{gap:10px;padding:0 14px}
-    .logo{font-size:19px}
+    .logo img{width:145px;height:46px}
     .nav .btn{padding:8px 10px;font-size:13px;margin-left:auto}
     .wrap{padding:0 14px}
   }
@@ -279,6 +279,7 @@
   @media (max-width:1180px){ .nav ul{gap:16px} .nav ul li.wide{display:none} }
   /* A phone has room for the logo and one button: Explore is in the hero and the bar there instead. */
   @media (max-width:560px){ .nav ul{display:none!important} }
+  @media (max-width:400px){ .logo img{width:112px;height:42px} }
 
   /* ---------- plan 18 phase 2: tour progress, stop card links, finale ---------- */
   .dots i.here{outline:2px solid var(--ink);outline-offset:1px}
