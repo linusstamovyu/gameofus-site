@@ -381,6 +381,8 @@ def main() -> int:
     build_showcase()
     build_share_image()
     sys.path.insert(0, str(Path(__file__).resolve().parent))
+    import build_couple_ads  # the home page's "For two?" card (plan 19); the 4:5 ads it also writes live in public/brand
+    errors.extend(build_couple_ads.build_card())
     import build_order_loops  # the order page's looping previews (loop_*), see that file
     errors.extend(build_order_loops.build())
     check_content_refs()

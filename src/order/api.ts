@@ -49,6 +49,7 @@ const crop = (b: { x: number; y: number; width: number; height: number } | null)
 export function toPayload(d: Draft, currency: Currency, country: string, shownTotal: number): OrderPayload {
   return {
     edition: d.edition ?? "standard",
+    occasion: d.occasion,
     currency,
     country,
     friends: squadFriends(d).map(f => ({

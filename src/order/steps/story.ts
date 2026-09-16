@@ -5,7 +5,7 @@ import { allowanceChip, checkbox, heading, money, sectionHandle, stepEyebrow, ty
 import { ADDONS } from "../prices";
 import {
   BOSS_MAX, ENDING_LABEL, ENDING_MESSAGE_MAX, ENDING_TYPES, LANGUAGE_MAX, MAX_MOMENTS, MEMORY_MAX, MEMORY_MIN,
-  MOMENT_MAX, TONE_BLURB, TONE_LABEL, TONES, type Ending, type Moment, type StoryChoices,
+  MOMENT_MAX, OUTLINES, TONE_BLURB, TONE_LABEL, TONES, outlineById, type Ending, type Moment, type OutlineId, type StoryChoices,
 } from "../sections/story";
 import type { UploadRef } from "../sections/types";
 import { fileButton, removeUpload, uploadUrl } from "../upload";
@@ -38,6 +38,23 @@ export const storyStep: StepView = (ctx, panel) => {
   panel.append(heading(stepEyebrow("story"), "Tell us the story",
     "One real night becomes the main quest. Tell it the way you'd tell it at the pub: who was there, what went wrong, what everyone still laughs about."));
 
+  // The shape of the story (plan 19). It comes before the memory because which outline this is decides
+  // what the memory has to tell us — the placeholder under the box follows the pick.
+  const shape = el("section", "shelf");
+  const shapeHead = el("div", "shelf-head");
+  shapeHead.append(el("h2", null, "The shape of it"));
+  shape.append(shapeHead, el("p", "lede", "One of the four we can build fast, or your own. Picked one in step 1? It is already ticked."));
+  const shapes = el("div", "s-story-chips s-story-outlines");
+  shapes.setAttribute("role", "group");
+  shapes.setAttribute("aria-label", "Story outline");
+  for (const o of OUTLINES) {
+    const chip = choiceChip(o.label, o.blurb, c.outline === o.id, () => patch(st => ({ ...st, outline: o.id as OutlineId })));
+    if (o.id !== "own") chip.prepend(loopBox(outlineScene(o.id), "s-story-oart", chip));
+    shapes.append(chip);
+  }
+  shape.append(shapes);
+  panel.append(shape);
+
   // The memory
   const mem = el("section", "shelf s-story-memory");
   const memHead = el("div", "shelf-head");
@@ -45,11 +62,16 @@ export const storyStep: StepView = (ctx, panel) => {
   mem.append(memHead);
   mem.append(loopBanner(slideshow("story-plate", [1, 2, 3, 4].map(i => ({ file: `loop_story_plate_${i}.webp`, hold: 1.25 })), "Your memory, told in the game's own pictures: a bartender shakes, pours and serves a drink.", { w: 480, h: 160 })));
   const memLabel = el("label", "field");
-  memLabel.append(el("span", null, "The night everyone still talks about"));
+  // With an outline picked, this box is not "tell us anything" any more: it is that outline's own blank.
+  memLabel.append(el("span", null, c.outline === "own" ? "The night everyone still talks about" : outlineById(c.outline).asks));
   const memText = el("textarea", "s-story-text");
   memText.rows = 7;
   memText.maxLength = MEMORY_MAX;
-  memText.placeholder = "We missed the last ferry, so we…";
+  memText.placeholder = c.outline === "crown" ? "Dan is the one who always…"
+    : c.outline === "heist" ? "They took our…"
+    : c.outline === "traitor" ? "Somebody told everyone that…"
+    : c.outline === "night" ? "We all met at…"
+    : "We missed the last ferry, so we…";
   memText.value = c.memory;
   const count = el("span", "s-story-count");
   const updateCount = () => {
@@ -249,6 +271,11 @@ function choiceChip(label: string, blurb: string, on: boolean, pick: () => void)
   b.onclick = pick;
   return b;
 }
+
+/** An outline's three captured frames, played as a banner (the same scene the step-0 cards use). */
+const outlineScene = (id: string): Scene =>
+  slideshow(`outline-${id}`, [1, 2, 3].map(n => ({ file: `loop_outline_${id}_${n}.webp`, hold: 2.1 })),
+    `Three moments from a ${id} story`, { fade: 0.5, push: true, w: 720, h: 240 });
 
 /** A banner that plays the game's own plates (./loops) instead of one still. */
 function loopBanner(scene: Scene): HTMLElement {

@@ -19,7 +19,7 @@ const base = (over: Partial<StoryChoices> = {}): StoryChoices => ({ ...storySect
 describe("story section", () => {
   it("starts empty with lads tone, English and no ending", () => {
     const d = storySection.defaults();
-    expect(d).toEqual({ memory: "", voiceNote: null, tone: "lads", language: "English", boss: "", moments: [], ending: { type: "none", message: "", custom: false } });
+    expect(d).toEqual({ outline: "own", memory: "", voiceNote: null, tone: "lads", language: "English", boss: "", moments: [], ending: { type: "none", message: "", custom: false } });
     expect(storySection.check(d)).toEqual(d);
   });
 

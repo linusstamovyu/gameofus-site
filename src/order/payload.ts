@@ -3,6 +3,7 @@
 // quotes them itself with prices.ts.
 import { BIG_GAMES, MINIGAMES } from "./catalogue";
 import { ACTIVE_LADDER, EDITION_IDS, LADDERS, MAX_FRIENDS, type AddonId, type Currency, type EditionId, type OrderPicks } from "./prices";
+import { OCCASION_IDS, type OccasionId } from "./occasions";
 import { perkActive, perkFree, perkKind } from "./perk";
 import { checkSections, sectionAddons, sectionUploads, type SectionChoices } from "./sections";
 import type { SectionContext, UploadRef } from "./sections/types";
@@ -28,6 +29,8 @@ export interface FriendPhotoInfo {
 
 export interface OrderPayload {
   edition: EditionId;
+  /** What the game is for (plan 19). Absent on orders from before step 0 existed. */
+  occasion?: OccasionId | null;
   currency: Currency;
   country: string;
   friends: { id: string; name: string; photo?: FriendPhotoInfo | null }[];
@@ -117,7 +120,8 @@ export function checkPayload(raw: unknown, thisYear = new Date().getFullYear(), 
   return {
     ok: true,
     value: {
-      edition, currency, country: str(r.country, 2).toUpperCase() || "XX", friends, bigGames, minigames, customGame, partyMode,
+      edition, occasion: OCCASION_IDS.includes(r.occasion as OccasionId) ? (r.occasion as OccasionId) : null,
+      currency, country: str(r.country, 2).toUpperCase() || "XX", friends, bigGames, minigames, customGame, partyMode,
       flexPass: bool(r.flexPass), directorsCut: bool(r.directorsCut), sections: checkSections(r.sections), organiser,
       perkUnlockedAt: perkActive(r.perkUnlockedAt, now) ? r.perkUnlockedAt : null,
       shownTotal: Number.isFinite(r.shownTotal) ? Number(r.shownTotal) : 0,

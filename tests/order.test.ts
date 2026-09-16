@@ -193,7 +193,11 @@ describe("draft", () => {
 
   it("revives a stored draft safely and throws away anything it doesn't recognise", () => {
     expect(reviveDraft(null).friends).toEqual([]);
-    expect(reviveDraft({ version: 7 }).step).toBe("squad");
+    // A draft this build cannot read comes back as a fresh one, which opens on step 0 (plan 19).
+    expect(reviveDraft({ version: 7 }).step).toBe("purpose");
+    // A draft it CAN read keeps its own place, and an unknown step lands on the squad rather than step 0:
+    // somebody with friends typed in is past being asked what the game is for.
+    expect(reviveDraft({ ...fullSquad(1), step: "nope", occasion: "wedding" }).occasion).toBeNull();
     const d = reviveDraft({ ...fullSquad(1), step: "nope", edition: "mega", bigGames: ["kart", "rocket"] });
     expect(d.step).toBe("squad");
     expect(d.edition).toBeNull();

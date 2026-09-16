@@ -1,6 +1,6 @@
 // Fills the page sections from src/content. The markup around them is static in index.html.
-import type { Offer, SquadMember } from "../content/types";
-import { $, el, photoPair } from "../dom";
+import type { Occasions, Offer, SquadMember } from "../content/types";
+import { $, asset, el, photoPair } from "../dom";
 import { ACTIVE_LADDER, ADDONS, FOUNDER_SPOTS, LADDERS, formatMoney, type AddonId, type Currency, type Edition } from "../order/prices";
 
 export function renderSquad(squad: SquadMember[]) {
@@ -80,11 +80,45 @@ export function renderOffer(offer: Offer, currency: Currency) {
   $("#addons").textContent = "Add-ons: " + addons.map(([id, label, from]) => `${label} ${from ? "from " : ""}${money(ADDONS[id].price[currency])}`).join(" · ");
 }
 
+/**
+ * The occasion doors (plan 19). Each tile is a LINK into the order page's step 0 with the occasion preset,
+ * so the page stays a page: the question "what's it for" is asked once, in the builder, not in two places.
+ */
+export function renderOccasions(occ: Occasions, offer: Offer) {
+  const christmas = `Order a Deluxe game by ${offer.deadlines.find(([n]) => n === "Deluxe")?.[1] ?? "early November"} to have it for Christmas.`;
+  const grid = $("#occ");
+  grid.replaceChildren();
+  for (const tile of occ.tiles) {
+    const a = el("a", "occ-tile");
+    a.href = `order.html?occasion=${encodeURIComponent(tile.id)}`;
+    a.dataset.track = "occasion_tile";
+    a.dataset.trackWhich = tile.id;
+    a.append(el("b", null, tile.title), el("span", null, tile.line || christmas));
+    grid.append(a);
+  }
+
+  // The couples door, with the mockup beside it (public/assets/couple_card.webp, tools/build_couple_ads.py).
+  const card = $("#forTwo");
+  card.replaceChildren();
+  card.className = "fortwo";
+  const art = el("img", "fortwo-art");
+  (art as HTMLImageElement).src = asset(occ.forTwo.art);
+  (art as HTMLImageElement).alt = "A heart thrown instead of a drink, and the meter renamed the Love Meter";
+  (art as HTMLImageElement).loading = "lazy";
+  art.addEventListener("error", () => art.remove());
+  const text = el("div", "fortwo-text");
+  text.append(el("p", "eyebrow", occ.forTwo.eyebrow), el("h3", null, occ.forTwo.title), el("p", null, occ.forTwo.line));
+  const go = el("a", "btn ghost", occ.forTwo.cta);
+  go.href = `order.html?occasion=${encodeURIComponent(occ.forTwo.id)}`;
+  go.dataset.track = "fortwo_cta";
+  text.append(go);
+  card.append(art, text);
+}
+
 /** The rest of the page around the prices: deadlines and the two general order buttons. */
 export function renderOrderCalls(offer: Offer) {
   const dl = offer.deadlines.map(([n, d]) => `${n} ${d}`).join(" · ");
   $("#deadlines").textContent = `Christmas order deadlines: ${dl}.`;
-  $("#occChristmas").textContent = `Order a Deluxe game by ${offer.deadlines.find(([n]) => n === "Deluxe")?.[1] ?? "early November"} to have it for Christmas.`;
   $("#ctaButton").replaceWith(orderLink("Start your order ▶", "", "btn dark"));
   $("#navOrder").replaceWith(orderLink("Start your order", "", "btn"));
 }

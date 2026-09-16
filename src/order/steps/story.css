@@ -23,3 +23,9 @@
 @media (min-width:640px){
   .s-story-chips{grid-template-columns:repeat(2,1fr)}
 }
+
+/* ---------- plan 19: the story outlines, as chips with a played banner on them ---------- */
+.s-story-outlines .s-story-chip{padding:0;overflow:hidden;gap:0}
+.s-story-outlines .s-story-chip>b{padding:10px 12px 0}
+.s-story-outlines .s-story-chip>span{padding:0 12px 10px}
+.s-story-oart{display:block;width:100%}

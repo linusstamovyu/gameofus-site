@@ -5,10 +5,13 @@ import { BIG_GAMES, MINIGAMES, minigameLocked, selectableMinigames } from "./cat
 import { checkSections, defaultSections, sectionAddons, sectionById, SECTIONS, type SectionChoices } from "./sections";
 import type { SectionContext, SectionId } from "./sections/types";
 import { perkActive, perkFree, perkKind } from "./perk";
-import { ACTIVE_LADDER, EDITION_IDS, LADDERS, MAX_FRIENDS, type AddonId, type EditionId, type LadderId, type OrderPicks } from "./prices";
+import { OCCASION_IDS, occasionById, suggestedSize, type OccasionId } from "./occasions";
+import type { OutlineId, StoryChoices, Tone } from "./sections/story";
+import { ACTIVE_LADDER, EDITION_IDS, LADDERS, MAX_FRIENDS, smallestEditionFor, type AddonId, type EditionId, type LadderId, type OrderPicks } from "./prices";
 
-export type StepId = "squad" | "edition" | "games" | SectionId | "review";
+export type StepId = "purpose" | "squad" | "edition" | "games" | SectionId | "review";
 export const STEPS: { id: StepId; label: string }[] = [
+  { id: "purpose", label: "What's it for" },
   { id: "squad", label: "Your squad" },
   { id: "edition", label: "Your edition" },
   { id: "games", label: "Games" },
@@ -81,6 +84,8 @@ export const PRETICK_PARTY_MODE_ON_ADULTS = false;
 export interface Draft {
   version: 1;
   step: StepId;
+  /** What the game is for (plan 19). A door, not a product: it presets, it never prices. Null = not asked. */
+  occasion: OccasionId | null;
   friends: Friend[];
   edition: EditionId | null;
   /** True once the visitor picked an edition themselves, so a changed squad size no longer moves it. */
@@ -103,7 +108,8 @@ export interface Draft {
 export function newDraft(now = Date.now()): Draft {
   return {
     version: 1,
-    step: "squad",
+    step: "purpose",
+    occasion: null,
     friends: [],
     edition: null,
     editionChosen: false,
@@ -134,6 +140,7 @@ export function reviveDraft(raw: unknown): Draft {
     ...d,
     step: known.has(d.step as StepId) ? (d.step as StepId) : "squad",
     edition: EDITION_IDS.includes(d.edition as EditionId) ? (d.edition as EditionId) : null,
+    occasion: OCCASION_IDS.includes(d.occasion as OccasionId) ? (d.occasion as OccasionId) : null,
     friends: d.friends.slice(0, MAX_FRIENDS).map(reviveFriend),
     bigGames: (d.bigGames ?? []).filter(id => BIG_GAMES.some(g => g.id === id)),
     minigames: (d.minigames ?? []).filter(id => MINIGAMES.some(g => g.id === id)),
@@ -327,6 +334,57 @@ export function prefillSquad(d: Draft, makeId: () => string = slotId): Draft {
 
 export function chooseEdition(d: Draft, edition: EditionId, makeId: () => string = slotId): Draft {
   return fitSlots(touch(d, { edition, editionChosen: true }), makeId);
+}
+
+// ---------- step 0: what's it for (plan 19) ----------
+
+const story = (d: Draft): StoryChoices => d.sections.story as StoryChoices;
+const setStory = (d: Draft, patch: Partial<StoryChoices>): Draft => setSection(d, "story", { ...story(d), ...patch });
+
+/** The tone a tile sets is copy, never a price, so it is applied straight away. */
+export function setTone(d: Draft, tone: Tone): Draft {
+  return setStory(d, { tone });
+}
+
+export function setOutline(d: Draft, outline: OutlineId): Draft {
+  return setStory(d, { outline });
+}
+
+/**
+ * Pick the occasion. It sets the tone and, while the visitor has not picked an edition themselves, the
+ * edition and the number of slots the occasion opens on. It never touches an add-on: a suggestion is
+ * offered with its price and added by a tap (occasions.ts).
+ */
+export function setOccasion(d: Draft, id: OccasionId, makeId: () => string = slotId, ladder: LadderId = activeLadder()): Draft {
+  const occ = occasionById(id);
+  if (!occ) return d;
+  let next = touch(d, { occasion: id });
+  next = setTone(next, occ.tone);
+  if (next.editionChosen) return next;
+  return setGroupSize(touch(next, { edition: occ.edition }), suggestedSize(id), makeId, ladder);
+}
+
+/**
+ * "How many people is it for?" — the second and last question of step 0.
+ *
+ * It sets the SLOTS to the answer, not to the edition's allowance: a group of four told us they are four,
+ * and padding back up to Deluxe's six would leave two empty slots, which block the send. The edition
+ * follows as the smallest one that fits, and `editionChosen` stays false so the edition step is still a
+ * recommendation rather than a decision already taken. A friend somebody has already typed in is never
+ * dropped, so the size can only grow past what is filled.
+ */
+export function setGroupSize(d: Draft, size: number, makeId: () => string = slotId, ladder: LadderId = activeLadder()): Draft {
+  const started = squadFriends(d).length;
+  const want = Math.max(MIN_FRIENDS, started, Math.min(MAX_FRIENDS, Math.round(size)));
+  const edition = d.editionChosen ? d.edition : smallestEditionFor(want, ladder);
+  let next = touch(d, { edition: edition ?? d.edition ?? DEFAULT_EDITION });
+  while (next.friends.length < want) next = addFriend(next, makeId());
+  while (next.friends.length > want) {
+    const last = next.friends.map(isEmptySlot).lastIndexOf(true);
+    if (last < 0) break;
+    next = { ...next, friends: next.friends.filter((_, i) => i !== last) };
+  }
+  return next;
 }
 
 export function toggleIn(list: string[], id: string): string[] {

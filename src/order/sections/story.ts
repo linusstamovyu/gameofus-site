@@ -8,6 +8,61 @@ export type Tone = (typeof TONES)[number];
 export const ENDING_TYPES = ["none", "dedication", "birthday", "proposal"] as const;
 export type EndingType = (typeof ENDING_TYPES)[number];
 
+// The ready-made story outlines (plan 19, owner 16 Sep 2026). A blank box is where people stall, so the
+// story step offers four shapes and "our own story" beside them. Each one runs on mechanics the game
+// already has, which is why there are four and not sixteen: an outline that needs a new gym is a quote.
+//
+// "heist" is deliberately generic (owner): the stolen thing is a blank the customer fills in, so one
+// outline serves a stag do, a birthday and a couple. Its art is captured from the real game —
+// loop_outline_<id>_{1,2,3} and outline_<id> in public/order-assets (tools/build_order_loops.py).
+export const OUTLINE_IDS = ["own", "crown", "heist", "traitor", "night"] as const;
+export type OutlineId = (typeof OUTLINE_IDS)[number];
+
+export interface Outline {
+  id: OutlineId;
+  label: string;
+  /** The hook, as the buyer would tell it to their group. */
+  blurb: string;
+  /** What the customer has to tell us for this outline to work. Empty for "own". */
+  asks: string;
+}
+
+export const OUTLINES: Outline[] = [
+  {
+    id: "crown",
+    label: "Crown of the Group",
+    blurb: "Every friend is a gym leader built around their running joke. Beat them all and you are crowned champion of the group.",
+    asks: "One thing each friend is known for.",
+  },
+  {
+    id: "heist",
+    label: "The Heist",
+    blurb: "Someone has taken the one thing the group cannot do without, and you chase them across your own city.",
+    asks: "What was taken, and who took it.",
+  },
+  {
+    id: "traitor",
+    label: "The Traitor in the Group Chat",
+    blurb: "Somebody leaked the group's secret. You question every friend in turn until you unmask them.",
+    asks: "The secret, and who the traitor is.",
+  },
+  {
+    id: "night",
+    label: "The Night We Met",
+    blurb: "A flashback to the night the group first came together, ending in the present day.",
+    asks: "Where you met, and one thing that happened.",
+  },
+  {
+    id: "own",
+    label: "Our own story",
+    blurb: "Tell us the night everyone still talks about and we will build the quest around it.",
+    asks: "",
+  },
+];
+
+export const outlineById = (id: OutlineId): Outline => OUTLINES.find(o => o.id === id) ?? OUTLINES[OUTLINES.length - 1];
+export const OUTLINE_LABEL: Record<OutlineId, string> = Object.fromEntries(OUTLINES.map(o => [o.id, o.label])) as Record<OutlineId, string>;
+
 export const MEMORY_MIN = 20;
 export const MEMORY_MAX = 4000;
 export const LANGUAGE_MAX = 40;
@@ -34,6 +89,8 @@ export interface Ending {
 }
 
 export interface StoryChoices {
+  /** Which ready-made outline the quest is built on; "own" means the memory below is the whole brief. */
+  outline: OutlineId;
   memory: string;
   voiceNote: UploadRef | null;
   tone: Tone;
@@ -78,6 +135,7 @@ export const storySection: Section<StoryChoices> = {
   label: "Your story",
 
   defaults: () => ({
+    outline: "own",
     memory: "",
     voiceNote: null,
     tone: "lads",
@@ -106,6 +164,7 @@ export const storySection: Section<StoryChoices> = {
     const e = obj(r.ending);
     const type = oneOf(ENDING_TYPES, e.type, "none");
     return {
+      outline: oneOf(OUTLINE_IDS, r.outline, "own"),
       memory: str(r.memory, MEMORY_MAX),
       voiceNote,
       tone: oneOf(TONES, r.tone, "lads"),
@@ -131,7 +190,8 @@ export const storySection: Section<StoryChoices> = {
   problems(c) {
     const out: string[] = [];
     if (!c.voiceNote) {
-      if (!c.memory) out.push("Tell us the memory, or attach a voice note.");
+      // With an outline picked, what is missing is that outline's own blank, not "the memory" in general.
+      if (!c.memory) out.push(c.outline === "own" ? "Tell us the memory, or attach a voice note." : `${outlineById(c.outline).asks} Type it in, or attach a voice note.`);
       else if (c.memory.length < MEMORY_MIN) out.push(`Tell us a bit more about the memory (at least ${MEMORY_MIN} characters), or attach a voice note.`);
     }
     if (c.moments.some(m => !m.text)) out.push("Every key moment needs a few words.");
@@ -141,6 +201,7 @@ export const storySection: Section<StoryChoices> = {
 
   summary(c) {
     const lines: string[] = [];
+    if (c.outline !== "own") lines.push(`Outline: ${OUTLINE_LABEL[c.outline]}`);
     if (c.memory) lines.push(c.memory.length > SUMMARY_MEMORY_CHARS ? `${c.memory.slice(0, SUMMARY_MEMORY_CHARS).trimEnd()}…` : c.memory);
     if (c.voiceNote) lines.push(`Voice note: ${c.voiceNote.name || "attached"}`);
     lines.push(`Tone: ${TONE_LABEL[c.tone]} · Language: ${c.language}`);

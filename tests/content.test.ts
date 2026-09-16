@@ -5,6 +5,9 @@ import offer from "../src/content/offer.json";
 import site from "../src/content/site.json";
 import squad from "../src/content/squad.json";
 import stops from "../src/content/stops.json";
+import occasions from "../src/content/occasions.json";
+import { OCCASION_IDS } from "../src/order/occasions";
+import { OUTLINES } from "../src/order/sections/story";
 
 const root = resolve(__dirname, "..");
 const assets = resolve(root, "public/assets");
@@ -27,6 +30,7 @@ describe("assets", () => {
     referenced.add(s.art);
     for (const [src] of (s as { thumbs?: [string, string][] }).thumbs ?? []) referenced.add(src);
   }
+  referenced.add(occasions.forTwo.art);
   const html = readFileSync(resolve(root, "index.html"), "utf8");
   for (const m of html.matchAll(/assets\/([\w.-]+\.(?:png|jpg|webp))/g)) referenced.add(m[1]);
 
@@ -41,8 +45,29 @@ describe("assets", () => {
   });
 });
 
+describe("the occasion doors (plan 19)", () => {
+  it("every tile opens a real occasion in the builder", () => {
+    expect(occasions.tiles.length).toBeGreaterThan(0);
+    for (const t of occasions.tiles) expect(OCCASION_IDS, t.id).toContain(t.id as (typeof OCCASION_IDS)[number]);
+    expect(OCCASION_IDS, "for-two card").toContain(occasions.forTwo.id as (typeof OCCASION_IDS)[number]);
+  });
+
+  it("only Christmas leaves its line to the deadline in offer.json", () => {
+    for (const t of occasions.tiles) {
+      if (t.id === "christmas") expect(t.line).toBe("");
+      else expect(t.line.length, t.id).toBeGreaterThan(0);
+    }
+  });
+
+  it("names the story outlines nowhere but the builder", () => {
+    // The outline copy lives in src/order/sections/story.ts; a second copy on the home page would drift.
+    const html = readFileSync(resolve(root, "index.html"), "utf8");
+    for (const o of OUTLINES) if (o.id !== "own") expect(html, o.label).not.toContain(o.label);
+  });
+});
+
 describe("what the site must never say", () => {
-  const files = ["index.html", "privacy.html", "terms.html", "src/content/squad.json", "src/content/stops.json", "src/content/faq.json", "src/content/offer.json", "src/order/prices.ts"];
+  const files = ["index.html", "privacy.html", "terms.html", "src/content/squad.json", "src/content/stops.json", "src/content/faq.json", "src/content/offer.json", "src/content/occasions.json", "src/order/occasions.ts", "src/order/sections/story.ts", "src/order/prices.ts"];
   // Franchise names stay out of copy and metadata (plan clip rules).
   const banned = [/pok[eé]mon/i, /minecraft/i, /fortnite/i, /ronaldo/i, /jonesy/i];
   it.each(files)("%s names no franchise or celebrity", f => {

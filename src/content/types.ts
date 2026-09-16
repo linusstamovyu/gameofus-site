@@ -73,3 +73,25 @@ export interface SiteConfig {
   siteUrl: string;
   isDraft: boolean;
 }
+
+/** The home page's occasion doors (plan 19). `id` is an OccasionId from src/order/occasions.ts. */
+export interface OccasionTile {
+  id: string;
+  title: string;
+  /** Empty for Christmas, whose line carries the order deadline and is written at run time. */
+  line: string;
+}
+
+export interface ForTwoCard {
+  id: string;
+  eyebrow: string;
+  title: string;
+  line: string;
+  art: string;
+  cta: string;
+}
+
+export interface Occasions {
+  tiles: OccasionTile[];
+  forTwo: ForTwoCard;
+}

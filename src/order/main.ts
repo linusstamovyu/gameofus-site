@@ -8,7 +8,8 @@ import { $, el } from "../dom";
 import { currentCountry, currentCurrency, initCountryPicker, onCountryChange } from "../shared/countryPicker";
 import { shopStatus } from "./api";
 import { money, type Ctx, type StepView } from "./context";
-import { blockingProblems, withPerk, chooseEdition, DEFERRED_STEPS, needsConsent, prefillSquad, problems, squadFriends, STEPS, toPicks, type Draft, type StepId } from "./draft";
+import { blockingProblems, withPerk, chooseEdition, DEFERRED_STEPS, needsConsent, prefillSquad, problems, setOccasion, squadFriends, STEPS, toPicks, type Draft, type StepId } from "./draft";
+import { OCCASION_IDS, type OccasionId } from "./occasions";
 import { loadPerk } from "../shared/tourProgress";
 import { applyFavourites, favouriteCount, loadFavourites } from "../explore/favourites";
 import { track, trackClicks } from "../shared/analytics";
@@ -19,6 +20,7 @@ import { consentView } from "./steps/consent";
 import { editionStep } from "./steps/edition";
 import { gamesStep } from "./steps/games";
 import { reviewStep } from "./steps/review";
+import { purposeStep } from "./steps/purpose";
 import { squadStep } from "./steps/squad";
 import { extrasStep } from "./steps/extras";
 import { keepsakesStep } from "./steps/keepsakes";
@@ -29,7 +31,7 @@ import { worldStep } from "./steps/world";
 
 const site = siteData as SiteConfig;
 const VIEWS: Record<StepId, StepView> = {
-  squad: squadStep, edition: editionStep, games: gamesStep,
+  purpose: purposeStep, squad: squadStep, edition: editionStep, games: gamesStep,
   world: worldStep, vehicles: vehiclesStep, phone: phoneStep, story: storyStep, extras: extrasStep, keepsakes: keepsakesStep,
   review: reviewStep,
 };
@@ -183,6 +185,14 @@ async function start() {
   draft = prefillSquad(await loadDraft());
   const wanted = params.get("edition") as EditionId | null;
   if (wanted && EDITION_IDS.includes(wanted)) draft = chooseEdition(draft, wanted);
+  // From a home page occasion tile (plan 19): the door presets the order and opens on step 0, where the
+  // visitor can see what it set and change it. An edition named in the URL still wins, since that came
+  // from a price card the visitor actually read.
+  const wantedOccasion = params.get("occasion") as OccasionId | null;
+  if (wantedOccasion && OCCASION_IDS.includes(wantedOccasion)) {
+    draft = { ...setOccasion(draft, wantedOccasion), step: "purpose" };
+    track("builder_from_occasion", { occasion: wantedOccasion });
+  }
   // A bonus unlocked on the beach tour on this device (plan 18 phase 2) rides along with the order.
   draft = withPerk(draft, loadPerk());
   // From Explore (plan 18 §2): favourites arrive ticked, and "Add these" opens the step they belong to.
@@ -197,7 +207,7 @@ async function start() {
   if (wantedStep && STEPS.some(s => s.id === wantedStep) && wantedStep !== "review") draft = { ...draft, step: wantedStep };
   if (params.get("cancelled")) draft = { ...draft, step: "review" };
   // Applied once: a reload shouldn't keep overriding a later choice.
-  if (wanted || fromExplore || params.get("from") || wantedStep || params.get("cancelled")) history.replaceState(null, "", location.pathname);
+  if (wanted || wantedOccasion || fromExplore || params.get("from") || wantedStep || params.get("cancelled")) history.replaceState(null, "", location.pathname);
   consenting = needsConsent(draft);
   $("#back").onclick = () => ctx.go(STEPS[Math.max(0, stepIndex(draft.step) - 1)].id);
   $("#next").onclick = () => {

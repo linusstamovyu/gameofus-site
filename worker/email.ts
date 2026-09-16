@@ -17,6 +17,7 @@ export function ownerEmail(o: OrderRecord, siteUrl: string): { subject: string; 
     `Order ${o.id}`,
     "",
     `Organiser: ${p.organiser.name} <${p.organiser.email}>, country ${p.country}`,
+    `What it's for: ${p.occasion ?? "not said"}`,
     p.partyMode ? `Party Mode: yes · birth year ${p.organiser.birthYear} · adults confirmed ${p.organiser.adultsConfirmed}` : "Party Mode: no",
     "",
     `Squad (${p.friends.length}): ${p.friends.map(f => f.name).join(", ")}`,

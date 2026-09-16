@@ -1,11 +1,12 @@
 import "./styles.css";
 import faqData from "./content/faq.json";
+import occasionsData from "./content/occasions.json";
 import offerData from "./content/offer.json";
 import siteData from "./content/site.json";
 import squadData from "./content/squad.json";
 import stopsData from "./content/stops.json";
-import type { Offer, SiteConfig, SquadMember, Stop } from "./content/types";
-import { renderFaq, renderOffer, renderOrderCalls, renderPause, renderSquad } from "./sections/render";
+import type { Occasions, Offer, SiteConfig, SquadMember, Stop } from "./content/types";
+import { renderFaq, renderOccasions, renderOffer, renderOrderCalls, renderPause, renderSquad } from "./sections/render";
 import { trackClicks } from "./shared/analytics";
 import { currentCurrency, initCountryPicker, onCountryChange } from "./shared/countryPicker";
 import { BeachWorld } from "./world/world";
@@ -13,12 +14,14 @@ import { BeachWorld } from "./world/world";
 const squad = squadData as unknown as SquadMember[];
 const stops = stopsData as unknown as Stop[];
 const offer = offerData as unknown as Offer;
+const occasions = occasionsData as unknown as Occasions;
 const site = siteData as SiteConfig;
 
 // The page comes first and never waits for the world.
 renderSquad(squad);
 renderOffer(offer, currentCurrency());
 renderOrderCalls(offer);
+renderOccasions(occasions, offer);
 onCountryChange((_, currency) => renderOffer(offer, currency));
 void initCountryPicker();
 renderFaq(faqData as unknown as [string, string][]);

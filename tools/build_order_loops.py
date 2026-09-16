@@ -20,6 +20,7 @@ SITE = Path(__file__).resolve().parent.parent
 GAME = SITE.parent / "polishedcrystal-master" / "public" / "assets"
 CHARACTER_ASSETS = SITE.parent / "CharacterAssets"
 OUT = SITE / "public" / "order-assets"
+SOURCE = SITE / "source"
 
 errors: list[str] = []
 
@@ -74,6 +75,41 @@ def sprite(im: Image.Image, name: str, lossless: bool = False) -> None:
         im.quantize(64, method=Image.FASTOCTREE).save(OUT / name, optimize=True)
         return
     im.save(OUT / name, "WEBP", lossless=lossless, quality=82, method=6, alpha_quality=90)
+
+
+# The four story outlines (plan 19). Three frames each, captured from the real game with
+# tools/frame_sink.py and kept in source/outlines/ — the game is not scripted from here, so a frame
+# cannot be re-derived on demand the way a sprite can. The loop plays them as a crossfading slideshow
+# (src/order/steps/loops.ts `slideshow`), so the banner is a 3:1 cut and the card a 3:2 one.
+#
+# `top` is the vertical crop bias: a battle plate keeps the fighters (they stand below the middle), a
+# top-down zone frame keeps the player, who is dead centre.
+OUTLINE_FRAMES: dict[str, list[tuple[str, float]]] = {
+    "crown": [("crown_1", 0.42), ("crown_2", 0.42), ("crown_3", 0.45)],
+    # heist_1 is biased well up: the thing worth seeing is the marina's colour terrace and the boats
+    # behind the promenade, not the paving the lad is standing on. heist_2 keeps the parked cars in.
+    "heist": [("heist_1", 0.22), ("heist_2", 0.36), ("heist_3", 0.5)],
+    "traitor": [("traitor_1", 0.5), ("traitor_2", 0.5), ("traitor_3", 0.5)],
+    "night": [("night_1", 0.5), ("night_2", 0.5), ("night_3", 0.5)],
+}
+
+
+def fit_source(rel: str, name: str, size: tuple[int, int], top: float, quality: int) -> None:
+    """Crop one of our own captures (source/, never the game tree) to a card or banner."""
+    p = SOURCE / rel
+    if not p.exists():
+        errors.append(f"missing source: {p}")
+        return
+    im = Image.open(p).convert("RGB")
+    ImageOps.fit(im, size, Image.LANCZOS, centering=(0.5, top)).save(OUT / name, "WEBP", quality=quality, method=6)
+
+
+def build_outlines() -> None:
+    for outline, frames in OUTLINE_FRAMES.items():
+        for i, (stem, top) in enumerate(frames, 1):
+            fit_source(f"outlines/{stem}.jpg", f"loop_outline_{outline}_{i}.webp", (720, 240), top, 62)
+        stem, top = frames[0]
+        fit_source(f"outlines/{stem}.jpg", f"outline_{outline}.webp", (360, 240), top, 68)
 
 
 def build() -> list[str]:
@@ -141,6 +177,7 @@ def build() -> list[str]:
     for i, (f, top) in enumerate((("intro_07.png", 0.35), ("intro_09.png", 0.35), ("intro_11.png", 0.4), ("poolside_11_cover.jpg", 0.75)), 1):
         cover(f"cutscene/{f}", f"loop_story_cut_{i}.webp", (720, 240), top, 72)
 
+    build_outlines()
     build_posters()
     return errors
 

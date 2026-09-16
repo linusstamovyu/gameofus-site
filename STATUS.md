@@ -2,7 +2,7 @@
 
 Plan: `../Game of Us/16-website-poc-build-plan.html` · launch target **Sat 4 Oct 2026 (Gate G0)**
 
-_Last updated: 15 Sep 2026_
+_Last updated: 16 Sep 2026_
 
 ## Done (15 Sep, ahead of schedule)
 
@@ -23,6 +23,21 @@ _Last updated: 15 Sep 2026_
 | Low-power fallback | 3 | ✅ Done | Sea and palms stop animating under 24 fps or with reduced motion; page never waits for the world |
 
 Verified in the browser: tour walks Rico to Kai and opens his card with the real photo; roster shows all 5 photo → game pairs; 3 tiers, 6 FAQs, no broken images, no console errors.
+
+## Done (16 Sep) — plan 19, occasion packs
+
+| Task | State | Notes |
+|---|---|---|
+| Step 0 "What's it for" in the builder | ✅ Done | Four occasion doors → tone + edition + slots; size stepper; four story outlines with playing banners; a recommendation line; suggestions priced with an Add button (nothing pre-ticked) |
+| Home page occasion tiles + "For two?" card | ✅ Done | `order.html?occasion=<id>`; Christmas's line still comes from `offer.json` deadlines |
+| Four story outlines | ✅ Done | Crown of the Group · The Heist · The Traitor in the Group Chat · The Night We Met, plus "our own story"; also on the story step, which follows the pick |
+| Outline loops (16 files, 145 KB) | ✅ Done | Three frames each, captured from the real game (`tools/frame_sink.py` → `source/outlines/`), cut by `tools/build_order_loops.py` |
+| Couples advertising art | ✅ Done | Four 4:5 mockups in `public/brand/couples/` + the home card, by `tools/build_couple_ads.py`. Advertising only — nothing in the engine |
+| `occasion` on the order | ✅ Done | Saved in the draft, sent in the payload, on the owner's order email, tracked in PostHog |
+| Tests | ✅ 218 pass | New `tests/purpose.test.ts`; `npm run build` clean; order art 1711 KB of a 2048 KB budget |
+
+Still to do on plan 19: the Instagram poll assets (task 6), then read the tile-click numbers after ~2 weeks
+and pick which occasion the hero leads with (task 7).
 
 ## Blocked on you
 

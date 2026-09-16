@@ -203,8 +203,8 @@
   /* ---------- occasions + faq ---------- */
   .band{background:var(--night);color:#e9eef3;padding:80px 0}
   .band .eyebrow{color:var(--cyan);margin-bottom:10px}
-  .occ{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:70px}
-  .occ div{background:var(--night-2);border-radius:10px;padding:18px}
+  .occ{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:24px}
+  .occ div,.occ-tile{background:var(--night-2);border-radius:10px;padding:18px}
   .occ b{display:block;font-family:var(--pixel);font-size:19px;margin-bottom:6px}
   .occ span{font-size:14px;opacity:.8}
   .faq{display:grid;grid-template-columns:1fr 1.4fr;gap:40px}
@@ -304,3 +304,18 @@
   .showcase .sc-actions{display:flex;flex-wrap:wrap;justify-content:center;align-items:center;gap:8px;padding:10px 12px}
   .showcase .sc-hint{color:#c9b28b;font-size:13px}
   .showcase .sc-steer{min-width:120px;min-height:48px;touch-action:none;user-select:none}
+
+  /* ---------- plan 19: the occasion doors and the couples card ---------- */
+  /* A tile is a link into the builder's step 0 (?occasion=), so it has to look pressable. */
+  .occ-tile{display:block;color:#e9eef3;text-decoration:none;border:3px solid transparent;transition:border-color .12s,transform .12s}
+  .occ-tile:hover{border-color:var(--teal);transform:translateY(-2px)}
+  .occ-tile b{color:#fff}
+  .occ-tile::after{content:"Start here ▶";display:block;margin-top:10px;font-family:var(--pixel);font-size:13px;color:var(--cyan)}
+
+  .fortwo{display:grid;grid-template-columns:300px 1fr;gap:22px;align-items:center;background:var(--night-2);border:3px solid #3d5a72;border-radius:14px;padding:18px;margin-bottom:70px}
+  .fortwo-art{display:block;width:100%;border-radius:10px;background:var(--night)}
+  .fortwo-text{color:#e9eef3;display:flex;flex-direction:column;gap:8px;align-items:start}
+  .fortwo-text h3{font-family:var(--pixel);font-size:26px;color:#fff}
+  .fortwo-text p{font-size:15px;line-height:1.5;opacity:.88;margin:0}
+  .fortwo-text .eyebrow{color:var(--charm)}
+  @media (max-width:700px){ .fortwo{grid-template-columns:1fr;gap:14px} }
