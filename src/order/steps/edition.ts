@@ -27,6 +27,7 @@ export const editionStep: StepView = (ctx, panel) => {
   }
 
   const grid = el("div", "editions");
+  grid.dataset.field = "edition";
   for (const id of EDITION_IDS) {
     const ed = ladder.editions[id];
     const tier = offer.tiers.find(t => t.id === id)!;

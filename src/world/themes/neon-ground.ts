@@ -1,8 +1,8 @@
 // Neon city, the ground: skyline, the megastructure wall with its billboards and
 // shopfronts, the LED walkway, the wet plaza, the kerb and the road. Static art is
 // painted once (tile + extras); `neonLive` animates traffic, puddles, rain and tickers.
-import { Ground, PALMS, PARASOLS, W, hash } from "../map";
-import { blocks, ellipse, mix, rgba, vnoise, wrap, type Ctx, type View } from "./kit";
+import { Ground, PAD_LEFT as P, PALMS, PARASOLS, W, hash } from "../map";
+import { blocks, ellipse, mix, perWidth, rgba, vnoise, wrap, type Ctx, type View } from "./kit";
 
 /* ---------- palette ---------- */
 export const MAG = "#ff3fb4", CYAN = "#35e8ff", AMBER = "#ffb13b", VIOLET = "#a66bff", RED = "#ff4a3a", LIME = "#b8ff5a";
@@ -31,9 +31,15 @@ export function glyph(g: Ctx, cx: number, cy: number, s: number, seed: number, c
 }
 
 /* ---------- layout (tile units, never pixels) ---------- */
+// Positions were authored on the 22-wide map; `P` (PAD_LEFT) keeps them in step with
+// the stops, and the extra pieces fill the open strip added on the left.
 export interface Board { x: number; w: number; c: string; kind: "glyph" | "logo" | "ticker" | "bars" }
 export const BB_Y0 = 1.4, BB_Y1 = 1.97;
-export const BILLBOARDS: Board[] = [
+export const BILLBOARDS: Board[] = ([
+  // the left strip
+  { x: P - 6.75, w: 3.0, c: CYAN, kind: "ticker" },
+  { x: P - 3.05, w: 2.0, c: VIOLET, kind: "bars" },
+  // the original row
   { x: 0.25, w: 2.5, c: MAG, kind: "glyph" },
   { x: 3.35, w: 1.7, c: CYAN, kind: "logo" },
   { x: 5.7, w: 3.3, c: AMBER, kind: "ticker" },
@@ -41,7 +47,7 @@ export const BILLBOARDS: Board[] = [
   { x: 12.0, w: 2.9, c: MAG, kind: "glyph" },
   { x: 15.55, w: 2.1, c: CYAN, kind: "ticker" },
   { x: 18.35, w: 3.4, c: AMBER, kind: "glyph" },
-];
+] as Board[]).map((b, i) => (i < 2 ? b : { ...b, x: b.x + P }));
 
 export type ShopKind = "noodle" | "shutter" | "arcade" | "kiosk";
 export interface Shop { x: number; w: number; kind: ShopKind; c: string; i: number }
@@ -57,7 +63,7 @@ export const SHOPS: Shop[] = (() => {
 })();
 export const LANTERNS: [number, number][] = SHOPS.filter(s => s.kind === "noodle")
   .flatMap(s => [[s.x + s.w * 0.22, s.i], [s.x + s.w * 0.78, s.i + 1]] as [number, number][]);
-export const VENTS = [4.15, 11.6, 18.95];
+export const VENTS = [P - 3.3, 4.15 + P, 11.6 + P, 18.95 + P];
 
 interface Tower { x: number; w: number; h: number; lit: string }
 const WARM = ["#ffd98a", "#9fefff", "#ffb3e6", "#ffe6a8"];
@@ -80,15 +86,19 @@ export const PUDDLES: [number, number, number, number][] = [
   [4.1, 5.62, 0.95, 0.3], [7.1, 7.35, 1.35, 0.4], [11.35, 6.45, 0.8, 0.26], [14.7, 9.62, 1.45, 0.42],
   [19.55, 7.4, 1.05, 0.33], [1.5, 10.25, 0.95, 0.3], [9.25, 10.5, 1.15, 0.34], [16.35, 6.35, 0.7, 0.22],
   [12.3, 11.45, 0.9, 0.24], [20.85, 10.95, 0.8, 0.27], [6.1, 4.55, 0.75, 0.2], [3.9, 11.62, 0.6, 0.18],
-];
+].map(([x, y, rx, ry]) => [x + P, y, rx, ry] as [number, number, number, number]).concat([
+  // the left strip
+  [2.3, 6.35, 1.1, 0.34], [5.2, 8.9, 0.85, 0.26], [1.2, 11.25, 0.75, 0.24], [4.6, 4.7, 0.7, 0.2],
+]);
 export function puddleColor(cx: number): string {
   let best = BILLBOARDS[0], d = 1e9;
   for (const b of BILLBOARDS) { const e = Math.abs(b.x + b.w / 2 - cx); if (e < d) { d = e; best = b; } }
   return best.c;
 }
-const MANHOLES: [number, number][] = [[4.5, 7.45], [12.45, 10.35], [19.5, 6.55], [7.5, 4.62]];
-export const MANHOLE_ROAD: [number, number] = [12.6, 16.62];
-const DRAINS = [3.2, 9.6, 15.1, 20.2];
+const MANHOLES: [number, number][] = [[4.5, 7.45], [12.45, 10.35], [19.5, 6.55], [7.5, 4.62], [-3.6, 9.45]].map(([x, y]) => [x + P, y] as [number, number]);
+export const MANHOLE_ROAD: [number, number] = [12.6 + P, 16.62];
+const MANHOLE_ROAD_LEFT: [number, number] = [P - 4.1, 14.62];
+const DRAINS = [-3.1, 3.2, 9.6, 15.1, 20.2].map(x => x + P);
 
 /* ---------- traffic ---------- */
 export interface Lane { y: number; dir: 1 | -1; v: number; n: number }
@@ -356,7 +366,7 @@ function wall(g: Ctx, T: number) {
     g.fillStyle = sh; g.fillRect(0, T * 1.3, mw, T * 0.32);
     // pipes + AC units in the gaps between billboards
     g.fillStyle = "#1a1922"; g.fillRect(0, T * 1.33, mw, u * 0.9);
-    for (let i = 0; i < 26; i++) {
+    for (let i = 0; i < perWidth(26); i++) {
       const ax = hash(i, 0, 51) * W, ay = 1.5 + hash(i, 1, 51) * 0.3;
       if (BILLBOARDS.some(b => ax > b.x - 0.4 && ax < b.x + b.w + 0.05)) continue;
       const aw = u * 4, ah = u * 3;
@@ -403,8 +413,8 @@ function plaza(g: Ctx, T: number) {
       g.fillStyle = grd; g.fillRect(-T, 0, T * 2, T); g.restore();
     }
     // pools of light from lamps high on the megastructure, off the top of the picture
-    for (const [lx, ly, rx, c, a] of [[10.6, 8.9, 3.2, "#ffc98a", 0.1], [4.4, 10.4, 2.4, MAG, 0.08], [17.2, 7.9, 2.8, CYAN, 0.08], [20.5, 11.2, 2, VIOLET, 0.08]] as [number, number, number, string, number][]) {
-      g.save(); g.translate(lx * T, ly * T); g.scale(rx, rx * 0.4);
+    for (const [lx, ly, rx, c, a] of [[10.6, 8.9, 3.2, "#ffc98a", 0.1], [4.4, 10.4, 2.4, MAG, 0.08], [17.2, 7.9, 2.8, CYAN, 0.08], [20.5, 11.2, 2, VIOLET, 0.08], [-3.4, 7.6, 2.6, AMBER, 0.08]] as [number, number, number, string, number][]) {
+      g.save(); g.translate((lx + P) * T, ly * T); g.scale(rx, rx * 0.4);
       const grd = g.createRadialGradient(0, 0, 0, 0, 0, T);
       grd.addColorStop(0, rgba(c, a)); grd.addColorStop(1, rgba(c, 0));
       g.fillStyle = grd; g.fillRect(-T, -T, T * 2, T * 2); g.restore();
@@ -416,9 +426,10 @@ function plaza(g: Ctx, T: number) {
     }
     // painted street lettering, big and faded
     g.save(); g.globalAlpha = 0.14;
-    for (let i = 0; i < 3; i++) glyph(g, T * (13.6 + i * 1.0), T * 6.6, T * 0.75, 400 + i, "#e8ecff", u * 1.6);
-    for (let i = 0; i < 2; i++) glyph(g, T * (5.6 + i * 1.0), T * 9.9, T * 0.72, 420 + i, "#e8ecff", u * 1.6);
-    g.beginPath(); g.moveTo(T * 18.6, T * 9.6); g.lineTo(T * 20.4, T * 9.6); g.moveTo(T * 20.4, T * 9.6); g.lineTo(T * 19.9, T * 9.25); g.moveTo(T * 20.4, T * 9.6); g.lineTo(T * 19.9, T * 9.95);
+    for (let i = 0; i < 3; i++) glyph(g, T * (13.6 + P + i * 1.0), T * 6.6, T * 0.75, 400 + i, "#e8ecff", u * 1.6);
+    for (let i = 0; i < 2; i++) glyph(g, T * (5.6 + P + i * 1.0), T * 9.9, T * 0.72, 420 + i, "#e8ecff", u * 1.6);
+    for (let i = 0; i < 2; i++) glyph(g, T * (P - 5.4 + i * 1.0), T * 7.9, T * 0.72, 440 + i, "#e8ecff", u * 1.6);
+    g.beginPath(); g.moveTo(T * (18.6 + P), T * 9.6); g.lineTo(T * (20.4 + P), T * 9.6); g.moveTo(T * (20.4 + P), T * 9.6); g.lineTo(T * (19.9 + P), T * 9.25); g.moveTo(T * (20.4 + P), T * 9.6); g.lineTo(T * (19.9 + P), T * 9.95);
     g.strokeStyle = "#e8ecff"; g.lineWidth = u * 1.6; g.stroke();
     g.restore();
     // tactile guide strip before the kerb, continuous across the map
@@ -464,7 +475,7 @@ function plaza(g: Ctx, T: number) {
       g.beginPath(); g.ellipse(px * T, py * T, rx * T, ry * T, 0, Math.PI * 1.05, Math.PI * 1.9); g.stroke();
     }
     // litter: soaked flyers and bottle caps
-    for (let i = 0; i < 18; i++) {
+    for (let i = 0; i < perWidth(18); i++) {
       const lx = hash(i, 0, 71) * W, ly = 4.3 + hash(i, 1, 71) * 7.2;
       g.save(); g.translate(lx * T, ly * T); g.rotate((hash(i, 2, 71) - 0.5) * 1.6);
       if (i % 3) { g.fillStyle = rgba(i % 2 ? "#e9e4f5" : NEONS[i % NEONS.length], 0.22); g.fillRect(-u * 1.6, -u, u * 3.2, u * 2.2); }
@@ -483,7 +494,7 @@ function kerb(g: Ctx, T: number) {
     g.fillStyle = "#101018"; g.fillRect(0, T * 12.82, mw, T * 0.18);
     g.fillStyle = rgba(CYAN, 0.55); g.fillRect(0, T * 12.88, mw, u * 0.7);
     // bollards, short, sitting on the kerb edge
-    for (let bx = 1.0; bx < W; bx += 2) {
+    for (let bx = ((1 + P) % 2) || 2; bx < W; bx += 2) { // every other tile, on the same tiles relative to the stops
       const cx = bx * T, base = T * 12.8, hgt = T * 0.34;
       ellipse(g, cx, base, u * 1.6, u * 0.6, "rgba(0,0,0,.5)");
       g.fillStyle = "#2f3140"; g.fillRect(cx - u * 1.1, base - hgt, u * 2.2, hgt);
@@ -495,7 +506,7 @@ function kerb(g: Ctx, T: number) {
 }
 
 function road(g: Ctx, T: number) {
-  const u = T / 16, mw = W * T, ZX0 = 6.4, ZX1 = 8.3;
+  const u = T / 16, mw = W * T, ZX0 = 6.4 + P, ZX1 = 8.3 + P;
   band(g, T, 13, 18, () => {
     g.fillStyle = "#08080d"; g.fillRect(0, T * 13, mw, T * 0.12);
     g.fillStyle = "rgba(160,180,255,.12)"; g.fillRect(0, T * 13.1, mw, u * 0.4);
@@ -522,8 +533,8 @@ function road(g: Ctx, T: number) {
       g.fillStyle = "#e9ecf5"; g.fillRect(-T * 0.5, -u * 0.6, T * 0.7, u * 1.2);
       g.beginPath(); g.moveTo(T * 0.45, 0); g.lineTo(T * 0.15, -u * 3); g.lineTo(T * 0.15, u * 3); g.closePath(); g.fill(); g.restore();
     };
-    arrow(3.2, 13.64, -1); arrow(15.4, 14.6, -1); arrow(11.2, 15.62, 1); arrow(19.1, 16.6, 1);
-    manhole(g, T, MANHOLE_ROAD[0], MANHOLE_ROAD[1]);
+    arrow(3.2 + P, 13.64, -1); arrow(15.4 + P, 14.6, -1); arrow(11.2 + P, 15.62, 1); arrow(19.1 + P, 16.6, 1); arrow(P - 2.6, 16.6, 1);
+    manhole(g, T, MANHOLE_ROAD[0], MANHOLE_ROAD[1]); manhole(g, T, MANHOLE_ROAD_LEFT[0], MANHOLE_ROAD_LEFT[1]);
     // far-side crash barrier: plainly not a place to stand
     g.fillStyle = "#0b0b11"; g.fillRect(0, T * 17.36, mw, T * 0.64);
     for (let px = T * 0.2; px < mw; px += T * 0.9) { g.fillStyle = "#2c2e3a"; g.fillRect(px, T * 17.4, u * 1.2, T * 0.5); }
@@ -571,7 +582,7 @@ export function neonLive(ctx: Ctx, T: number, time: number, animated: boolean, v
   // rain rings on the plaza and splashes on the road
   if (animated) {
     ctx.lineWidth = Math.max(1, u * 0.35);
-    for (let i = 0; i < 70; i++) {
+    for (let i = 0; i < perWidth(70); i++) {
       const rx = hash(i, 0, 301) * W, ry = 3.3 + hash(i, 1, 301) * 9.5;
       if (rx < v.x0 - 1 || rx > v.x1 + 1 || ry < v.y0 - 1 || ry > v.y1 + 1) continue;
       const ph = wrap(t * (0.7 + hash(i, 2, 301) * 0.6) + hash(i, 3, 301), 1);
@@ -600,7 +611,7 @@ export function neonLive(ctx: Ctx, T: number, time: number, animated: boolean, v
   });
   if (animated && v.y1 >= 13) {
     ctx.fillStyle = "rgba(200,215,255,.35)";
-    for (let i = 0; i < 50; i++) {
+    for (let i = 0; i < perWidth(50); i++) {
       const sx = hash(i, 0, 311) * W, sy = 13.2 + hash(i, 1, 311) * 4.1;
       if (sx < v.x0 - 1 || sx > v.x1 + 1) continue;
       const ph = wrap(t * 2.3 + hash(i, 2, 311), 1);

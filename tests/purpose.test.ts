@@ -121,7 +121,7 @@ describe("the story outlines", () => {
   it("asks for that outline's own blank when the memory is empty", () => {
     const heist = storySection.check({ outline: "heist" });
     expect(storySection.problems(heist, { edition: "standard", includes: { characters: 2, bigGames: 1, minigames: 3, vehicles: 1, phonePhotos: 3, phoneBeats: 0, zones: 1, evolutions: 0, cutscenes: 0, movesPerCharacter: 1, voiceLines: 0, revisions: 1 }, friends: [], partyMode: false, currency: "DKK" })[0])
-      .toBe(`${outlineById("heist").asks} Type it in, or attach a voice note.`);
+      .toEqual({ message: `${outlineById("heist").asks} Type it in, or attach a voice note.`, field: "story:memory" });
   });
 
   it("ships the three frames and the card each outline plays", () => {

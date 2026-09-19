@@ -85,6 +85,10 @@ export const OCCASIONS: Occasion[] = [
 
 export const OCCASION_IDS: OccasionId[] = OCCASIONS.map(o => o.id);
 
+/** Each occasion's illustration, named by its id (tools/build_occasion_art.py). The home page's doors, the
+ * for-two card and the builder's step-0 tiles all read it, so a door never shows a picture of another occasion. */
+export const occasionArt = (id: string): string => `occ_${id}.webp`;
+
 export const occasionById = (id: OccasionId | null | undefined): Occasion | null =>
   OCCASIONS.find(o => o.id === id) ?? null;
 

@@ -161,6 +161,7 @@ export const phoneStep: StepView = (ctx, panel) => {
     card.append(top);
 
     const from = el("label", "field");
+    from.dataset.field = `beat:${index}:from`;
     const fromId = fieldId("from");
     from.htmlFor = fromId;
     from.append(el("span", null, isCall ? "Who's calling?" : "Headline"));
@@ -173,6 +174,7 @@ export const phoneStep: StepView = (ctx, panel) => {
     from.append(fromInput);
 
     const about = el("label", "field");
+    about.dataset.field = `beat:${index}:about`;
     const aboutId = fieldId("about");
     about.htmlFor = aboutId;
     about.append(el("span", null, "What's it about?"));

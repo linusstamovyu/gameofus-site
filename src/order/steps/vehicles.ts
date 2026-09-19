@@ -73,7 +73,9 @@ export const vehiclesStep: StepView = (ctx, panel) => {
   const list = el("div", "s-vehicles-cars");
   choices.ownCars.forEach((car, i) => {
     const card = el("div", "s-vehicles-car");
+    card.dataset.field = `car:${i}`;
     const field = el("label", "field");
+    field.dataset.field = `car:${i}:description`;
     field.append(el("span", null, `Car ${i + 1}: who drives what?`));
     const input = el("input");
     input.type = "text";
@@ -85,6 +87,7 @@ export const vehiclesStep: StepView = (ctx, panel) => {
     card.append(field);
 
     const photoRow = el("div", "s-vehicles-photo");
+    photoRow.dataset.field = `car:${i}:photo`;
     if (car.photo) {
       const ref = car.photo;
       const thumb = el("div", "s-vehicles-thumb");

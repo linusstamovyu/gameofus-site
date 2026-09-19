@@ -6,7 +6,7 @@ import site from "../src/content/site.json";
 import squad from "../src/content/squad.json";
 import stops from "../src/content/stops.json";
 import occasions from "../src/content/occasions.json";
-import { OCCASION_IDS } from "../src/order/occasions";
+import { OCCASION_IDS, occasionArt } from "../src/order/occasions";
 import { OUTLINES } from "../src/order/sections/story";
 
 const root = resolve(__dirname, "..");
@@ -31,6 +31,7 @@ describe("assets", () => {
     for (const [src] of (s as { thumbs?: [string, string][] }).thumbs ?? []) referenced.add(src);
   }
   referenced.add(occasions.forTwo.art);
+  for (const id of OCCASION_IDS) referenced.add(occasionArt(id));
   const html = readFileSync(resolve(root, "index.html"), "utf8");
   for (const m of html.matchAll(/assets\/([\w.-]+\.(?:png|jpg|webp))/g)) referenced.add(m[1]);
 
@@ -50,6 +51,15 @@ describe("the occasion doors (plan 19)", () => {
     expect(occasions.tiles.length).toBeGreaterThan(0);
     for (const t of occasions.tiles) expect(OCCASION_IDS, t.id).toContain(t.id as (typeof OCCASION_IDS)[number]);
     expect(OCCASION_IDS, "for-two card").toContain(occasions.forTwo.id as (typeof OCCASION_IDS)[number]);
+  });
+
+  it("the partner door is the for-two card, never also a tile", () => {
+    expect(occasions.tiles.map(t => t.id)).not.toContain(occasions.forTwo.id);
+    expect([...occasions.tiles.map(t => t.id), occasions.forTwo.id].sort()).toEqual([...OCCASION_IDS].sort());
+  });
+
+  it("the for-two card shows the partner door's own illustration", () => {
+    expect(occasions.forTwo.art).toBe(occasionArt(occasions.forTwo.id));
   });
 
   it("only Christmas leaves its line to the deadline in offer.json", () => {

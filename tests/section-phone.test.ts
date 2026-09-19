@@ -92,8 +92,8 @@ describe("phone section", () => {
     expect(phoneSection.problems(choices({}), ctx("standard"))).toEqual([]);
     const probs = phoneSection.problems(choices({ beats: [{ ...beat("a"), from: "" }, { ...beat("b", false, "news"), about: "" }, beat("c")] }), ctx("standard"));
     expect(probs).toHaveLength(2);
-    expect(probs[0]).toMatch(/Call 1/);
-    expect(probs[1]).toMatch(/News mail 2/);
+    expect(probs[0]).toMatchObject({ message: expect.stringMatching(/Call 1/), field: "beat:0:from" });
+    expect(probs[1]).toMatchObject({ message: expect.stringMatching(/News mail 2/), field: "beat:1:about" });
   });
 
   it("summarises photos, beats and apps", () => {

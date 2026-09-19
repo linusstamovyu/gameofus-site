@@ -78,9 +78,11 @@ describe("vehicles section", () => {
     const c: VehiclesChoices = { types: [], ownCars: [car("a"), car("b", "  ", null), car("c", "Van", null)] };
     const p = s.problems(c, ctx("standard"));
     expect(p).toHaveLength(3);
-    expect(p.some(m => m.includes("Car 2") && m.includes("description"))).toBe(true);
-    expect(p.some(m => m.includes("Car 2") && m.includes("photo"))).toBe(true);
-    expect(p.some(m => m.includes("Van") && m.includes("photo"))).toBe(true);
+    const has = (text: string, what: string, field: string) =>
+      p.some(x => typeof x !== "string" && x.message.includes(text) && x.message.includes(what) && x.field === field);
+    expect(has("Car 2", "description", "car:1:description")).toBe(true);
+    expect(has("Car 2", "photo", "car:1:photo")).toBe(true);
+    expect(has("Van", "photo", "car:2:photo")).toBe(true);
     expect(s.problems({ types: ["taxi"], ownCars: [car("a")] }, ctx("standard"))).toEqual([]);
   });
 

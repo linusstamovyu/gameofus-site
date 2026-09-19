@@ -1,6 +1,6 @@
 // Step 6, The phone: the Photos app (their real photos redrawn), calls and news mails ("beats"), and the two
 // free apps. PURE: shared by the page and the Worker, so no DOM, storage or network here.
-import type { Section, SectionAddons, SectionContext, UploadRef } from "./types";
+import type { Section, SectionAddons, SectionContext, SectionProblem, UploadRef } from "./types";
 
 export const MAX_PHONE_PHOTOS = 30;
 export const MAX_PHONE_BEATS = 10;
@@ -104,11 +104,11 @@ export const phoneSection: Section<PhoneChoices> = {
   },
 
   problems(c) {
-    const out: string[] = [];
+    const out: SectionProblem[] = [];
     c.beats.forEach((b, i) => {
       const what = b.kind === "call" ? `Call ${i + 1}` : `News mail ${i + 1}`;
-      if (!b.from) out.push(b.kind === "call" ? `${what} needs to say who's calling.` : `${what} needs a headline.`);
-      if (!b.about) out.push(`${what} needs to say what it's about.`);
+      if (!b.from) out.push({ message: b.kind === "call" ? `${what} needs to say who's calling.` : `${what} needs a headline.`, field: `beat:${i}:from` });
+      if (!b.about) out.push({ message: `${what} needs to say what it's about.`, field: `beat:${i}:about` });
     });
     return out;
   },

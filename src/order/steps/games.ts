@@ -36,6 +36,7 @@ export const gamesStep: StepView = (ctx, panel) => {
   bigHead.append(el("h2", null, "Big games"), allowanceChip(use.bigGames.used, use.bigGames.included, money(ctx, ADDONS.big_game.price[cur]), "big games"));
   big.append(bigHead);
   const bigGrid = el("div", "game-grid");
+  bigGrid.dataset.field = "big-games";
   for (const g of BIG_GAMES) bigGrid.append(gameCard(ctx, g.name, g.blurb, orderAsset(g.art), d.bigGames.includes(g.id), () => ctx.update(dr => ({ ...dr, bigGames: toggleIn(dr.bigGames, g.id) })), "game", GAME_SCENES[g.id]));
   big.append(bigGrid);
 

@@ -2,8 +2,8 @@
 // parasols become vending machines, the sea becomes a four-lane road of light.
 // Ground and traffic live in neon-ground.ts; props, light and weather are here.
 import type { Stop } from "../../content/types";
-import { PALMS, PARASOLS, hash } from "../map";
-import { ellipse, glow, mix, rgba, shadow, wrap, type Ctx } from "./kit";
+import { PALMS, PARASOLS, W, hash } from "../map";
+import { ellipse, glow, mix, perWidth, rgba, shadow, wrap, type Ctx } from "./kit";
 import {
   AMBER, ANTENNAS, BB_Y0, BB_Y1, BILLBOARDS, CYAN, LANTERNS, LIME, MAG, RED, SHOPS, VENTS, VIOLET,
   forCars, glyph, glyphPath, neonExtras, neonLive, neonTile,
@@ -178,8 +178,8 @@ export const neon: Theme = {
         if (on) { glow(ctx, ax * T, ay * T, u * 3, RED, 0.9); ctx.fillStyle = "#ffb0a0"; ctx.fillRect(ax * T - 1, ay * T - 1, 2, 2); }
       }
       // expressway traffic high on the megastructure
-      for (let i = 0; i < 12; i++) {
-        const dir = i % 2 ? 1 : -1, span = 30;
+      for (let i = 0; i < perWidth(12); i++) {
+        const dir = i % 2 ? 1 : -1, span = W + 8;
         const x = wrap(hash(i, 0, 401) * span + dir * t * (4 + hash(i, 1, 401) * 3), span) - 4;
         if (!inX(x, x + 1)) continue;
         const yy = T * (dir > 0 ? 1.1 : 1.16), col = dir > 0 ? "#ffe9c0" : "#ff4040";
@@ -214,7 +214,7 @@ export const neon: Theme = {
       ctx.fillStyle = rgba(CYAN, 0.35); ctx.fillRect(mx0, 3 * T + u * 0.8, mw - mx0, u * 0.7);
       ctx.fillStyle = rgba(MAG, 0.35); ctx.fillRect(mx0, 4 * T - u * 1.4, mw - mx0, u * 0.7);
       for (let k = 0; k < 2; k++) {
-        const p1 = wrap(t * 5.5 + k * 11, 26) - 2, p2 = 24 - wrap(t * 4.2 + k * 13, 26);
+        const p1 = wrap(t * 5.5 + k * 11, W + 4) - 2, p2 = W + 2 - wrap(t * 4.2 + k * 13, W + 4);
         for (const [p, yy, col, dir] of [[p1, 3 * T + u * 0.8, CYAN, 1], [p2, 4 * T - u * 1.4, MAG, -1]] as [number, number, string, number][]) {
           const grd = ctx.createLinearGradient(p * T, 0, (p - dir * 2.5) * T, 0);
           grd.addColorStop(0, rgba("#ffffff", 0.95)); grd.addColorStop(0.15, rgba(col, 0.9)); grd.addColorStop(1, rgba(col, 0));

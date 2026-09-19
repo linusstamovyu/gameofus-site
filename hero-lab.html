@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Hero lab</title>
+  <meta name="robots" content="noindex">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Pixelify+Sans:wght@500;700&family=Chakra+Petch:wght@600;700&display=swap">
+  <!-- Dev-only preview (17 Sep 2026, grilled Q1-Q17): the character-select start screen merged with the scroll walk.
+       Not a build input. ?ending=squad|start|end|both  ?layout=beside|top  ?at=<screens>  ?debug -->
+  <script type="module" src="/src/heroLab/heroLab.ts"></script>
+</head>
+<body class="hl-page">
+<nav class="nav" aria-label="Main">
+  <div class="wrap">
+    <a class="logo" href="#top" aria-label="Game of Us home"><img src="brand/game-of-us-logo-wide-white.webp" alt="Game of Us"></a>
+    <span class="draft-flag">Hero lab</span>
+  </div>
+</nav>
+
+<header class="hl-hero" id="top">
+  <div class="hl-track" id="track">
+    <div class="hl-pin" id="pin">
+      <div class="wrap hl-row">
+        <div class="stage hl-stage" id="stage" tabindex="0" aria-label="Playable beach.">
+          <canvas aria-hidden="true"></canvas>
+
+          <!-- Start screen: character select. -->
+          <div class="hl-start" id="start">
+            <div class="hl-headline">
+              <p class="eyebrow">A retro RPG starring your friends</p>
+              <h1>Your friends. Your places. <em>Any world.</em></h1>
+              <p>Real photos in, playable characters out. This is Kai.</p>
+              <div class="hl-go">
+                <button class="btn hl-press" id="press" type="button">Press start ▶</button>
+                <span class="hl-or">or scroll ↓</span>
+              </div>
+            </div>
+            <div class="hl-pair" id="pair">
+              <figure class="hl-photo" id="photoFig"><img id="photoImg" src="lab/kai_photo_cut.webp" alt="Kai in real life"><figcaption>Real photo</figcaption></figure>
+              <span class="hl-arrow" id="pairArrow" aria-hidden="true">→</span>
+              <figure class="hl-art" id="artFig"><img id="artImg" src="lab/kai_fullbody.webp" alt="Kai in the game"><figcaption>In game</figcaption></figure>
+            </div>
+          </div>
+          <canvas class="hl-fx" id="fx" aria-hidden="true"></canvas>
+
+          <div class="hl-card hl-card-top" id="cardTop" hidden></div>
+          <button class="hl-walk" id="walk" type="button" hidden>Walk around yourself</button>
+          <p class="hl-hint" id="hint" hidden>Scroll to walk to your friends ↓</p>
+
+          <!-- The world's own controls, kept for SeasonWorld and for exploring; the story hides most of them. -->
+          <div class="title-card" id="titleCard" hidden></div>
+          <button class="mini-title" id="miniTitle" type="button" hidden></button>
+          <label class="world-pick" hidden><span class="world-swatch" id="worldSwatch"></span><select id="worldSelect" aria-label="World"></select></label>
+          <nav class="tour" hidden><button id="prev" type="button"></button><div><small id="tourStep"></small><strong id="tourName"></strong><div id="dots"></div></div><button id="next" type="button"></button></nav>
+          <span hidden><button id="heroTour" type="button"></button><button id="heroWalk" type="button"></button></span>
+          <div class="scrim" id="scrim" hidden></div>
+          <section class="card" id="card" role="dialog" aria-labelledby="cardTitle" hidden></section>
+          <div class="toast" id="toast" role="status" hidden></div>
+        </div>
+        <aside class="hl-side" id="side" aria-live="polite">
+          <ol class="hl-steps" id="steps"></ol>
+          <div class="hl-card" id="cardSide"></div>
+        </aside>
+      </div>
+
+      <!-- The ending: a pop-up over the pinned view, drawn with the full-size art (never a zoom into the map). -->
+      <div class="hl-end" id="end" aria-hidden="true"><div class="hl-end-panel" id="endPanel"></div></div>
+    </div>
+  </div>
+</header>
+
+<main class="hl-rest">
+  <section class="wrap">
+    <p class="eyebrow">The rest of the page</p>
+    <h2>The map lets go here and the page carries on.</h2>
+    <p>Scroll back up and the story plays in reverse; "Walk around yourself" on the map lets you explore it freely.</p>
+  </section>
+</main>
+
+<form class="hl-lab" id="lab">
+  <b>Preview</b>
+  <fieldset><legend>Ending (Q1)</legend>
+    <label><input type="radio" name="ending" value="squad"> Kai at start, squad at end</label>
+    <label><input type="radio" name="ending" value="start"> Start only</label>
+    <label><input type="radio" name="ending" value="end"> End only</label>
+    <label><input type="radio" name="ending" value="both"> Kai at start and end</label>
+  </fieldset>
+  <fieldset><legend>Layout (Q3)</legend>
+    <label><input type="radio" name="layout" value="top"> Card on the map</label>
+    <label><input type="radio" name="layout" value="beside"> Map beside cards</label>
+  </fieldset>
+</form>
+</body>
+</html>

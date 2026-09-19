@@ -1,0 +1,170 @@
+# Asset delivery (in progress)
+
+123 of 146 requested image files are saved. The built-in image generator reached its account limit; it reports a reset on 19 September 2026. No site code, original assets, or references were changed.
+
+## Files produced
+
+- `01-rico-fullbody/rico_fullbody.png`
+- `02-ethan-walk/ethan_walk_beach_down.png`
+- `02-ethan-walk/ethan_walk_beach_left.png`
+- `02-ethan-walk/ethan_walk_beach_right.png`
+- `02-ethan-walk/ethan_walk_beach_up.png`
+- `03-elias-walk/elias_walk_beach_down.png`
+- `03-elias-walk/elias_walk_beach_left.png`
+- `03-elias-walk/elias_walk_beach_right.png`
+- `03-elias-walk/elias_walk_beach_up.png`
+- `04-coco-walk/coco_walk_beach_down.png`
+- `04-coco-walk/coco_walk_beach_left.png`
+- `04-coco-walk/coco_walk_beach_right.png`
+- `04-coco-walk/coco_walk_beach_up.png`
+- `05-kai-walk/kai_walk_beach_down.png`
+- `05-kai-walk/kai_walk_beach_left.png`
+- `05-kai-walk/kai_walk_beach_right.png`
+- `05-kai-walk/kai_walk_beach_up.png`
+- `06-rico-walk/rico_build_down.png`
+- `06-rico-walk/rico_build_left.png`
+- `06-rico-walk/rico_build_right.png`
+- `06-rico-walk/rico_build_up.png`
+- `06-rico-walk/rico_run_down.png`
+- `06-rico-walk/rico_run_left.png`
+- `06-rico-walk/rico_run_right.png`
+- `06-rico-walk/rico_run_up.png`
+- `06-rico-walk/rico_walk_beach_down.png`
+- `06-rico-walk/rico_walk_beach_left.png`
+- `06-rico-walk/rico_walk_beach_right.png`
+- `06-rico-walk/rico_walk_beach_up.png`
+- `07-world-outfits/coco_walk_fairy_down.png`
+- `07-world-outfits/coco_walk_fairy_left.png`
+- `07-world-outfits/coco_walk_fairy_right.png`
+- `07-world-outfits/coco_walk_fairy_up.png`
+- `07-world-outfits/coco_walk_jungle_down.png`
+- `07-world-outfits/coco_walk_jungle_left.png`
+- `07-world-outfits/coco_walk_jungle_right.png`
+- `07-world-outfits/coco_walk_jungle_up.png`
+- `07-world-outfits/coco_walk_mars_down.png`
+- `07-world-outfits/coco_walk_mars_left.png`
+- `07-world-outfits/coco_walk_mars_right.png`
+- `07-world-outfits/coco_walk_mars_up.png`
+- `07-world-outfits/coco_walk_neon_down.png`
+- `07-world-outfits/coco_walk_neon_left.png`
+- `07-world-outfits/coco_walk_neon_right.png`
+- `07-world-outfits/coco_walk_neon_up.png`
+- `07-world-outfits/coco_walk_ski_down.png`
+- `07-world-outfits/coco_walk_ski_left.png`
+- `07-world-outfits/coco_walk_ski_right.png`
+- `07-world-outfits/coco_walk_ski_up.png`
+- `07-world-outfits/elias_walk_fairy_down.png`
+- `07-world-outfits/elias_walk_fairy_left.png`
+- `07-world-outfits/elias_walk_fairy_right.png`
+- `07-world-outfits/elias_walk_fairy_up.png`
+- `07-world-outfits/elias_walk_jungle_down.png`
+- `07-world-outfits/elias_walk_jungle_left.png`
+- `07-world-outfits/elias_walk_jungle_right.png`
+- `07-world-outfits/elias_walk_jungle_up.png`
+- `07-world-outfits/elias_walk_mars_down.png`
+- `07-world-outfits/elias_walk_mars_left.png`
+- `07-world-outfits/elias_walk_mars_right.png`
+- `07-world-outfits/elias_walk_mars_up.png`
+- `07-world-outfits/elias_walk_neon_down.png`
+- `07-world-outfits/elias_walk_neon_left.png`
+- `07-world-outfits/elias_walk_neon_right.png`
+- `07-world-outfits/elias_walk_neon_up.png`
+- `07-world-outfits/elias_walk_ski_down.png`
+- `07-world-outfits/elias_walk_ski_left.png`
+- `07-world-outfits/elias_walk_ski_right.png`
+- `07-world-outfits/elias_walk_ski_up.png`
+- `07-world-outfits/ethan_walk_jungle_down.png`
+- `07-world-outfits/ethan_walk_jungle_up.png`
+- `07-world-outfits/ethan_walk_mars_down.png`
+- `07-world-outfits/ethan_walk_mars_left.png`
+- `07-world-outfits/ethan_walk_mars_right.png`
+- `07-world-outfits/ethan_walk_mars_up.png`
+- `07-world-outfits/ethan_walk_neon_down.png`
+- `07-world-outfits/ethan_walk_neon_left.png`
+- `07-world-outfits/ethan_walk_neon_right.png`
+- `07-world-outfits/ethan_walk_neon_up.png`
+- `07-world-outfits/kai_walk_fairy_down.png`
+- `07-world-outfits/kai_walk_fairy_left.png`
+- `07-world-outfits/kai_walk_fairy_right.png`
+- `07-world-outfits/kai_walk_fairy_up.png`
+- `07-world-outfits/kai_walk_jungle_down.png`
+- `07-world-outfits/kai_walk_jungle_left.png`
+- `07-world-outfits/kai_walk_jungle_right.png`
+- `07-world-outfits/kai_walk_jungle_up.png`
+- `07-world-outfits/kai_walk_mars_down.png`
+- `07-world-outfits/kai_walk_mars_left.png`
+- `07-world-outfits/kai_walk_mars_right.png`
+- `07-world-outfits/kai_walk_mars_up.png`
+- `07-world-outfits/kai_walk_neon_down.png`
+- `07-world-outfits/kai_walk_neon_left.png`
+- `07-world-outfits/kai_walk_neon_right.png`
+- `07-world-outfits/kai_walk_neon_up.png`
+- `07-world-outfits/kai_walk_ski_down.png`
+- `07-world-outfits/kai_walk_ski_left.png`
+- `07-world-outfits/kai_walk_ski_right.png`
+- `07-world-outfits/kai_walk_ski_up.png`
+- `07-world-outfits/rico_walk_fairy_down.png`
+- `07-world-outfits/rico_walk_fairy_left.png`
+- `07-world-outfits/rico_walk_fairy_right.png`
+- `07-world-outfits/rico_walk_fairy_up.png`
+- `07-world-outfits/rico_walk_jungle_down.png`
+- `07-world-outfits/rico_walk_jungle_left.png`
+- `07-world-outfits/rico_walk_jungle_right.png`
+- `07-world-outfits/rico_walk_jungle_up.png`
+- `07-world-outfits/rico_walk_mars_down.png`
+- `07-world-outfits/rico_walk_mars_left.png`
+- `07-world-outfits/rico_walk_mars_right.png`
+- `07-world-outfits/rico_walk_mars_up.png`
+- `07-world-outfits/rico_walk_neon_down.png`
+- `07-world-outfits/rico_walk_neon_left.png`
+- `07-world-outfits/rico_walk_neon_right.png`
+- `07-world-outfits/rico_walk_neon_up.png`
+- `07-world-outfits/rico_walk_ski_down.png`
+- `07-world-outfits/rico_walk_ski_left.png`
+- `07-world-outfits/rico_walk_ski_right.png`
+- `07-world-outfits/rico_walk_ski_up.png`
+- `08-nala-right/nala_walk_beach_right.png`
+- `08-nala-right/nala_walk_mars_right.png`
+- `08-nala-right/nala_walk_neon_right.png`
+- `11-photo-retouch/ethan.jpg`
+
+## Missing files
+
+- `07-world-outfits/ethan_walk_fairy_down.png`
+- `07-world-outfits/ethan_walk_fairy_left.png`
+- `07-world-outfits/ethan_walk_fairy_right.png`
+- `07-world-outfits/ethan_walk_fairy_up.png`
+- `07-world-outfits/ethan_walk_jungle_left.png`
+- `07-world-outfits/ethan_walk_jungle_right.png`
+- `07-world-outfits/ethan_walk_ski_down.png`
+- `07-world-outfits/ethan_walk_ski_left.png`
+- `07-world-outfits/ethan_walk_ski_right.png`
+- `07-world-outfits/ethan_walk_ski_up.png`
+- `08-nala-right/nala_walk_fairy_right.png`
+- `08-nala-right/nala_walk_jungle_right.png`
+- `08-nala-right/nala_walk_ski_right.png`
+- `09-talking-face/talk_open.png`
+- `09-talking-face/talk_rest.png`
+- `10-chaser/chaser_walk_down.png`
+- `10-chaser/chaser_walk_left.png`
+- `10-chaser/chaser_walk_right.png`
+- `10-chaser/chaser_walk_up.png`
+- `11-photo-retouch/rico.png`
+- `12-portrait-edges/nala_face.png`
+- `12-portrait-edges/rico_face.png`
+- `13-christmas-card/occ_christmas.png`
+
+## Visual review and limits
+
+- All 123 saved files decode successfully. This is a file integrity check, not proof that each asset meets every visual requirement.
+- Coco’s neon and Kai’s Mars sheets were regenerated after the first versions used beach outfits. Their current files show the correct world outfits.
+- Coco’s Mars sheet still shows hair extending beyond the helmet. Some Coco bag placements vary with facing; the beach left profile shows the bag on the visible side.
+- Kai’s watch sometimes appears on the wrong visible wrist, especially in right profiles. A few world sheets may retain colored edge fringe.
+- Elias’s hair is lighter than the requested near-black brown. The microphone shifts or disappears in some poses, and minor colored edge fringe remains in some world sheets.
+- Rico’s ski tips still rise beside his head in front frames. Some step A/B poses are too similar to read as alternating legs.
+- The Ethan, Rico, and Nala work was interrupted by the image generator limit. Their saved files need a final visual check before site use.
+- None of the generated sheets is cleared for automatic deployment. The image generator can miss side-specific details and frame consistency despite the exact filenames and valid images.
+
+## Generation method
+
+Built-in image generation was used for new art and image edits. Full 4 × 3 sprite atlases were generated against the character and world references, then split into the required row PNGs. No CLI/API fallback was used.

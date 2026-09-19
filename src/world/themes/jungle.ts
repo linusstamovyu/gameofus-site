@@ -2,13 +2,13 @@
 // a mossy floor and a murky river with something in it. Static scenery lives in
 // jungle-scenery.ts; this file is everything that moves, the props and the sign.
 import type { Stop } from "../../content/types";
-import { PARASOLS, W, hash } from "../map";
-import { glow, r01, rgba, shadow, wrap, type Ctx, type View } from "./kit";
-import { PAL, clump, css, jungleExtras, jungleTile, leaf, lerp3 } from "./jungle-scenery";
+import { PAD_LEFT as P, PARASOLS, W, hash } from "../map";
+import { glow, perWidth, r01, rgba, shadow, wrap, type Ctx, type View } from "./kit";
+import { PAL, TEMPLE_X, clump, css, jungleExtras, jungleTile, leaf, lerp3 } from "./jungle-scenery";
 import type { Theme } from "./types";
 
 const TAU = Math.PI * 2;
-const IDOLS = new Set(["10,11", "20,5"]); // the other two "small" props are campfires
+const IDOLS = new Set([`${10 + P},11`, `${20 + P},5`]); // the other two "small" props are campfires
 const CROC_LAP = W + 7;                     // tiles the crocodile drifts before it comes round again
 
 /* ---------- the river ---------- */
@@ -31,7 +31,7 @@ function river(ctx: Ctx, T: number, time: number, animated: boolean, v: View) {
 
   // the bank's reflection: a dark band with the reeds wobbling in it
   ctx.fillStyle = "rgba(12,28,16,.35)"; ctx.fillRect(L, top, R - L, T * 0.55);
-  for (let c = 0; c < 22; c++) {
+  for (let c = 0; c < perWidth(22); c++) {
     const x = r01(c, 90) * W * T;
     if (x < L - T || x > R + T) continue;
     const w = Math.sin(t * 2.2 + c) * u;
@@ -57,7 +57,7 @@ function river(ctx: Ctx, T: number, time: number, animated: boolean, v: View) {
   }
 
   // silt flecks
-  for (let i = 0; i < 40; i++) {
+  for (let i = 0; i < perWidth(40); i++) {
     const x = wrap(r01(i, 85) * (W + 1) * T + t * T * (0.6 + r01(i, 86)), (W + 1) * T) - T * 0.5;
     if (x < L || x > R) continue;
     const y = top + (0.6 + r01(i, 87) * 4.3) * T;
@@ -66,7 +66,7 @@ function river(ctx: Ctx, T: number, time: number, animated: boolean, v: View) {
 
   // a mossy log riding the current
   {
-    const lx = (wrap(15 + t * 0.75, W + 5) - 2.5) * T, ly = 16.55 * T + Math.sin(t * 1.4) * u * 0.6, lw = T * 1.3, rot = Math.sin(t * 0.5) * 0.05;
+    const lx = (wrap(15 + P + t * 0.75, W + 5) - 2.5) * T, ly = 16.55 * T + Math.sin(t * 1.4) * u * 0.6, lw = T * 1.3, rot = Math.sin(t * 0.5) * 0.05;
     if (lx + lw > L && lx - lw < R) {
       ctx.save(); ctx.translate(lx, ly); ctx.rotate(rot);
       ctx.fillStyle = "rgba(12,28,20,.4)"; ctx.beginPath(); ctx.ellipse(u, u * 2, lw * 0.55, u * 2.4, 0, 0, TAU); ctx.fill();
@@ -86,7 +86,7 @@ function river(ctx: Ctx, T: number, time: number, animated: boolean, v: View) {
   // current streaks, all flowing east, faster mid-stream
   for (let r = 0; r < 5; r++) {
     const speed = T * (0.8 + (r === 1 || r === 2 ? 0.7 : 0.2));
-    for (let i = 0; i < 16; i++) {
+    for (let i = 0; i < perWidth(16); i++) {
       const len = T * (0.3 + r01(i, r + 20) * 0.7);
       const x = wrap(r01(i, r + 10) * (W + 2) * T + t * speed * (0.8 + r01(i, r + 30) * 0.4), (W + 2) * T) - T;
       if (x + len < L || x > R) continue;
@@ -98,7 +98,7 @@ function river(ctx: Ctx, T: number, time: number, animated: boolean, v: View) {
   }
 
   // drifting leaves and foam flecks riding the current
-  for (let i = 0; i < 18; i++) {
+  for (let i = 0; i < perWidth(18); i++) {
     const x = wrap(r01(i, 60) * (W + 2) * T + t * T * 1.1, (W + 2) * T) - T;
     if (x < L - T || x > R) continue;
     const y = top + (0.6 + r01(i, 61) * 4.2) * T + Math.sin(t * 2 + i) * u;
@@ -107,8 +107,8 @@ function river(ctx: Ctx, T: number, time: number, animated: boolean, v: View) {
   }
 
   // rocks at the bank with the water breaking round them
-  for (const [rx, ry, s] of [[4.6, 13.35, 1], [12.4, 13.5, 2], [19.2, 13.3, 3], [8.3, 16.6, 4]] as const) {
-    const x = rx * T, y = ry * T, w = T * (0.36 + s * 0.04);
+  for (const [rx, ry, s] of [[4.6, 13.35, 1], [12.4, 13.5, 2], [19.2, 13.3, 3], [8.3, 16.6, 4], [-5.2, 13.4, 2], [-2.4, 16.2, 1]] as const) {
+    const x = (rx + P) * T, y = ry * T, w = T * (0.36 + s * 0.04);
     if (x + T < L || x - T > R) continue;
     const p = Math.sin(t * 3 + s) * 0.5 + 0.5;
     ctx.strokeStyle = `rgba(220,235,210,${0.35 + p * 0.25})`; ctx.lineWidth = u * 0.7;
@@ -120,7 +120,7 @@ function river(ctx: Ctx, T: number, time: number, animated: boolean, v: View) {
   }
 
   // lily pads, bobbing in the slack water
-  for (let i = 0; i < 9; i++) {
+  for (let i = 0; i < perWidth(9); i++) {
     const bx = (0.8 + r01(i, 70) * (W - 1.6)) * T, by = top + (0.45 + r01(i, 71) * 4.2) * T;
     const x = bx + Math.sin(t * 0.6 + i * 1.7) * u * 1.4, y = by + Math.sin(t * 1.3 + i) * u * 0.5;
     if (x + T < L || x - T > R) continue;
@@ -148,7 +148,7 @@ function river(ctx: Ctx, T: number, time: number, animated: boolean, v: View) {
 
 function crocodile(ctx: Ctx, T0: number, t: number, L: number, R: number) {
   const T = T0 * 1.5, u = T / 16;
-  const hx = (wrap(8 + t * 0.32, CROC_LAP) - 3) * T0; // the snout; he drifts east, head first
+  const hx = (wrap(8 + P + t * 0.32, CROC_LAP) - 3) * T0; // the snout; he drifts east, head first
   if (hx + T < L || hx - T * 3 > R) return;
   const y = 15.2 * T0 + Math.sin(t * 0.9) * u * 0.8;
   // wake: a V of ripples trailing behind the head
@@ -360,8 +360,8 @@ function lights(ctx: Ctx, T: number, time: number, animated: boolean, v: View) {
   ctx.globalCompositeOperation = "lighter";
 
   // diagonal shafts of sun through gaps in the canopy
-  for (let i = 0; i < 5; i++) {
-    const sx = (2.5 + i * 4.4 + r01(i, 1) * 1.5) * T, w0 = T * (0.35 + r01(i, 2) * 0.35), w1 = w0 * 2.6, len = 11.5 * T;
+  for (let i = -2; i < 5; i++) { // i < 0: the shafts over the left strip
+    const sx = (2.5 + P + i * 4.4 + r01(i, 1) * 1.5) * T, w0 = T * (0.35 + r01(i, 2) * 0.35), w1 = w0 * 2.6, len = 11.5 * T;
     const a = 0.06 + 0.025 * Math.sin(t * 0.35 + i * 1.9);
     const grd = ctx.createLinearGradient(0, 0.9 * T, 0, len);
     grd.addColorStop(0, `rgba(255,240,170,${a})`); grd.addColorStop(0.75, `rgba(230,240,160,${a * 0.5})`); grd.addColorStop(1, "rgba(230,240,160,0)");
@@ -369,7 +369,7 @@ function lights(ctx: Ctx, T: number, time: number, animated: boolean, v: View) {
     ctx.moveTo(sx - w0, 0.9 * T); ctx.lineTo(sx + w0, 0.9 * T); ctx.lineTo(sx + w1 - 3 * T, len); ctx.lineTo(sx - w1 - 3 * T, len); ctx.closePath(); ctx.fill();
   }
   // dappled light patches on the floor, breathing as the canopy moves
-  for (let i = 0; i < 16; i++) {
+  for (let i = 0; i < perWidth(16); i++) {
     const x = (r01(i, 10) * W) * T + Math.sin(t * 0.3 + i) * u * 3, y = (4.4 + r01(i, 11) * 7.4) * T;
     if (!inView(x, y, T)) continue;
     const a = 0.07 + 0.05 * Math.sin(t * 0.6 + i * 2.3);
@@ -394,7 +394,7 @@ function lights(ctx: Ctx, T: number, time: number, animated: boolean, v: View) {
     }
   }
   for (const side of [-1, 1]) {
-    const bx = 11 * T + side * (T * 0.62 + T * 0.55), by = 2.95 * T - u * 8.6, f = 1 + 0.15 * Math.sin(t * 10 + side);
+    const bx = TEMPLE_X * T + side * (T * 0.62 + T * 0.55), by = 2.95 * T - u * 8.6, f = 1 + 0.15 * Math.sin(t * 10 + side);
     if (!inView(bx, by, T * 2)) continue;
     glow(ctx, bx, by, T * 1.1 * f, "#ff9a3a", 0.3);
     ctx.fillStyle = "rgba(255,140,50,.85)"; ctx.beginPath();
@@ -402,10 +402,10 @@ function lights(ctx: Ctx, T: number, time: number, animated: boolean, v: View) {
     ctx.quadraticCurveTo(bx + u * 2, by - u * 3, bx + u * 2, by); ctx.fill();
     ctx.fillStyle = "rgba(255,230,140,.9)"; ctx.fillRect(bx - u * 0.8, by - u * 2.4, u * 1.6, u * 2.2);
   }
-  glow(ctx, 11 * T, 0.68 * T, T * 0.5, "#e8c060", 0.12 + 0.05 * Math.sin(t * 0.8));
+  glow(ctx, TEMPLE_X * T, 0.68 * T, T * 0.5, "#e8c060", 0.12 + 0.05 * Math.sin(t * 0.8));
 
   // pollen and spores drifting through the light
-  for (let i = 0; i < 70; i++) {
+  for (let i = 0; i < perWidth(70); i++) {
     const x = wrap(r01(i, 20) * W * T + t * T * (0.05 + r01(i, 21) * 0.1) + Math.sin(t * 0.5 + i) * T * 0.4, W * T);
     const y = (1.6 + r01(i, 22) * 11) * T + Math.sin(t * 0.8 + i * 1.3) * T * 0.3;
     if (!inView(x, y, 0)) continue;
@@ -414,7 +414,7 @@ function lights(ctx: Ctx, T: number, time: number, animated: boolean, v: View) {
     ctx.fillStyle = `rgba(255,248,190,${a})`; ctx.fillRect(x, y, u * 0.55, u * 0.55);
   }
   // fireflies over the riverbank
-  for (let i = 0; i < 9; i++) {
+  for (let i = 0; i < perWidth(9); i++) {
     const x = (r01(i, 30) * W) * T + Math.sin(t * 0.7 + i * 2) * T * 0.5, y = (11.9 + r01(i, 31) * 1.3) * T + Math.sin(t * 1.1 + i) * T * 0.25;
     const a = Math.max(0, Math.sin(t * 1.7 + i * 2.1));
     if (a < 0.1 || !inView(x, y, T)) continue;
@@ -422,7 +422,7 @@ function lights(ctx: Ctx, T: number, time: number, animated: boolean, v: View) {
   }
   ctx.globalCompositeOperation = "source-over";
   // a few leaves spiralling down
-  for (let i = 0; i < 6; i++) {
+  for (let i = 0; i < perWidth(6); i++) {
     const p = ((animated ? t : 3) * 0.07 + r01(i, 40)) % 1;
     const x = (r01(i, 41) * W) * T + Math.sin(p * 12 + i) * T * 0.4, y = (1 + p * 11) * T;
     if (!inView(x, y, T)) continue;

@@ -208,9 +208,14 @@ function reviveConsent(raw: unknown, organiser: Organiser): Consent {
 
 /** What stops the consent screen from being done. Empty means the order can start. */
 export function consentProblems(d: Draft): string[] {
-  const out: string[] = [];
-  if (!d.organiser.photosPermission) out.push("Confirm that everyone in the photos has agreed to be in the game.");
-  if (d.consent.adults === null) out.push("Tell us whether everyone in your group is 18 or over.");
+  return consentGaps(d).map(g => g.message);
+}
+
+/** The consent screen's gaps, each with the field it is about, in the order they appear on the screen. */
+export function consentGaps(d: Draft): { message: string; field: string }[] {
+  const out: { message: string; field: string }[] = [];
+  if (!d.organiser.photosPermission) out.push({ message: "Confirm that everyone in the photos has agreed to be in the game.", field: "consent:photos" });
+  if (d.consent.adults === null) out.push({ message: "Tell us whether everyone in your group is 18 or over.", field: "consent:adults" });
   return out;
 }
 
@@ -435,6 +440,8 @@ export function withPerk(d: Draft, unlockedAt: number | null): Draft {
 export interface StepProblem {
   step: StepId;
   message: string;
+  /** The control this is about, matching a `data-field` in the step view (see `sections/types.ts`). */
+  field?: string;
 }
 
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -442,28 +449,28 @@ const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 /** What stops a step from being done, in plain words. An empty list means the step is complete. */
 export function problems(d: Draft, step: StepId, thisYear = new Date().getFullYear()): StepProblem[] {
   const out: StepProblem[] = [];
-  const say = (message: string) => out.push({ step, message });
+  const say = (message: string, field?: string) => out.push(field ? { step, message, field } : { step, message });
   if (step === "squad") {
     if (!d.friends.length) say("Add at least one friend.");
     d.friends.forEach((f, i) => {
       // Every slot the order has must be filled: an empty one is either a friend still to add or a slot to remove.
       // The last slot can't be removed (MIN_FRIENDS), so it isn't offered as a way out there.
-      if (isEmptySlot(f)) return say(d.friends.length > MIN_FRIENDS ? `Slot ${i + 1} is empty — add a friend or remove the slot.` : `Slot ${i + 1} is empty — add a friend.`);
+      if (isEmptySlot(f)) return say(d.friends.length > MIN_FRIENDS ? `Slot ${i + 1} is empty — add a friend or remove the slot.` : `Slot ${i + 1} is empty — add a friend.`, `friend:${f.id}:name`);
       const who = f.name.trim() || `Friend ${i + 1}`;
-      if (!f.name.trim()) say(`Friend ${i + 1} needs a name.`);
+      if (!f.name.trim()) say(`Friend ${i + 1} needs a name.`, `friend:${f.id}:name`);
       const p = f.photo;
-      if (!p) say(`${who}: add a photo (one clear face, head to feet).`);
-      else if (p.recheck) say(`${who}: we're still checking the photo.`);
-      else if (p.status === "fail") say(`${who}: the photo won't work. ${p.note}`);
+      if (!p) say(`${who}: add a photo (one clear face, head to feet).`, `friend:${f.id}:photo`);
+      else if (p.recheck) say(`${who}: we're still checking the photo.`, `friend:${f.id}:photo`);
+      else if (p.status === "fail") say(`${who}: the photo won't work. ${p.note}`, `friend:${f.id}:photo`);
     });
   }
-  if (step === "edition" && !d.edition) say("Pick an edition.");
+  if (step === "edition" && !d.edition) say("Pick an edition.", "edition");
   if (step === "games") {
-    if (!d.bigGames.length && !d.customGame.trim()) say("Pick at least one big game, or describe your own.");
+    if (!d.bigGames.length && !d.customGame.trim()) say("Pick at least one big game, or describe your own.", "big-games");
   }
   if (isSectionStep(step)) {
     const sec = sectionById(step);
-    for (const message of sec.problems(d.sections[step], sectionContext(d))) say(message);
+    for (const p of sec.problems(d.sections[step], sectionContext(d))) typeof p === "string" ? say(p) : say(p.message, p.field);
   }
   if (step === "review") {
     for (const s of STEPS.filter(x => x.id !== "review").map(x => x.id)) out.push(...problems(d, s, thisYear));

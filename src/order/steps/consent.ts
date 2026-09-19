@@ -4,7 +4,8 @@
 import "./consent.css";
 import { el } from "../../dom";
 import { checkbox, heading, money, type Ctx } from "../context";
-import { completeConsent, consentProblems, setAdults, setPhotosPermission } from "../draft";
+import { completeConsent, consentGaps, setAdults, setPhotosPermission } from "../draft";
+import { showProblem } from "../fix";
 import { ADDONS } from "../prices";
 
 export function consentView(ctx: Ctx, panel: HTMLElement, onDone: () => void): void {
@@ -31,6 +32,7 @@ export function consentView(ctx: Ctx, panel: HTMLElement, onDone: () => void): v
   terms.href = "terms.html";
   terms.target = "_blank";
   read.append("How we handle the photos and how long we keep them is in our ", privacy, ". The ", terms, " apply when you order.");
+  perm.dataset.field = "consent:photos";
   photos.append(perm, read);
   panel.append(photos);
 
@@ -49,6 +51,7 @@ export function consentView(ctx: Ctx, panel: HTMLElement, onDone: () => void): v
     b.onclick = () => ctx.update(dr => setAdults(dr, value));
     choices.append(b);
   }
+  choices.dataset.field = "consent:adults";
   age.append(choices);
   if (d.consent.adults === "yes") {
     // Yes only unlocks Party Mode; it is never ticked for the customer (paid add-on, no pre-ticked boxes).
@@ -66,10 +69,10 @@ export function consentView(ctx: Ctx, panel: HTMLElement, onDone: () => void): v
   const go = el("button", "btn big", d.consent.answeredAt ? "Save and go back ▶" : "Start building ▶");
   go.type = "button";
   go.onclick = () => {
-    const found = consentProblems(ctx.draft());
-    list2.replaceChildren(...found.map(m => el("li", null, m)));
+    const found = consentGaps(ctx.draft());
+    list2.replaceChildren(...found.map(g => el("li", null, g.message)));
     list2.hidden = !found.length;
-    if (found.length) return;
+    if (found.length) { showProblem(panel, found[0]); return; }
     ctx.update(dr => completeConsent(dr), { rerender: false });
     onDone();
   };

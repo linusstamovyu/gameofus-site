@@ -38,6 +38,7 @@ export const worldStep: StepView = (ctx, panel) => {
   shelf.append(head);
   shelf.append(el("p", "rules", `Each place is built in the art style closest to it. Want it to look like the real thing? Build it from your photos (${money(ctx, ADDONS.zone_photos.price[cur])} as an extra place). Included places cover photo places first.`));
 
+  shelf.dataset.field = "places";
   c.places.forEach((place, i) => shelf.append(placeCard(place, i)));
 
   if (c.places.length < MAX_PLACES) {
@@ -60,6 +61,7 @@ export const worldStep: StepView = (ctx, panel) => {
 
   function placeCard(place: Place, index: number): HTMLElement {
     const card = el("article", "s-world-place");
+    card.dataset.field = `place:${index}`;
     const top = el("div", "s-world-place-head");
     top.append(el("h3", null, place.name.trim() || `Place ${index + 1}`));
     const remove = el("button", "link-btn danger", "Remove");
@@ -86,7 +88,9 @@ export const worldStep: StepView = (ctx, panel) => {
     card.append(kinds);
     if (place.kind === "country") card.append(el("p", "s-world-note", "You'll fly there from the airport in the game."));
 
-    card.append(textField("Name", place.name, NAME_MAX, "Our flat in Nørrebro", v => setPlace(place.id, { name: v }, false)));
+    const nameField = textField("Name", place.name, NAME_MAX, "Our flat in Nørrebro", v => setPlace(place.id, { name: v }, false));
+    nameField.dataset.field = `place:${index}:name`;
+    card.append(nameField);
 
     // Art style
     card.append(el("p", "s-world-label", "Closest art style"));
@@ -110,6 +114,7 @@ export const worldStep: StepView = (ctx, panel) => {
 
     // Photos
     const photos = el("div", "s-world-photos");
+    photos.dataset.field = `place:${index}:photos`;
     for (const ref of place.photos) {
       const fig = el("figure", "s-world-thumb");
       const img = el("img");

@@ -1,19 +1,36 @@
 // Fills the page sections from src/content. The markup around them is static in index.html.
 import type { Occasions, Offer, SquadMember } from "../content/types";
-import { $, asset, el, photoPair } from "../dom";
+import { occasionArt } from "../order/occasions";
+import { $, asset, el } from "../dom";
 import { ACTIVE_LADDER, ADDONS, FOUNDER_SPOTS, LADDERS, formatMoney, type AddonId, type Currency, type Edition } from "../order/prices";
 
 export function renderSquad(squad: SquadMember[]) {
   const roster = $("#roster");
+  // Three steps side by side, so the whole value is on screen at once: the real photo, the portrait we drew from it,
+  // and the character walking in the game.
+  const figure = (caption: string, media: HTMLElement, game: boolean) => {
+    const f = el("figure", game ? "game" : null);
+    f.append(media, el("figcaption", null, caption));
+    return f;
+  };
+  const image = (file: string, cls: string, alt: string) => {
+    const i = el("img", cls); i.src = asset(file); i.alt = alt; i.loading = "lazy"; return i;
+  };
+  const arrow = () => { const a = el("span", "arrow", "→"); a.setAttribute("aria-hidden", "true"); return a; };
   for (const m of squad) {
     const card = el("article", "lad");
-    const pair = el("div", "pair");
-    pair.append(photoPair(m.name, m.face, m.photo));
+    const steps = el("div", "steps-row");
+    if (m.photo) steps.append(figure("Real photo", image(m.photo, "photo", `${m.name} in real life`), false), arrow());
+    const walk = el("div", "walk");
+    walk.style.backgroundImage = `url(${asset(m.walk)})`;
+    walk.setAttribute("role", "img");
+    walk.setAttribute("aria-label", `${m.name} walking in the game`);
+    steps.append(figure("Portrait", image(m.face, "portrait", `${m.name}'s portrait in the game`), true), arrow(), figure("Walking", walk, true));
     const info = el("div", "info");
     const h = el("h3", null, m.name);
     h.append(el("span", `chip ${m.type}`, m.type));
     info.append(h, el("p", null, m.line), el("span", "move", `Signature move: ${m.move}`));
-    card.append(pair, info);
+    card.append(steps, info);
     roster.append(card);
   }
 }
@@ -93,17 +110,24 @@ export function renderOccasions(occ: Occasions, offer: Offer) {
     a.href = `order.html?occasion=${encodeURIComponent(tile.id)}`;
     a.dataset.track = "occasion_tile";
     a.dataset.trackWhich = tile.id;
-    a.append(el("b", null, tile.title), el("span", null, tile.line || christmas));
+    const art = el("img", "occ-art") as HTMLImageElement;
+    art.src = asset(occasionArt(tile.id));
+    art.alt = "";
+    art.loading = "lazy";
+    art.width = 960;
+    art.height = 640;
+    art.addEventListener("error", () => art.remove());
+    a.append(art, el("b", null, tile.title), el("span", null, tile.line || christmas));
     grid.append(a);
   }
 
-  // The couples door, with the mockup beside it (public/assets/couple_card.webp, tools/build_couple_ads.py).
+  // The partner occasion's door (it has no tile above: one illustration, shown once), with its illustration beside it (public/assets/occ_partner.webp, tools/build_occasion_art.py).
   const card = $("#forTwo");
   card.replaceChildren();
   card.className = "fortwo";
   const art = el("img", "fortwo-art");
   (art as HTMLImageElement).src = asset(occ.forTwo.art);
-  (art as HTMLImageElement).alt = "A heart thrown instead of a drink, and the meter renamed the Love Meter";
+  (art as HTMLImageElement).alt = "A couple walking out of their flat into their own town at sunset";
   (art as HTMLImageElement).loading = "lazy";
   art.addEventListener("error", () => art.remove());
   const text = el("div", "fortwo-text");

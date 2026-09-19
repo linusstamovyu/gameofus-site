@@ -1,17 +1,16 @@
 {
-  "_note": "The home page's 'Made for' doors (plan 19). Each tile opens the order page's step 0 with that occasion preset: order.html?occasion=<id>. `id` must match an OccasionId in src/order/occasions.ts, which tests/purpose.test.ts and tests/content.test.ts both check. `christmasLine` is written at run time from offer.json's deadlines, so the deadline is never typed twice.",
+  "_note": "The home page's 'Made for' doors (plan 19). Each tile opens the order page's step 0 with that occasion preset: order.html?occasion=<id>. `id` must match an OccasionId in src/order/occasions.ts, which tests/purpose.test.ts and tests/content.test.ts both check. `christmasLine` is written at run time from offer.json's deadlines, so the deadline is never typed twice. The tiles are the GROUP occasions; the partner occasion's door is the `forTwo` card under them, so its illustration shows once (owner, 2026-09-16).",
   "tiles": [
     { "id": "trip", "title": "Stag, hen & trips", "line": "A hype gift before you go, or the game you play after." },
     { "id": "christmas", "title": "Christmas", "line": "" },
-    { "id": "birthday", "title": "Big birthdays", "line": "Reveal it at the party, on the TV." },
-    { "id": "partner", "title": "You and your partner", "line": "Two characters, your places, and how you met." }
+    { "id": "birthday", "title": "Big birthdays", "line": "Reveal it at the party, on the TV." }
   ],
   "forTwo": {
     "id": "partner",
     "eyebrow": "New · for two",
     "title": "Making one for your partner?",
     "line": "The same game, built for two people: hearts instead of beers, your flat in a warmer light, and an ending you get to write — a dedication, or a question.",
-    "art": "couple_card.webp",
+    "art": "occ_partner.webp",
     "cta": "See the two-player version"
   }
 }

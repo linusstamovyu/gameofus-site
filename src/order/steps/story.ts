@@ -62,6 +62,7 @@ export const storyStep: StepView = (ctx, panel) => {
   mem.append(memHead);
   mem.append(loopBanner(slideshow("story-plate", [1, 2, 3, 4].map(i => ({ file: `loop_story_plate_${i}.webp`, hold: 1.25 })), "Your memory, told in the game's own pictures: a bartender shakes, pours and serves a drink.", { w: 480, h: 160 })));
   const memLabel = el("label", "field");
+  memLabel.dataset.field = "story:memory";
   // With an outline picked, this box is not "tell us anything" any more: it is that outline's own blank.
   memLabel.append(el("span", null, c.outline === "own" ? "The night everyone still talks about" : outlineById(c.outline).asks));
   const memText = el("textarea", "s-story-text");
@@ -168,6 +169,7 @@ export const storyStep: StepView = (ctx, panel) => {
   c.moments.forEach((m, i) => {
     const li = el("li", "s-story-moment");
     const lab = el("label", "field");
+    lab.dataset.field = `moment:${i}`;
     lab.append(el("span", null, `Moment ${i + 1}`));
     const ta = el("textarea", "s-story-text");
     ta.rows = 2;
@@ -240,6 +242,7 @@ export const storyStep: StepView = (ctx, panel) => {
   if (c.ending.type !== "none") {
     const box = el("div", "upsell s-story-ending");
     const msg = el("label", "field");
+    msg.dataset.field = "story:ending";
     msg.append(el("span", null, c.ending.type === "proposal" ? "What you want to ask, in your words" : "The message"));
     const ta = el("textarea", "s-story-text");
     ta.rows = 3;

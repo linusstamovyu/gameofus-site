@@ -2,8 +2,8 @@
 // a fairy ring, an enchanted lake with a swan, blossom trees hung with lantern
 // orbs, and fireflies everywhere. The static picture is in fairy-scene.ts.
 import stopsData from "../../content/stops.json";
-import { PALMS, PARASOLS, PLAYER_START, W, hash } from "../map";
-import { type Ctx, type View } from "./kit";
+import { PAD_LEFT as P, PALMS, PARASOLS, PLAYER_START, W, hash } from "../map";
+import { perWidth, type Ctx, type View } from "./kit";
 import {
   BUDS, CASTLE_WINDOWS, CHIMNEYS, COTTAGE_LIGHTS, CRYSTALS, MOON, PENNANTS, RING, TINY_SHROOMS, fairyExtras, fairyTile,
 } from "./fairy-scene";
@@ -212,10 +212,12 @@ function drawSign(ctx: Ctx, T: number, s: { x: number; y: number; label?: string
 }
 
 /* ---------- the enchanted lake ---------- */
-const PADS: [number, number, number][] = [
+// Authored on the old 22-wide map, shifted by PAD_LEFT; the last four float in the left strip.
+const PADS: [number, number, number][] = ([
   [2.2, 14.1, 1], [6.8, 13.75, 0], [8.1, 15.9, 0], [11.7, 14.4, 1], [14.9, 16.6, 0], [17.3, 13.85, 1],
   [19.8, 15.3, 1], [1.1, 16.8, 0], [10.2, 17.1, 1], [21.1, 13.7, 0], [13.3, 13.6, 0], [5.6, 16.4, 0],
-];
+  [-4.6, 14.3, 0], [-2.2, 15.6, 1], [-5.9, 16.9, 1], [-0.7, 13.7, 0],
+] as [number, number, number][]).map(([x, y, l]) => [x + P, y, l]);
 function drawLake(ctx: Ctx, T: number, t: number, v: View) {
   const y0 = Math.max(13, v.y0), x0 = v.x0 * T, x1 = (v.x1 + 1) * T;
   if (y0 > v.y1) return;
@@ -223,8 +225,8 @@ function drawLake(ctx: Ctx, T: number, t: number, v: View) {
   lg.addColorStop(0, "#3d3f95"); lg.addColorStop(0.35, "#2a2c78"); lg.addColorStop(1, "#171743");
   ctx.fillStyle = lg; ctx.fillRect(x0, y0 * T, x1 - x0, (v.y1 + 1 - y0) * T);
   // slow deep patches
-  for (let i = 0; i < 9; i++) {
-    const px = (((hash(i, 1, 201) * 26 + t * 0.06 * (0.5 + hash(i, 2, 201))) % 26) - 2) * T, py = (13.6 + hash(i, 3, 201) * 4.2) * T;
+  for (let i = 0; i < perWidth(9); i++) {
+    const px = (((hash(i, 1, 201) * (W + 4) + t * 0.06 * (0.5 + hash(i, 2, 201))) % (W + 4)) - 2) * T, py = (13.6 + hash(i, 3, 201) * 4.2) * T;
     ell(ctx, px, py, T * (1.2 + hash(i, 4, 201)), T * 0.35, i % 3 ? "rgba(15,12,50,.22)" : "rgba(150,140,230,.1)");
   }
   // reflection of the far shore glow along the bank
@@ -241,8 +243,8 @@ function drawLake(ctx: Ctx, T: number, t: number, v: View) {
   }
   // ripple streaks drifting
   for (let y = y0; y <= v.y1; y++)
-    for (let k = 0; k < 8; k++) {
-      const px = ((hash(y, k, 202) * 24 + t * (0.12 + hash(y, k, 203) * 0.1)) % 24 - 1) * T;
+    for (let k = 0; k < perWidth(8); k++) {
+      const px = ((hash(y, k, 202) * (W + 2) + t * (0.12 + hash(y, k, 203) * 0.1)) % (W + 2) - 1) * T;
       if (px < x0 - T || px > x1) continue;
       const a = 0.12 + 0.12 * Math.sin(t * 1.4 + k * 2 + y);
       ctx.fillStyle = `rgba(190,190,255,${a})`;
@@ -268,7 +270,7 @@ function drawLake(ctx: Ctx, T: number, t: number, v: View) {
     }
   });
   // reflected stars
-  for (let i = 0; i < 34; i++) {
+  for (let i = 0; i < perWidth(34); i++) {
     const sx = hash(i, 1, 208) * W * T + Math.sin(t * 0.9 + i) * T * 0.03, sy = (13.4 + hash(i, 2, 208) * 4.5) * T;
     if (sx < x0 || sx > x1) continue;
     ctx.fillStyle = `rgba(255,248,225,${0.2 + 0.25 * (0.5 + 0.5 * Math.sin(t * 1.7 + i * 2.1))})`;
@@ -276,14 +278,14 @@ function drawLake(ctx: Ctx, T: number, t: number, v: View) {
   }
   drawSwan(ctx, T, t);
   // mist wisps
-  for (let i = 0; i < 5; i++) {
-    const px = ((hash(i, 1, 207) * 30 + t * 0.15) % 30 - 4) * T, py = (13.5 + hash(i, 2, 207) * 3.8) * T;
+  for (let i = 0; i < perWidth(5); i++) {
+    const px = ((hash(i, 1, 207) * (W + 8) + t * 0.15) % (W + 8) - 4) * T, py = (13.5 + hash(i, 2, 207) * 3.8) * T;
     ell(ctx, px, py, T * 2.2, T * 0.22, "rgba(220,200,255,.07)");
   }
 }
 
 function drawSwan(ctx: Ctx, T0: number, t: number) {
-  const X = ((((t ? 3 + t * 0.2 : 13) % 26) + 26) % 26 - 2) * T0, Y = (15.35 + Math.sin(t * 0.7) * 0.04) * T0, T = T0 * 1.45;
+  const X = ((((t ? 3 + P + t * 0.2 : 13 + P) % (W + 4)) + W + 4) % (W + 4) - 2) * T0, Y = (15.35 + Math.sin(t * 0.7) * 0.04) * T0, T = T0 * 1.45;
   // wake and reflection
   ctx.strokeStyle = "rgba(210,215,255,.3)"; ctx.lineWidth = Math.max(1, T * 0.02);
   for (let k = 1; k <= 3; k++) { ctx.beginPath(); ctx.moveTo(X - T * 0.2 - k * T * 0.25, Y - k * T * 0.06); ctx.lineTo(X - T * 0.2, Y + T * 0.02); ctx.lineTo(X - T * 0.2 - k * T * 0.25, Y + T * 0.1 + k * T * 0.06); ctx.stroke(); }
@@ -308,7 +310,7 @@ function drawSwan(ctx: Ctx, T0: number, t: number) {
 }
 
 /* ---------- fireflies ---------- */
-const FLIES = 120;
+const FLIES = perWidth(120);
 const FLY_COL = ["#f2ff9a", "#f2ff9a", "#ffe08a", "#f2ff9a", "#ffc2f6", "#b9f7ff"];
 function flyAt(i: number, t: number): [number, number, number] {
   const zone = hash(i, 1, 301);
@@ -373,7 +375,7 @@ export const fairy: Theme = {
     ctx.globalCompositeOperation = "lighter";
     // windows, lanterns and the gate
     CASTLE_WINDOWS.forEach(([x, y], i) => inView(x, y) && glowAt(ctx, x * T, y * T, T * 0.38, "#ffb45e", 0.42 + 0.08 * Math.sin(t * 3 + i * 2.1)));
-    if (inView(11, 2.7)) glowAt(ctx, 11 * T, 2.8 * T, T * 0.8, "#ffa65a", 0.45);
+    if (inView(11 + P, 2.7)) glowAt(ctx, (11 + P) * T, 2.8 * T, T * 0.8, "#ffa65a", 0.45);
     COTTAGE_LIGHTS.forEach(([x, y, r], i) => inView(x, y) && glowAt(ctx, x * T, y * T, T * (r < 0.1 ? 0.45 : 0.6), "#ffb45e", 0.5 + 0.12 * Math.sin(t * 4.3 + i * 1.7) * Math.sin(t * 2.1 + i)));
     if (inView(MOON[0], MOON[1])) glowAt(ctx, MOON[0] * T, MOON[1] * T, T * 0.9, "#ffe9cf", 0.35);
     // crystals and vine buds
@@ -408,7 +410,7 @@ export const fairy: Theme = {
     PADS.forEach(([x, y, lotus], i) => lotus && inView(x, y) && glowAt(ctx, x * T, (y - 0.08) * T, T * 0.45, "#ffc2ea", 0.45 + 0.2 * Math.sin(t * 1.5 + i)));
     if (v.y1 >= 13) glowAt(ctx, MOON[0] * T, 15.2 * T, T * 1.6, "#fff0c8", 0.12);
     ctx.strokeStyle = "rgba(255,250,235,.9)"; ctx.lineWidth = 1;
-    for (let i = 0; i < 18; i++) {
+    for (let i = 0; i < perWidth(18); i++) {
       const x = hash(i, 1, 401) * W, y = 13.3 + hash(i, 2, 401) * 4.5;
       if (!inView(x, y)) continue;
       const a = t ? Math.pow(Math.max(0, Math.sin(t * (1 + hash(i, 3, 401)) + i * 2.3)), 6) : hash(i, 4, 401) * 0.6;

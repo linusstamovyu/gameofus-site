@@ -49,7 +49,7 @@ describe("keepsakes section", () => {
   });
 
   it("needs a recipient only when the gift card is on", () => {
-    expect(s.problems(withGift({ recipient: "" }), ctx)).toHaveLength(1);
+    expect(s.problems(withGift({ recipient: "" }), ctx)).toEqual([expect.objectContaining({ field: "giftcard:recipient" })]);
     expect(s.problems(withGift(), ctx)).toEqual([]);
     expect(s.problems(withGift({ on: false, recipient: "" }), ctx)).toEqual([]);
     // A wanted-by date that's too soon is a warning in the UI, never a problem.

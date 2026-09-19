@@ -1,6 +1,7 @@
 /* Step 1, What's it for (plan 19). Mobile first; nothing here may be wider than the panel. */
 .s-purpose-tiles{display:grid;grid-template-columns:1fr;gap:10px;margin:0 0 12px}
 .s-purpose-tile{display:flex;flex-direction:column;gap:4px;text-align:left;font:inherit;color:#e9eef3;background:var(--night-2);border:3px solid transparent;border-radius:12px;padding:14px 16px;cursor:pointer;min-width:0}
+.s-purpose-occart{display:block;width:calc(100% + 32px);max-width:none;height:auto;aspect-ratio:3/2;object-fit:cover;margin:-14px -16px 8px;border-radius:9px 9px 0 0;background:var(--night)}
 .s-purpose-tile b{font-family:var(--pixel);font-size:19px;color:#fff}
 .s-purpose-tile span{font-size:14px;line-height:1.35;opacity:.85}
 .s-purpose-tile:hover{border-color:#3d5a72}

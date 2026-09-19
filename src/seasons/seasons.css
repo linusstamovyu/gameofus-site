@@ -1,0 +1,57 @@
+/* season-scroll.html only. Builds on styles.css (the hero's own rules). */
+
+/* A sideways trackpad swipe must scrub the map, never page back through history. */
+html:has(body.season-page), body.season-page { overscroll-behavior-x: none; }
+body.season-page { background: var(--sea-deep); min-height: 100vh; }
+.season-page .hero { padding-top: 14px; }
+/* The hero blocks every touch gesture on the map; here a vertical pan still scrolls the page and a sideways
+   one comes to the page as pointer moves. */
+.season-page .stage canvas { touch-action: pan-y; }
+
+.season-top { background: var(--wood); border-bottom: 4px solid var(--ink); }
+.season-top .wrap { display: flex; align-items: center; gap: 12px; min-height: 52px; }
+.season-title { font-family: var(--pixel); font-weight: 700; font-size: 20px; color: var(--paper); }
+.season-title em { font-style: normal; color: #f1cf9a; }
+.season-flag { font-family: var(--pixel); font-size: 11px; letter-spacing: .14em; text-transform: uppercase;
+  background: var(--gold); color: var(--ink); padding: 2px 7px; border-radius: 3px; }
+
+.season-hint { position: absolute; z-index: 3; left: 50%; top: 18px; transform: translateX(-50%); max-width: calc(100% - 32px);
+  font-family: var(--pixel); font-size: 14px; background: rgba(32, 36, 44, .88); color: var(--paper); padding: 8px 14px;
+  border-radius: 999px; text-align: center; pointer-events: none; animation: season-nudge 2.4s ease-in-out infinite; }
+@keyframes season-nudge { 0%, 100% { transform: translateX(-50%); } 25% { transform: translateX(calc(-50% - 10px)); } 75% { transform: translateX(calc(-50% + 10px)); } }
+/* Just above the tour bar, where it points at the whole map rather than at one lad. */
+.season-hint { top: auto; bottom: 100px; }
+@media (max-width: 700px) { .season-hint { bottom: 150px; font-size: 13px; } }
+
+.season-bar { margin-top: 14px; background: var(--paper); border: 4px solid var(--ink); border-radius: 12px;
+  box-shadow: 0 6px 0 rgba(0, 0, 0, .25); padding: 10px 12px 8px; }
+.season-head { display: flex; align-items: center; justify-content: space-between; gap: 8px 16px; flex-wrap: wrap; margin-bottom: 8px; }
+.season-now { margin: 0; font-family: var(--pixel); font-weight: 700; font-size: 17px; color: var(--ink); }
+.season-outfits { display: flex; align-items: center; gap: 4px; }
+.season-outfits span { font-family: var(--pixel); font-size: 11px; letter-spacing: .14em; text-transform: uppercase; color: var(--teal-dark); margin-right: 4px; }
+/* Form controls don't inherit the body's ligature switch, and Pixelify's "fi" reads as "A". */
+.season-outfits button { font-variant-ligatures: none; font-family: var(--pixel); font-size: 13px; color: var(--ink); background: #efe3c6; border: 2px solid var(--ink);
+  border-radius: 6px; padding: 4px 9px; cursor: pointer; }
+.season-outfits button[aria-pressed="true"] { background: var(--teal); color: #fff; }
+
+.season-track { position: relative; height: 14px; border: 2px solid var(--ink); border-radius: 7px; overflow: hidden; }
+.season-band { position: absolute; inset: 0; }
+.season-marker { position: absolute; top: -2px; bottom: -2px; width: 6px; margin-left: -3px; background: var(--ink);
+  box-shadow: 0 0 0 2px var(--paper); border-radius: 2px; }
+
+.season-stops { display: grid; grid-template-columns: repeat(6, 1fr); margin-top: 6px; }
+.season-stop { font: inherit; background: none; border: 0; border-radius: 6px; padding: 4px 2px; cursor: pointer; color: var(--ink);
+  display: flex; flex-direction: column; align-items: center; text-align: center; min-width: 0; }
+.season-stop b { font-family: var(--pixel); font-size: 13px; line-height: 1.2; }
+.season-stop span { font-size: 11.5px; color: var(--muted); line-height: 1.2; }
+.season-stop:hover { background: #efe3c6; }
+.season-stop.on { background: #e8f5f2; box-shadow: inset 0 -3px 0 var(--teal); }
+
+@media (max-width: 700px) {
+  .season-top .wrap { min-height: 44px; }
+  .season-title { font-size: 16px; }
+  .season-stop span { display: none; }
+  .season-stop b { font-size: 11px; }
+  .season-now { font-size: 15px; }
+  .season-page .stage { height: clamp(460px, 68vh, 640px); }
+}

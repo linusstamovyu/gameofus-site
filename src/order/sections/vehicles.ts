@@ -1,6 +1,6 @@
 // Step 5, Getting around: which vehicle types are in the game, plus the group's own car(s) drawn from a photo.
 // PURE (see ./types): shared by the page and the Worker.
-import type { Section, UploadRef } from "./types";
+import type { Section, SectionProblem, UploadRef } from "./types";
 
 export type VehicleId = "car" | "scooter" | "taxi" | "minecart" | "kart";
 
@@ -98,11 +98,11 @@ export const vehiclesSection: Section<VehiclesChoices> = {
   },
 
   problems(c) {
-    const out: string[] = [];
+    const out: SectionProblem[] = [];
     c.ownCars.forEach((car, i) => {
       const label = car.description.trim() ? `"${car.description.trim()}"` : `Car ${i + 1}`;
-      if (!car.description.trim()) out.push(`${label} needs a short description, like "Mads's red Golf".`);
-      if (!car.photo) out.push(`${label} needs a photo of the car.`);
+      if (!car.description.trim()) out.push({ message: `${label} needs a short description, like "Mads's red Golf".`, field: `car:${i}:description` });
+      if (!car.photo) out.push({ message: `${label} needs a photo of the car.`, field: `car:${i}:photo` });
     });
     return out;
   },

@@ -119,10 +119,12 @@ export const squadStep: StepView = (ctx, panel) => {
 function friendCard(ctx: Ctx, f: Friend, index: number): HTMLElement {
   const card = el("article", isOpenSlot(f) ? "friend open" : "friend");
   card.dataset.friend = f.id;
+  card.dataset.field = `friend:${f.id}`;
 
   const main = el("div", "friend-main");
   const nameRow = el("div", "name-row");
   const label = el("label", "field");
+  label.dataset.field = `friend:${f.id}:name`;
   label.append(el("span", null, isOpenSlot(f) ? `Slot ${index + 1} · empty: add a friend or remove it` : `Friend ${index + 1}`));
   const name = el("input");
   name.type = "text";
@@ -159,6 +161,7 @@ const rechecking = new Set<string>();
 function shot(ctx: Ctx, f: Friend): HTMLElement {
   const meta = f.photo;
   const wrap = el("div", `shot ${meta ? `has ${meta.recheck ? "busy" : meta.status}` : "empty"}`);
+  wrap.dataset.field = `friend:${f.id}:photo`;
   const inputId = `photo-${f.id}`;
   const picker = fileInput(inputId);
   const camera = fileInput(`${inputId}-camera`);

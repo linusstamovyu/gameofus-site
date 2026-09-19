@@ -226,3 +226,10 @@
 .perk-items{display:flex;flex-wrap:wrap;gap:8px;margin-top:6px}
 .perk-items figure{margin:0;display:flex;flex-direction:column;align-items:center;width:64px;font-size:11px;text-align:center;line-height:1.2}
 .perk-items img{width:44px;height:44px;image-rendering:pixelated}
+
+/* ---------- "take me to what's missing" (17 Sep 2026): the field Next refused on ---------- */
+.needs-fix{outline:3px solid #c43d2f;outline-offset:4px;border-radius:8px;animation:needs-fix-pulse .9s ease-out 1}
+.needs-fix,.fix-msg{scroll-margin-top:96px}
+.fix-msg{margin:8px 0 4px;padding:8px 10px;border-left:4px solid #c43d2f;background:#fdeceb;color:#8f261c;font-size:14px;font-weight:600;border-radius:4px}
+@keyframes needs-fix-pulse{0%{outline-color:transparent;outline-offset:12px}100%{outline-color:#c43d2f;outline-offset:4px}}
+@media (prefers-reduced-motion:reduce){ .needs-fix{animation:none} }

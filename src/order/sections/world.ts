@@ -1,6 +1,6 @@
 // Step 4, Your world: the places the game is set in (each becomes a zone) and the real shops or bars that
 // appear as signage. Pure data logic, shared by the page and the Worker (see ./types).
-import type { Section, SectionAddons, SectionContext, UploadRef } from "./types";
+import type { Section, SectionAddons, SectionContext, SectionProblem, UploadRef } from "./types";
 
 export const PLACE_KINDS = ["home", "town", "landmark", "country"] as const;
 export type PlaceKind = (typeof PLACE_KINDS)[number];
@@ -109,13 +109,13 @@ export const worldSection: Section<WorldChoices> = {
     return out;
   },
 
-  problems(choices: WorldChoices): string[] {
-    const out: string[] = [];
-    if (!choices.places.length) return ["Add at least your home base."];
+  problems(choices: WorldChoices): SectionProblem[] {
+    const out: SectionProblem[] = [];
+    if (!choices.places.length) return [{ message: "Add at least your home base.", field: "places" }];
     choices.places.forEach((p, i) => {
       const label = p.name || `Place ${i + 1}`;
-      if (!p.name) out.push(`Give place ${i + 1} a name.`);
-      if (p.fromPhotos && !p.photos.length) out.push(`${label} is built from your photos, so add at least one photo.`);
+      if (!p.name) out.push({ message: `Give place ${i + 1} a name.`, field: `place:${i}:name` });
+      if (p.fromPhotos && !p.photos.length) out.push({ message: `${label} is built from your photos, so add at least one photo.`, field: `place:${i}:photos` });
     });
     return out;
   },

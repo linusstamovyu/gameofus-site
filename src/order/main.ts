@@ -14,6 +14,7 @@ import { loadPerk } from "../shared/tourProgress";
 import { applyFavourites, favouriteCount, loadFavourites } from "../explore/favourites";
 import { track, trackClicks } from "../shared/analytics";
 import { tierPill } from "./tier";
+import { showProblem } from "./fix";
 import { EDITION_IDS, FOUNDER_SPOTS, quote, type EditionId } from "./prices";
 import { clearAll, loadDraft, saveDraft } from "./storage";
 import { consentView } from "./steps/consent";
@@ -217,6 +218,8 @@ async function start() {
     }
     if (found.length) {
       ctx.notify(found[0].message + (found.length > 1 ? ` (and ${found.length - 1} more)` : ""), "error");
+      // Take the buyer to the first gap; with no field to point at, the top of the step is the next best place.
+      if (!showProblem($("#panel"), found[0])) $("#order").scrollIntoView({ behavior: "smooth", block: "start" });
       return;
     }
     ctx.go(STEPS[Math.min(STEPS.length - 1, stepIndex(draft.step) + 1)].id);

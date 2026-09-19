@@ -1,9 +1,10 @@
 import { describe, expect, it } from "vitest";
 import { BIG_GAMES, MINIGAMES, minigameLocked, selectableMinigames } from "../src/order/catalogue";
 import {
-  addFriend, allowanceUse, DEFAULT_EDITION, emptySlots, MIN_FRIENDS, PRETICK_PARTY_MODE_ON_ADULTS, prefillSquad, squadFriends, completeConsent, consentProblems, needsConsent, partyModeAvailable, setAdults, setPhotosPermission, toggleMinigame, setSection, chooseEdition, newDraft, problems, removeFriend, reviveDraft, setPartyMode, setPhoto, shareMessage, toggleIn, toPicks, updateFriend,
+  addFriend, allowanceUse, DEFAULT_EDITION, emptySlots, MIN_FRIENDS, PRETICK_PARTY_MODE_ON_ADULTS, prefillSquad, squadFriends, completeConsent, consentGaps, consentProblems, needsConsent, partyModeAvailable, setAdults, setPhotosPermission, toggleMinigame, setSection, chooseEdition, newDraft, problems, removeFriend, reviveDraft, setPartyMode, setPhoto, shareMessage, toggleIn, toPicks, updateFriend,
   type Draft, type PhotoMeta,
 } from "../src/order/draft";
+import { fieldCandidates } from "../src/order/fix";
 import { checkPayload, picksFromPayload } from "../src/order/payload";
 import { ACTIVE_LADDER, LADDERS, MAX_FRIENDS } from "../src/order/prices";
 import { storySection } from "../src/order/sections/story";
@@ -248,5 +249,29 @@ describe("catalogue", () => {
     expect(BIG_GAMES).toHaveLength(9);
     for (const g of [...BIG_GAMES, ...MINIGAMES]) expect(g.art).toMatch(/\.webp$/);
     expect(["A", "B"]).toContain(ACTIVE_LADDER);
+  });
+});
+
+describe("take me to what's missing (17 Sep 2026)", () => {
+  it("names the field each order problem is about, in the order they appear", () => {
+    const d = prefillSquad(newDraft());
+    const [first] = d.friends;
+    const found = problems(d, "squad");
+    expect(found[0].field).toBe(`friend:${first.id}:name`);
+    const named = updateFriend(d, first.id, { name: "Mads" });
+    expect(problems(named, "squad")[0].field).toBe(`friend:${first.id}:photo`);
+    expect(problems({ ...newDraft(), edition: null }, "edition")[0].field).toBe("edition");
+    expect(problems(fullSquad(1), "games")[0].field).toBe("big-games");
+  });
+
+  it("points the consent screen at the photo box first, then the 18+ question", () => {
+    expect(consentGaps(newDraft()).map(g => g.field)).toEqual(["consent:photos", "consent:adults"]);
+    expect(consentGaps(setPhotosPermission(newDraft(), true)).map(g => g.field)).toEqual(["consent:adults"]);
+    expect(consentProblems(newDraft())).toEqual(consentGaps(newDraft()).map(g => g.message));
+  });
+
+  it("falls back from the most specific field key to the whole card", () => {
+    expect(fieldCandidates("place:0:name")).toEqual(["place:0:name", "place:0", "place"]);
+    expect(fieldCandidates("edition")).toEqual(["edition"]);
   });
 });

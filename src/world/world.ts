@@ -95,7 +95,25 @@ export class BeachWorld {
     THEMES.forEach(t => { const o = el("option", null, t.label); o.value = t.id; o.title = t.blurb; select.append(o); });
     select.value = this.theme.id;
     this.paintSwatch();
-    select.addEventListener("change", () => this.setTheme(select.value));
+    // Left focused on the select, the walking keys become its type-ahead: A jumps to "Albufeira beach" and S to
+    // "Ski village", so walking undid the world just picked (17 Sep 2026). Two guards:
+    // - picked with a mouse or a finger, focus goes straight back to the beach;
+    // - W/A/S/D pressed on the select walk instead (focus moves to the beach and the key is passed on).
+    // Arrow keys stay with the select, so a keyboard user can still step through the worlds.
+    let viaPointer = false;
+    select.addEventListener("pointerdown", () => { viaPointer = true; });
+    select.addEventListener("change", () => {
+      this.setTheme(select.value);
+      if (viaPointer) { select.blur(); this.stage.focus({ preventScroll: true }); }
+      viaPointer = false;
+    });
+    select.addEventListener("keydown", e => {
+      const k = e.key.toLowerCase();
+      if (k.length !== 1 || !"wasd".includes(k) || e.ctrlKey || e.metaKey || e.altKey) return;
+      e.preventDefault();
+      this.stage.focus({ preventScroll: true });
+      this.stage.dispatchEvent(new KeyboardEvent("keydown", { key: e.key, bubbles: true }));
+    });
   }
   private paintSwatch() {
     const sw = $("#worldSwatch");
@@ -264,9 +282,10 @@ export class BeachWorld {
     all.dataset.track = "tour_see_all";
     all.dataset.trackStop = s.id;
     acts.append(all);
-    body.append(acts);
 
-    card.append(art, body);
+    // The actions sit outside the scrolling body, so Next stop and the Add button are always on screen:
+    // on a phone the body text scrolls and the buttons stay put (they used to sit below the card's edge).
+    card.append(art, body, acts);
     card.hidden = false; $("#scrim").hidden = false;
     card.classList.remove("enter"); void card.offsetWidth; card.classList.add("enter");
     // Keyboard and screen-reader users land on the card's first action, not somewhere behind it.

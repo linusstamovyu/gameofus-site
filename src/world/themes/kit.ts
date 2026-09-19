@@ -1,7 +1,7 @@
 // Shared drawing tools for the world themes. Every theme paints the SAME map
 // (same bands, same prop tiles, same people); only the pictures change.
 import type { Stop } from "../../content/types";
-import { hash } from "../map";
+import { W, hash } from "../map";
 
 export type Ctx = CanvasRenderingContext2D;
 
@@ -71,6 +71,8 @@ export function roundRect(g: Ctx, x: number, y: number, w: number, h: number, r:
 /* ---------- deterministic particles ---------- */
 /** 0..1 from an index and a salt, stable across frames. */
 export const r01 = (i: number, s: number) => hash(i, s, 91);
+/** Scatter counts were tuned on the old 22-wide map; scale one so its density holds across the wider map. */
+export const perWidth = (n: number) => Math.round((n * W) / 22);
 /** Wrap a value into 0..m. */
 export const wrap = (v: number, m: number) => ((v % m) + m) % m;
 

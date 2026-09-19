@@ -6,10 +6,10 @@
 //
 // Mobile first: the tiles are one column on a phone, so the organiser can open this in the group chat.
 import "./purpose.css";
-import { el } from "../../dom";
+import { asset, el } from "../../dom";
 import { heading, money, stepEyebrow, type Ctx, type StepView } from "../context";
 import { partyModeAvailable, setGroupSize, setOccasion, setOutline, setPartyMode, squadFriends, squadSize, type Draft } from "../draft";
-import { GROUP_SIZES, OCCASIONS, occasionById, type SuggestionId } from "../occasions";
+import { GROUP_SIZES, OCCASIONS, occasionArt, occasionById, type SuggestionId } from "../occasions";
 import { OUTLINES, outlineById, type StoryChoices } from "../sections/story";
 import { setSection } from "../draft";
 import { ADDONS, ACTIVE_LADDER, isFounder, LADDERS, type AddonId } from "../prices";
@@ -98,7 +98,13 @@ function tiles(ctx: Ctx, d: Draft): HTMLElement {
     const tile = el("button", `s-purpose-tile${on ? " on" : ""}`);
     tile.type = "button";
     tile.setAttribute("aria-pressed", String(on));
-    tile.append(el("b", null, occ.title), el("span", null, occ.line));
+    const art = el("img", "s-purpose-occart") as HTMLImageElement;
+    art.src = asset(occasionArt(occ.id));
+    art.alt = "";
+    art.width = 960;
+    art.height = 640;
+    art.addEventListener("error", () => art.remove());
+    tile.append(art, el("b", null, occ.title), el("span", null, occ.line));
     tile.onclick = () => {
       track("purpose_occasion", { occasion: occ.id });
       ctx.update(dr => setOccasion(dr, occ.id));

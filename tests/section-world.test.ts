@@ -130,12 +130,13 @@ describe("world section", () => {
 
   it("problems", () => {
     const ctx = ctxFor("standard");
-    expect(worldSection.problems(world([]), ctx)).toEqual(["Add at least your home base."]);
+    // Each problem names the field Next takes the buyer to (17 Sep 2026).
+    expect(worldSection.problems(world([]), ctx)).toEqual([{ message: "Add at least your home base.", field: "places" }]);
     expect(worldSection.problems(world([place({ name: "Home" })]), ctx)).toEqual([]);
-    expect(worldSection.problems(world([place({ name: "" })]), ctx)).toHaveLength(1);
+    expect(worldSection.problems(world([place({ name: "Home" }), place({ id: "p2", name: "" })]), ctx)).toEqual([{ message: "Give place 2 a name.", field: "place:1:name" }]);
     const noPhotos = worldSection.problems(world([place({ name: "Beach", fromPhotos: true })]), ctx);
     expect(noPhotos).toHaveLength(1);
-    expect(noPhotos[0]).toMatch(/photo/);
+    expect(noPhotos[0]).toMatchObject({ message: expect.stringMatching(/photo/), field: "place:0:photos" });
     expect(worldSection.problems(world([place({ name: "Beach", fromPhotos: true, photos: [photo("z")] })]), ctx)).toEqual([]);
   });
 

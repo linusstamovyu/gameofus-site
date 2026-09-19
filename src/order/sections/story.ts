@@ -1,6 +1,6 @@
 // Step 7, Your story: the memory the main quest is built from, its tone and language, the villain, the key
 // moments (some drawn as cutscenes) and how the game ends. Pure data logic, shared by the page and the Worker.
-import type { Section, SectionAddons, SectionContext, UploadRef } from "./types";
+import type { Section, SectionAddons, SectionContext, SectionProblem, UploadRef } from "./types";
 
 export const TONES = ["lads", "romance", "family", "corporate"] as const;
 export type Tone = (typeof TONES)[number];
@@ -188,14 +188,15 @@ export const storySection: Section<StoryChoices> = {
   },
 
   problems(c) {
-    const out: string[] = [];
+    const out: SectionProblem[] = [];
     if (!c.voiceNote) {
       // With an outline picked, what is missing is that outline's own blank, not "the memory" in general.
-      if (!c.memory) out.push(c.outline === "own" ? "Tell us the memory, or attach a voice note." : `${outlineById(c.outline).asks} Type it in, or attach a voice note.`);
-      else if (c.memory.length < MEMORY_MIN) out.push(`Tell us a bit more about the memory (at least ${MEMORY_MIN} characters), or attach a voice note.`);
+      if (!c.memory) out.push({ message: c.outline === "own" ? "Tell us the memory, or attach a voice note." : `${outlineById(c.outline).asks} Type it in, or attach a voice note.`, field: "story:memory" });
+      else if (c.memory.length < MEMORY_MIN) out.push({ message: `Tell us a bit more about the memory (at least ${MEMORY_MIN} characters), or attach a voice note.`, field: "story:memory" });
     }
-    if (c.moments.some(m => !m.text)) out.push("Every key moment needs a few words.");
-    if (c.ending.type !== "none" && !c.ending.message) out.push(`Write the message for the ${ENDING_LABEL[c.ending.type].toLowerCase()} ending.`);
+    const blank = c.moments.findIndex(m => !m.text);
+    if (blank >= 0) out.push({ message: "Every key moment needs a few words.", field: `moment:${blank}` });
+    if (c.ending.type !== "none" && !c.ending.message) out.push({ message: `Write the message for the ${ENDING_LABEL[c.ending.type].toLowerCase()} ending.`, field: "story:ending" });
     return out;
   },
 

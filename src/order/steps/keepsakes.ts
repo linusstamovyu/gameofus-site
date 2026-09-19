@@ -51,6 +51,7 @@ export const keepsakesStep: StepView = (ctx, panel) => {
     need.hidden = Boolean(c.giftCard.recipient.trim());
 
     const who = el("label", "field");
+    who.dataset.field = "giftcard:recipient";
     const whoInput = el("input");
     whoInput.type = "text";
     whoInput.maxLength = RECIPIENT_MAX;

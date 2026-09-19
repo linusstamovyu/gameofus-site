@@ -30,6 +30,9 @@ export interface SectionContext {
 /** Add-on quantities a section adds to the order. "rush" is special: +50% of everything else (plan 03). */
 export type SectionAddons = Partial<Record<AddonId | "rush", number>>;
 
+/** A section problem: a plain message, or a message plus the field key it is about. */
+export type SectionProblem = string | { message: string; field: string };
+
 export interface Section<T> {
   id: SectionId;
   /** Stepper label, e.g. "Your world". */
@@ -43,8 +46,13 @@ export interface Section<T> {
   check(raw: unknown): T;
   /** What this section adds to the price, given the edition's allowance. Only extras over the allowance cost. */
   addons(choices: T, ctx: SectionContext): SectionAddons;
-  /** What stops the step being done, in plain words. [] means complete. Most sections are optional: return []. */
-  problems(choices: T, ctx: SectionContext): string[];
+  /**
+   * What stops the step being done, in plain words. [] means complete. Most sections are optional: return [].
+   * A problem may name the control it is about (`field`), which the step view tags with `data-field`, so Next can
+   * take the buyer straight to it (17 Sep 2026). Keys are colon-separated and most specific last, e.g.
+   * `place:0:name`; a view that only tags `place:0` still catches it.
+   */
+  problems(choices: T, ctx: SectionContext): SectionProblem[];
   /** Plain-text lines for the review step and the owner's email, e.g. "Home base: Nørrebro flat (from photos)". */
   summary(choices: T, ctx: SectionContext): string[];
   /** Every file this section's choices refer to, so the page uploads them and the Worker expects them. */

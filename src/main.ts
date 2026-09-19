@@ -1,4 +1,5 @@
 import "./styles.css";
+import "./story/story.css";
 import faqData from "./content/faq.json";
 import occasionsData from "./content/occasions.json";
 import offerData from "./content/offer.json";
@@ -9,6 +10,8 @@ import type { Occasions, Offer, SiteConfig, SquadMember, Stop } from "./content/
 import { renderFaq, renderOccasions, renderOffer, renderOrderCalls, renderPause, renderSquad } from "./sections/render";
 import { trackClicks } from "./shared/analytics";
 import { currentCurrency, initCountryPicker, onCountryChange } from "./shared/countryPicker";
+import { SeasonWorld } from "./seasons/seasonWorld";
+import { SeasonStory } from "./story/story";
 import { BeachWorld } from "./world/world";
 
 const squad = squadData as unknown as SquadMember[];
@@ -32,8 +35,14 @@ const year = document.getElementById("year");
 if (year) year.textContent = String(new Date().getFullYear());
 
 const stage = document.getElementById("stage");
+// The season story (16-17 Sep 2026): scrolling opens the map out and plays the year. ?story=0 is the hero as it was.
+const storyOff = new URLSearchParams(location.search).get("story") === "0";
 try {
-  if (stage) new BeachWorld(stage, stops, squad, offer);
+  if (stage && storyOff) new BeachWorld(stage, stops, squad, offer);
+  else if (stage) {
+    const story = new SeasonStory(stage, squad);
+    story.attach(new SeasonWorld(stage, stops, squad, offer, { outfits: "fade", remember: true }));
+  }
 } catch (err) {
   // A browser that can't run the world still gets the whole page.
   console.error("Beach failed to start", err);

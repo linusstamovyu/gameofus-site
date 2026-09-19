@@ -88,11 +88,12 @@ describe("story section", () => {
 
   it("lists problems, with the voice-note exception", () => {
     expect(storySection.problems(storySection.defaults(), ctx("standard"))).toHaveLength(1);
-    expect(storySection.problems(base({ memory: "too short" }), ctx("standard"))[0]).toMatch(/at least 20/);
+    expect(storySection.problems(base({ memory: "too short" }), ctx("standard"))[0]).toMatchObject({ message: expect.stringMatching(/at least 20/), field: "story:memory" });
     expect(storySection.problems(base(), ctx("standard"))).toEqual([]);
     expect(storySection.problems(base({ memory: "", voiceNote: audio }), ctx("standard"))).toEqual([]);
-    expect(storySection.problems(base({ ending: { type: "dedication", message: "", custom: false } }), ctx("standard"))).toHaveLength(1);
-    expect(storySection.problems(base({ moments: [moment("a", false, "")] }), ctx("standard"))).toHaveLength(1);
+    expect(storySection.problems(base({ ending: { type: "dedication", message: "", custom: false } }), ctx("standard"))).toEqual([expect.objectContaining({ field: "story:ending" })]);
+    // The first blank moment is the one Next points at.
+    expect(storySection.problems(base({ moments: [moment("a", false, "Dan falls in"), moment("b", false, "")] }), ctx("standard"))).toEqual([expect.objectContaining({ field: "moment:1" })]);
   });
 
   it("summarises the story", () => {

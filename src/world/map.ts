@@ -2,7 +2,9 @@
 // Pure data and rules only (no DOM), so tests can load it.
 import type { Stop } from "../content/types";
 
-export const W = 22;
+/** Open beach added on the left (2026-09-16), so the player starts clear of the title card and the camera can centre on him. */
+export const PAD_LEFT = 7;
+export const W = 22 + PAD_LEFT;
 export const H = 18;
 
 export const Ground = { Town: 0, Cliff: 1, Board: 2, Sand: 3, Wet: 4, Sea: 5 } as const;
@@ -18,9 +20,9 @@ export function groundAt(_x: number, y: number): Ground {
   return Ground.Sea;
 }
 
-export const PALMS: [number, number][] = [[2, 5], [9, 4], [15, 4], [21, 8], [1, 11]];
-export const PARASOLS: [number, number][] = [[3, 9], [10, 11], [16, 11], [20, 5]];
-export const PLAYER_START: [number, number] = [2, 8];
+export const PALMS: [number, number][] = [[9, 5], [16, 4], [22, 4], [28, 8], [8, 11]];
+export const PARASOLS: [number, number][] = [[10, 9], [17, 11], [23, 11], [27, 5]];
+export const PLAYER_START: [number, number] = [9, 8];
 
 export const tileKey = (x: number, y: number) => y * W + x;
 

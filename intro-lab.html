@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Intro lab</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Pixelify+Sans:wght@500;700&family=Chakra+Petch:wght@600;700&display=swap">
+  <!-- Dev-only prototype (not in the build): start screens, intro, squad cards. -->
+  <script type="module" src="/src/introLab.ts"></script>
+</head>
+<body>
+<div class="lab-bar" id="labBar">
+  <div class="wrap">
+    <b>Preview</b>
+    <span class="lab-group">Start screen:
+      <label><input type="radio" name="layout" value="card"> Title card</label>
+      <label><input type="radio" name="layout" value="select"> Character select</label>
+      <label><input type="radio" name="layout" value="bubble"> Button on Rico</label>
+    </span>
+    <span class="lab-group">Starts on:
+      <label><input type="radio" name="mode" value="press"> Press</label>
+      <label><input type="radio" name="mode" value="scroll"> Scroll</label>
+    </span>
+    <label><input type="checkbox" data-opt="photo"> Real photo first</label>
+    <label><input type="checkbox" data-opt="you"> YOU marker</label>
+    <label><input type="checkbox" data-opt="hint"> Hint + path</label>
+    <span class="lab-group">Squad cards:
+      <label><input type="radio" name="squad" value="steps"> Three steps</label>
+      <label><input type="radio" name="squad" value="full"> Photo + full body</label>
+      <label><input type="radio" name="squad" value="squares"> Two squares</label>
+    </span>
+    <span class="lab-group">Card background:
+      <label><input type="radio" name="cardbg" value="split"> Sea/sand</label>
+      <label><input type="radio" name="cardbg" value="world"> Their place</label>
+      <label><input type="radio" name="cardbg" value="type"> Type colour</label>
+      <label><input type="radio" name="cardbg" value="spot"> Spotlight</label>
+    </span>
+    <button class="btn" id="replay" type="button">Replay ↺</button>
+  </div>
+</div>
+
+<header class="hero" id="top">
+  <div class="wrap">
+    <div class="stage" id="stage" tabindex="0" aria-label="Playable beach.">
+      <canvas aria-hidden="true"></canvas>
+      <canvas class="intro-fx" id="introFx" aria-hidden="true"></canvas>
+      <p class="intro-line" id="introLine" hidden></p>
+      <div class="title-card" id="titleCard">
+        <p class="eyebrow">A retro RPG starring your friends</p>
+        <h1>Your friends. Your places. <em>Any world.</em></h1>
+        <p>We turn your group's real photos, places and in-jokes into a game you play together, set wherever you like.</p>
+        <p class="now-showing" aria-live="polite"><span class="world-swatch" id="nowSwatch" aria-hidden="true"></span> Now showing: <b id="nowLabel">Albufeira beach</b></p>
+        <div class="row start-row">
+          <button class="btn start-btn" type="button">Press start ▶</button>
+          <span class="scroll-cue"><span class="mouse" aria-hidden="true"><i></i></span> Scroll to start</span>
+        </div>
+      </div>
+      <!-- Character select: the call to action sits beside the character, where he is looking. -->
+      <div class="select-cta" id="selectCta">
+        <span class="select-name">Rico</span>
+        <button class="btn start-btn" type="button">Press start ▶</button>
+        <span class="scroll-cue"><span class="mouse" aria-hidden="true"><i></i></span> Scroll to start</span>
+      </div>
+      <!-- Button on Rico: the start is a speech bubble over the lad himself. -->
+      <div class="rico-bubble" id="ricoBubble">
+        <button class="start-btn bubble-btn" type="button">Hey, that's you! <b>Press start ▶</b></button>
+        <span class="scroll-cue bubble-btn"><span class="mouse" aria-hidden="true"><i></i></span> Scroll to start</span>
+      </div>
+      <button class="mini-title" id="miniTitle" type="button" hidden>◀ Game of Us</button>
+      <label class="world-pick">
+        <span class="world-swatch" id="worldSwatch" aria-hidden="true"></span>
+        <span class="world-label">World</span>
+        <select id="worldSelect" aria-label="Choose the world"></select>
+      </label>
+      <nav class="tour" aria-label="Guided tour">
+        <button class="btn ghost" id="prev" type="button" aria-label="Previous stop">◀</button>
+        <div class="where"><small id="tourStep">Guided tour</small><strong id="tourName">Stops on the beach</strong><div class="dots" id="dots"></div></div>
+        <button class="btn" id="next" type="button">Start ▶</button>
+      </nav>
+      <div class="scrim" id="scrim" hidden></div>
+      <section class="card" id="card" role="dialog" aria-labelledby="cardTitle" hidden></section>
+      <div class="toast" id="toast" role="status" hidden></div>
+      <!-- BeachWorld still looks these up; in this layout they live off the stage. -->
+      <span hidden><button id="heroTour" type="button"></button><button id="heroWalk" type="button"></button></span>
+    </div>
+    <div class="skip">
+      <span>Rather read than walk? <a href="#squad">Scroll to the site ↓</a></span>
+      <a href="explore.html">See everything that can go in your game ▶</a>
+    </div>
+  </div>
+</header>
+
+<main>
+  <section class="squad" id="squad">
+    <div class="wrap">
+      <div class="sec-head">
+        <div><p class="eyebrow">Meet the squad</p><h2>Real photos in, playable characters out</h2></div>
+        <p>These are the real people from our flagship game, <b>Lads Trip to Albufeira</b>, next to the characters we made from their photos. The dog counts.</p>
+      </div>
+      <div class="roster sbs-roster" id="roster"></div>
+    </div>
+  </section>
+</main>
+</body>
+</html>

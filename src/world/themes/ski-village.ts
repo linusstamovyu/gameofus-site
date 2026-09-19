@@ -1,8 +1,8 @@
 // Ski village: the pictures bigger than a tile. The chalet row along the top
 // (y0–2), the ski tracks and footprints across the snow, the ridge along the
 // lake and the cracks in the ice. All static: painted once into the layer.
-import { W, hash } from "../map";
-import { ellipse, mix, rgba, roundRect, type Ctx } from "./kit";
+import { PAD_LEFT as P, W, hash } from "../map";
+import { ellipse, mix, perWidth, rgba, roundRect, type Ctx } from "./kit";
 
 /* ---------- shared palette ---------- */
 export const SNOW = "#f7fbff";
@@ -70,13 +70,18 @@ export function drawPine(g: Ctx, cx: number, by: number, h: number, sway: number
 
 /* ---------- the chalets ---------- */
 interface Chalet { x0: number; w: number; ridge: number; gable: boolean; shutter: string; door: number; }
+// Authored on the old 22-wide map and shifted by PAD_LEFT so the row keeps its place
+// above the stops; the last two stand in the strip added on the left (appended, so the
+// seeded details of the first five stay as they were).
 const CHALETS: Chalet[] = [
   { x0: 0.2, w: 3.5, ridge: 0.34, gable: false, shutter: "#b83a2e", door: 0.3 },
   { x0: 4.75, w: 3.3, ridge: 0.3, gable: true, shutter: "#2f6a4a", door: 0.66 },
   { x0: 9.05, w: 4.7, ridge: 0.16, gable: true, shutter: "#b83a2e", door: 0.5 },
   { x0: 14.8, w: 3.4, ridge: 0.42, gable: false, shutter: "#2d5d8c", door: 0.34 },
   { x0: 19.15, w: 3.9, ridge: 0.26, gable: true, shutter: "#2f6a4a", door: 0.44 },
-];
+  { x0: -4.25, w: 3.45, ridge: 0.28, gable: true, shutter: "#2d5d8c", door: 0.4 },
+  { x0: -8.55, w: 3.3, ridge: 0.38, gable: false, shutter: "#2f6a4a", door: 0.62 },
+].map(c => ({ ...c, x0: c.x0 + P }));
 const EAVE = 1.08, GF = 1.95, FOUND = 2.72;
 
 /** Chimney tops in tile units, where the smoke leaves. */
@@ -350,10 +355,12 @@ function backdrop(g: Ctx, T: number) {
 
 function gapProps(g: Ctx, T: number) {
   // Gap 1 and 4: pines. Gap 2: skis in a rack. Gap 3: a firewood store.
-  drawPine(g, 4.25 * T, 2.97 * T, T * 1.7, 0, 71);
-  drawPine(g, 18.85 * T, 2.97 * T, T * 1.45, 0, 72);
+  drawPine(g, (4.25 + P) * T, 2.97 * T, T * 1.7, 0, 71);
+  drawPine(g, (18.85 + P) * T, 2.97 * T, T * 1.45, 0, 72);
+  drawPine(g, (P - 0.3) * T, 2.97 * T, T * 1.55, 0, 73); // the left strip's gaps: a pine and another woodstore
+  woodStore(g, T, (P - 5.2) * T);
   // Ski rack.
-  const rx = 8.1 * T, ry = 2.95 * T;
+  const rx = (8.1 + P) * T, ry = 2.95 * T;
   const skis = ["#d8392b", "#f2b233", "#2f7fc4", "#e9e9ef", "#3c9a5a"];
   skis.forEach((col, i) => {
     const x = rx + T * (0.1 + i * 0.16);
@@ -366,8 +373,14 @@ function gapProps(g: Ctx, T: number) {
   });
   g.fillStyle = "#5e3820"; g.fillRect(rx, ry - T * 0.55, T * 0.9, T * 0.05); g.fillRect(rx + T * 0.02, ry - T * 0.55, T * 0.05, T * 0.55); g.fillRect(rx + T * 0.83, ry - T * 0.55, T * 0.05, T * 0.55);
   roundRect(g, rx - T * 0.02, ry - T * 0.6, T * 0.94, T * 0.05, T * 0.025, SNOW);
-  // Firewood store under a little snowy lean-to.
-  const wx = 13.8 * T, wy = 2.96 * T, ww = T * 0.95;
+  woodStore(g, T, (13.8 + P) * T);
+  // Snow drifted against every foundation and prop in the row.
+  for (let x = 0; x < W; x += 0.5) ellipse(g, (x + hash(Math.round(x * 2), 3, 83) * 0.3) * T, 2.98 * T, T * 0.35, T * 0.06, "rgba(245,250,255,.9)");
+}
+
+/** Firewood store under a little snowy lean-to, its left post at wx (px). */
+function woodStore(g: Ctx, T: number, wx: number) {
+  const wy = 2.96 * T, ww = T * 0.95;
   g.fillStyle = "#4b2b16"; g.fillRect(wx, wy - T * 0.85, T * 0.05, T * 0.85); g.fillRect(wx + ww - T * 0.05, wy - T * 0.85, T * 0.05, T * 0.85);
   for (let r = 0; r < 5; r++) for (let k = 0; k < 5; k++) {
     const cx = wx + T * 0.14 + k * T * 0.17 + (r % 2) * T * 0.08, cy = wy - T * 0.09 - r * T * 0.14;
@@ -381,8 +394,6 @@ function gapProps(g: Ctx, T: number) {
   g.beginPath(); g.moveTo(wx - T * 0.12, wy - T * 0.8);
   for (let x = 0; x <= 1; x += 0.2) g.lineTo(wx - T * 0.1 + (ww + T * 0.2) * x, wy - T * (0.8 + 0.15 * x) - T * (0.08 + hash(Math.round(x * 5), 0, 82) * 0.05));
   g.lineTo(wx + ww + T * 0.12, wy - T * 0.95); g.closePath(); g.fillStyle = SNOW; g.fill();
-  // Snow drifted against every foundation and prop in the row.
-  for (let x = 0; x < W; x += 0.5) ellipse(g, (x + hash(Math.round(x * 2), 3, 83) * 0.3) * T, 2.98 * T, T * 0.35, T * 0.06, "rgba(245,250,255,.9)");
 }
 
 /** A soft, feathered drift: blue lee shadow below-right, bright crest above. */
@@ -421,11 +432,13 @@ function strokePts(g: Ctx, pts: Pt[], T: number, dy = 0) {
   g.beginPath(); pts.forEach(([x, y], i) => (i ? g.lineTo(x * T, y * T + dy) : g.moveTo(x * T, y * T + dy))); g.stroke();
 }
 
+const shiftPts = (curves: Pt[][]): Pt[][] => curves.map(c => c.map(([x, y]) => [x + P, y] as Pt));
 const TRACKS: Pt[][][] = [
-  // Swoops in from the west edge, arcs low through the middle, climbs out east.
-  [[[-0.5, 7.4], [4, 4.6], [8.5, 11.4], [13.5, 8.2]], [[13.5, 8.2], [16.5, 6.2], [19, 5.8], [22.5, 7.2]]],
+  // Swoops in from the west edge (across the left strip), arcs low through the middle, climbs out east.
+  [[[-0.5, 8.1], [1.5, 7.2], [P - 2.5, 8.65], [P - 0.5, 7.4]],
+    ...shiftPts([[[-0.5, 7.4], [4, 4.6], [8.5, 11.4], [13.5, 8.2]], [[13.5, 8.2], [16.5, 6.2], [19, 5.8], [22.5, 7.2]]])],
   // Leaves the terrace, carves two turns down to the lake shore.
-  [[[6.6, 4.05], [4.5, 6.8], [9.5, 7.2], [11.8, 9.2]], [[11.8, 9.2], [14.4, 11.3], [18.8, 9.2], [20.8, 12.6]]],
+  shiftPts([[[6.6, 4.05], [4.5, 6.8], [9.5, 7.2], [11.8, 9.2]], [[11.8, 9.2], [14.4, 11.3], [18.8, 9.2], [20.8, 12.6]]]),
 ];
 
 function skiTracks(g: Ctx, T: number) {
@@ -449,7 +462,7 @@ function skiTracks(g: Ctx, T: number) {
 }
 
 function footprints(g: Ctx, T: number) {
-  const path = samplePath([[[7.7, 3.35], [7.2, 5.5], [10.2, 6.8], [9.6, 8.2]], [[9.6, 8.2], [8.9, 9.7], [5.6, 10.6], [6.4, 12.7]]], 60);
+  const path = samplePath(shiftPts([[[7.7, 3.35], [7.2, 5.5], [10.2, 6.8], [9.6, 8.2]], [[9.6, 8.2], [8.9, 9.7], [5.6, 10.6], [6.4, 12.7]]]), 60);
   // Walk the path at an even stride.
   let acc = 0, n = 0;
   for (let i = 1; i < path.length; i++) {
@@ -470,7 +483,7 @@ function footprints(g: Ctx, T: number) {
 function snowDetails(g: Ctx, T: number) {
   // Wind ripples: long faint curves, seeded per ripple, crossing tiles cleanly.
   g.lineCap = "round";
-  for (let i = 0; i < 14; i++) {
+  for (let i = 0; i < perWidth(14); i++) {
     const y0 = 4.5 + hash(i, 0, 91) * 7, x0 = hash(i, 1, 91) * W - 2, len = 2 + hash(i, 2, 91) * 3;
     g.strokeStyle = "rgba(160,190,225,.28)"; g.lineWidth = Math.max(1, T * 0.03);
     g.beginPath();
@@ -482,7 +495,8 @@ function snowDetails(g: Ctx, T: number) {
     g.stroke();
   }
   // Rocks peeking out, capped with snow.
-  const rocks: [number, number, number][] = [[7.5, 7.75, 0.28], [19.35, 8.6, 0.22], [12.5, 11.7, 0.2], [4.3, 11.75, 0.16], [14.4, 6.4, 0.13], [0.5, 4.8, 0.2]];
+  const rocks: [number, number, number][] = [[7.5, 7.75, 0.28], [19.35, 8.6, 0.22], [12.5, 11.7, 0.2], [4.3, 11.75, 0.16], [14.4, 6.4, 0.13], [0.5, 4.8, 0.2], [-4.8, 10.6, 0.22], [-2.1, 6.1, 0.15]]
+    .map(([x, y, r]) => [x + P, y, r] as [number, number, number]);
   rocks.forEach(([x, y, r], i) => {
     const px = x * T, py = y * T, R = r * T;
     ellipse(g, px + R * 0.2, py + R * 0.35, R * 1.2, R * 0.35, "rgba(120,150,190,.35)");
@@ -495,7 +509,7 @@ function snowDetails(g: Ctx, T: number) {
     ellipse(g, px, py + R * 0.32, R * 1.1, R * 0.16, "#f2f7fc");
   });
   // Dry grass stalks and twigs poking through.
-  const tufts: Pt[] = [[14.3, 7.9], [6.2, 10.8], [20.2, 11.9], [11.6, 7.7], [17.6, 9.3], [2.6, 6.7]];
+  const tufts: Pt[] = shiftPts([[[14.3, 7.9], [6.2, 10.8], [20.2, 11.9], [11.6, 7.7], [17.6, 9.3], [2.6, 6.7], [-5.7, 11.4], [-1.4, 8.7]]])[0];
   tufts.forEach(([x, y], i) => {
     for (let k = 0; k < 5; k++) {
       const bx = (x + (k - 2) * 0.05) * T, by = y * T, h = T * (0.14 + hash(i, k, 94) * 0.14), lean = (hash(i, k, 95) - 0.5) * T * 0.12;
@@ -554,16 +568,17 @@ function cracks(g: Ctx, T: number) {
     g.strokeStyle = "rgba(255,255,255,.75)"; g.lineWidth = depth ? 1 : 1.6; strokePts(g, pts, T, 1.2);
     g.strokeStyle = `rgba(55,105,150,${depth ? 0.45 : 0.62})`; g.lineWidth = depth ? 0.9 : 1.4; strokePts(g, pts, T);
   };
-  walk(1.5, 14.2, 0.2, 18, 11, 0);
-  walk(9.2, 15.4, -0.3, 15, 12, 0);
-  walk(14.5, 13.6, 0.9, 12, 13, 0);
-  walk(16.8, 16.6, -0.1, 17, 14, 0);
-  walk(4.2, 17.3, -0.6, 10, 15, 0);
+  walk(1.5 + P, 14.2, 0.2, 18, 11, 0);
+  walk(9.2 + P, 15.4, -0.3, 15, 12, 0);
+  walk(14.5 + P, 13.6, 0.9, 12, 13, 0);
+  walk(16.8 + P, 16.6, -0.1, 17, 14, 0);
+  walk(4.2 + P, 17.3, -0.6, 10, 15, 0);
+  walk(P - 6.6, 15.7, -0.2, 16, 16, 0); // the left strip
   // A star-burst of fractures: the thin patch.
-  for (let k = 0; k < 7; k++) walk(11.4, 16.1, (k / 7) * Math.PI * 2, 4 + (k % 3), 30 + k, 2);
-  ellipse(g, 11.4 * T, 16.1 * T, T * 0.5, T * 0.3, "rgba(40,95,140,.18)");
+  for (let k = 0; k < 7; k++) walk(11.4 + P, 16.1, (k / 7) * Math.PI * 2, 4 + (k % 3), 30 + k, 2);
+  ellipse(g, (11.4 + P) * T, 16.1 * T, T * 0.5, T * 0.3, "rgba(40,95,140,.18)");
   // Snow drifts combed out by the wind.
-  for (let i = 0; i < 16; i++) {
+  for (let i = 0; i < perWidth(16); i++) {
     const x = hash(i, 0, 99) * W, y = 13.5 + hash(i, 1, 99) * 4.3, len = T * (0.7 + hash(i, 2, 99) * 1.6);
     for (let k = 0; k < 4; k++) ellipse(g, x * T + k * len * 0.22, y * T + (k % 2) * T * 0.04, len * (0.3 - k * 0.05), T * (0.07 - k * 0.012), "rgba(245,251,255,.55)");
   }
@@ -573,17 +588,17 @@ function cracks(g: Ctx, T: number) {
 /* ---------- the deck edge ---------- */
 function deckDrifts(g: Ctx, T: number) {
   // Soft powder blown onto the boards: long low drifts, heaviest at the wall.
-  for (let i = 0; i < 26; i++) {
+  for (let i = 0; i < perWidth(26); i++) {
     const x = hash(i, 0, 103) * W, y = 3.12 + hash(i, 1, 103) * 0.75, w = 0.4 + hash(i, 2, 103) * 0.9;
     softDrift(g, x * T, y * T, w * T * 0.55, T * (0.05 + hash(i, 3, 103) * 0.04), 0.8);
   }
   // A bench, a lantern post and a sled parked on the terrace.
-  const bx = 13.2 * T, by = 3.35 * T;
+  const bx = (13.2 + P) * T, by = 3.35 * T;
   g.fillStyle = "#5e3820"; g.fillRect(bx, by, T * 0.9, T * 0.08); g.fillRect(bx + T * 0.05, by + T * 0.08, T * 0.05, T * 0.18); g.fillRect(bx + T * 0.8, by + T * 0.08, T * 0.05, T * 0.18);
   g.fillStyle = "#7a4a2a"; g.fillRect(bx, by - T * 0.2, T * 0.9, T * 0.06);
   roundRect(g, bx - T * 0.02, by - T * 0.25, T * 0.94, T * 0.05, T * 0.025, SNOW);
   roundRect(g, bx - T * 0.02, by - T * 0.03, T * 0.94, T * 0.05, T * 0.025, SNOW);
-  const sx = 6.15 * T, sy = 3.72 * T;
+  const sx = (6.15 + P) * T, sy = 3.72 * T;
   g.strokeStyle = "#4b2b16"; g.lineWidth = Math.max(1.2, T * 0.03);
   g.beginPath(); g.moveTo(sx, sy); g.lineTo(sx + T * 0.7, sy); g.quadraticCurveTo(sx + T * 0.85, sy, sx + T * 0.85, sy - T * 0.14); g.stroke();
   g.fillStyle = "#c0392b"; g.fillRect(sx + T * 0.06, sy - T * 0.16, T * 0.62, T * 0.07);
@@ -594,7 +609,7 @@ function deckDrifts(g: Ctx, T: number) {
 
 function snowProps(g: Ctx, T: number) {
   // A pair of skis and poles planted in the snow, and a snow drift mound or two.
-  const px = 17.35 * T, py = 8.1 * T;
+  const px = (17.35 + P) * T, py = 8.1 * T;
   ellipse(g, px + T * 0.1, py + T * 0.04, T * 0.35, T * 0.08, "rgba(120,155,200,.35)");
   [["#2f7fc4", -0.08], ["#2f7fc4", 0.06]].forEach(([col, a], i) => {
     g.save(); g.translate(px + T * (i * 0.12), py); g.rotate(a as number);
@@ -608,7 +623,8 @@ function snowProps(g: Ctx, T: number) {
   ellipse(g, px + T * 0.33, py - T * 0.12, T * 0.05, T * 0.015, "#3a3f48");
   ellipse(g, px + T * 0.1, py + T * 0.02, T * 0.3, T * 0.06, SNOW);
   // Wind-built mounds with a blue lee side.
-  const mounds: [number, number, number][] = [[3.6, 5.55, 0.7], [16.2, 9.9, 0.8], [11.2, 10.3, 0.55], [21.3, 11.6, 0.6], [0.6, 9.8, 0.5]];
+  const mounds: [number, number, number][] = [[3.6, 5.55, 0.7], [16.2, 9.9, 0.8], [11.2, 10.3, 0.55], [21.3, 11.6, 0.6], [0.6, 9.8, 0.5], [-4.4, 7.4, 0.65], [-1.8, 11.3, 0.5]]
+    .map(([x, y, r]) => [x + P, y, r] as [number, number, number]);
   mounds.forEach(([x, y, r]) => {
     softDrift(g, x * T, y * T, r * T * 0.7, T * 0.17);
   });

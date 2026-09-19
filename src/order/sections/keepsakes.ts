@@ -2,7 +2,7 @@
 // PURE (see ./types): shared by the page and the Worker. Flex Pass and Director's Cut are top-level draft fields
 // priced by the draft itself, so they are deliberately NOT in this section's addons.
 import type { EditionId } from "../prices";
-import type { Section, SectionAddons } from "./types";
+import type { Section, SectionAddons, SectionProblem } from "./types";
 
 export const RECIPIENT_MAX = 60;
 export const MESSAGE_MAX = 300;
@@ -107,8 +107,8 @@ export const keepsakesSection: Section<KeepsakesChoices> = {
     if (c.rush) out.rush = 1;
     return out;
   },
-  problems(c) {
-    return c.giftCard.on && !c.giftCard.recipient.trim() ? ["Who is the gift card for? Add their name, or turn the gift card off."] : [];
+  problems(c): SectionProblem[] {
+    return c.giftCard.on && !c.giftCard.recipient.trim() ? [{ message: "Who is the gift card for? Add their name, or turn the gift card off.", field: "giftcard:recipient" }] : [];
   },
   summary(c) {
     const lines: string[] = [];

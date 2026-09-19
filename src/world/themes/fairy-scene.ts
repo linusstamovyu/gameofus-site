@@ -3,36 +3,44 @@
 // the bluebell shore. Everything here is painted once into the layer; the
 // positions of anything that GLOWS are exported so the lights pass can find it.
 import stopsData from "../../content/stops.json";
-import { Ground, H, PALMS, PARASOLS, PLAYER_START, W, hash } from "../map";
-import { vnoise, type Ctx } from "./kit";
+import { Ground, H, PAD_LEFT as P, PALMS, PARASOLS, PLAYER_START, W, hash } from "../map";
+import { perWidth, vnoise, type Ctx } from "./kit";
 
 const TAU = Math.PI * 2;
 
 /* ---------- shared positions (tile units) ---------- */
-export const MOON: [number, number] = [4.3, 0.34];
+// Authored on the old 22-wide map: `P` (PAD_LEFT) keeps each one beside its stop, and
+// the pieces marked "left strip" fill the columns added on the left.
+type XY = [number, number];
+const sx2 = <T extends number[]>(list: T[]): T[] => list.map(([x, ...rest]) => [x + P, ...rest] as T);
+export const MOON: [number, number] = [4.3 + P, 0.34];
 /** Arched castle windows: x, y (centre). */
-export const CASTLE_WINDOWS: [number, number][] = [
+export const CASTLE_WINDOWS: [number, number][] = sx2<XY>([
   [10.78, 1.22], [11.22, 1.22], [11, 1.72],
   [9.35, 1.52], [9.35, 2.28], [12.65, 1.52], [12.65, 2.28],
   [7.75, 1.9], [7.75, 2.5], [14.25, 1.9], [14.25, 2.5],
   [8.55, 2.45], [13.45, 2.45],
-];
+]);
 /** Pennant poles: x, tip y of the roof, colour. */
-export const PENNANTS: [number, number, string][] = [
+export const PENNANTS: [number, number, string][] = ([
   [11, 0.2, "#ffd36e"], [9.35, 0.52, "#ff8cc6"], [12.65, 0.52, "#ff8cc6"], [7.75, 1.0, "#9ee7ff"], [14.25, 1.0, "#9ee7ff"],
-];
+] as [number, number, string][]).map(([x, y, c]) => [x + P, y, c]);
+/** Toadstool cottages: centre x, purple cap. */
+export const COTTAGES: [number, boolean][] = [[P - 3.7, true], [1.75 + P, false], [20.25 + P, true]];
 /** Cottage windows and lanterns: x, y, radius. */
-export const COTTAGE_LIGHTS: [number, number, number][] = [
+export const COTTAGE_LIGHTS: [number, number, number][] = sx2<[number, number, number]>([
+  [-4.3, 2.2, 0.14], [-3.15, 2.05, 0.16], [-4.2, 2.62, 0.06], // left strip
   [1.2, 2.05, 0.16], [2.35, 2.2, 0.14], [2.25, 2.62, 0.06],
   [19.65, 2.2, 0.14], [20.8, 2.05, 0.16], [19.75, 2.62, 0.06],
-];
-export const CHIMNEYS: [number, number][] = [[2.65, 0.52], [19.35, 0.52]];
+]);
+export const CHIMNEYS: [number, number][] = sx2<XY>([[-4.6, 0.52], [2.65, 0.52], [19.35, 0.52]]);
 /** Wall crystals: x, y (base), scale, kind (0 cyan, 1 violet). */
-export const CRYSTALS: [number, number, number, number][] = [
+export const CRYSTALS: [number, number, number, number][] = sx2<[number, number, number, number]>([
+  [-1.55, 2.64, 0.85, 0], [-0.75, 1.9, 0.6, 1], [-6.35, 2.66, 0.7, 1], [-6.65, 1.7, 0.45, 0], // left strip
   [4.15, 2.62, 1, 0], [5.75, 1.95, 0.8, 1], [3.7, 1.55, 0.55, 1], [6.45, 2.7, 0.6, 0],
   [16.15, 2.6, 0.95, 1], [17.55, 1.8, 0.75, 0], [18.05, 2.72, 0.5, 1], [15.7, 1.5, 0.5, 0],
-];
-export const RING: { cx: number; cy: number; rx: number; ry: number; n: number } = { cx: 6.35, cy: 10.95, rx: 0.95, ry: 0.5, n: 11 };
+]);
+export const RING: { cx: number; cy: number; rx: number; ry: number; n: number } = { cx: 6.35 + P, cy: 10.95, rx: 0.95, ry: 0.5, n: 11 };
 /** Tiny glowing meadow mushrooms: x, y, kind. Filled by `meadow`. */
 export const TINY_SHROOMS: [number, number, number][] = [];
 /** Glow buds on the vines and the path moss: x, y. */
@@ -107,8 +115,7 @@ export function fairyExtras(g: Ctx, T: number) {
   wall(g, T);
   vines(g, T);
   castle(g, T);
-  cottage(g, T, 1.75, false);
-  cottage(g, T, 20.25, true);
+  for (const [cx, purple] of COTTAGES) cottage(g, T, cx, purple);
   for (const [x, y, s, k] of CRYSTALS) crystal(g, T, x, y, s * 1.35, k);
   path(g, T);
   meadow(g, T);
@@ -120,7 +127,7 @@ function sky(g: Ctx, T: number) {
   const gr = g.createLinearGradient(0, 0, 0, T);
   gr.addColorStop(0, "#2a1c5c"); gr.addColorStop(0.5, "#6c4798"); gr.addColorStop(0.85, "#d98bb6"); gr.addColorStop(1, "#f3b4bd");
   g.fillStyle = gr; g.fillRect(0, 0, WW, T);
-  for (let i = 0; i < 90; i++) {
+  for (let i = 0; i < perWidth(90); i++) {
     const sx = hash(i, 1, 31) * WW, sy = hash(i, 2, 31) * T * 0.52, big = hash(i, 3, 31) > 0.88;
     g.fillStyle = `rgba(255,248,230,${0.35 + hash(i, 4, 31) * 0.55})`;
     const s = Math.max(1, T / 48) * (big ? 2 : 1);
@@ -205,7 +212,7 @@ function wall(g: Ctx, T: number) {
 }
 
 function vines(g: Ctx, T: number) {
-  const spots = [3.55, 4.75, 6.25, 15.45, 16.8, 18.0, 7.25, 14.75];
+  const spots = [3.55, 4.75, 6.25, 15.45, 16.8, 18.0, 7.25, 14.75, -0.35, -1.25, -6.1].map(x => x + P);
   spots.forEach((vx, i) => {
     const len = (0.9 + hash(i, 0, 61) * 0.85) * T, x0 = vx * T;
     const pts: [number, number][] = [];
@@ -280,16 +287,16 @@ function archWindow(g: Ctx, T: number, x: number, y: number, s = 1) {
 function castle(g: Ctx, T: number) {
   const u = T / 16, pink: [string, string, string] = ["#f39ccb", "#ffc6e3", "#b95a9c"], lav: [string, string, string] = ["#b596e6", "#dccbff", "#6f53a8"];
   // central keep
-  tower(g, T, 11, 1.02, 0.98, 2.2, 0.2, lav);
+  tower(g, T, 11 + P, 1.02, 0.98, 2.2, 0.2, lav);
   // rose window
-  fillEll(g, 11 * T, 1.52 * T, T * 0.11, T * 0.11, "#5b3d73");
-  const rw = g.createRadialGradient(11 * T, 1.52 * T, 0, 11 * T, 1.52 * T, T * 0.09);
+  fillEll(g, (11 + P) * T, 1.52 * T, T * 0.11, T * 0.11, "#5b3d73");
+  const rw = g.createRadialGradient((11 + P) * T, 1.52 * T, 0, (11 + P) * T, 1.52 * T, T * 0.09);
   rw.addColorStop(0, "#fff6c9"); rw.addColorStop(1, "#ff9f6b");
-  g.fillStyle = rw; g.beginPath(); g.arc(11 * T, 1.52 * T, T * 0.085, 0, TAU); g.fill();
+  g.fillStyle = rw; g.beginPath(); g.arc((11 + P) * T, 1.52 * T, T * 0.085, 0, TAU); g.fill();
   g.strokeStyle = "rgba(120,60,80,.6)"; g.lineWidth = 1;
-  for (let k = 0; k < 4; k++) { const a = (k * Math.PI) / 4; g.beginPath(); g.moveTo(11 * T + Math.cos(a) * T * 0.085, 1.52 * T + Math.sin(a) * T * 0.085); g.lineTo(11 * T - Math.cos(a) * T * 0.085, 1.52 * T - Math.sin(a) * T * 0.085); g.stroke(); }
+  for (let k = 0; k < 4; k++) { const a = (k * Math.PI) / 4; g.beginPath(); g.moveTo((11 + P) * T + Math.cos(a) * T * 0.085, 1.52 * T + Math.sin(a) * T * 0.085); g.lineTo((11 + P) * T - Math.cos(a) * T * 0.085, 1.52 * T - Math.sin(a) * T * 0.085); g.stroke(); }
   // curtain wall with battlements
-  const cT = 2.02 * T, cB = 3 * T, cL = 7.5 * T, cR = 14.5 * T;
+  const cT = 2.02 * T, cB = 3 * T, cL = (7.5 + P) * T, cR = (14.5 + P) * T;
   const cg = g.createLinearGradient(0, cT, 0, cB);
   cg.addColorStop(0, "#f2dcea"); cg.addColorStop(1, "#c9a8cc");
   g.fillStyle = cg; g.fillRect(cL, cT, cR - cL, cB - cT);
@@ -299,7 +306,7 @@ function castle(g: Ctx, T: number) {
   }
   for (let xx = cL; xx < cR; xx += T * 0.26) { g.fillStyle = "#ecd2e4"; g.fillRect(xx, cT - T * 0.12, T * 0.15, T * 0.13); g.fillStyle = "rgba(90,60,110,.25)"; g.fillRect(xx + T * 0.11, cT - T * 0.12, T * 0.04, T * 0.13); }
   // gate: warm light through a portcullis
-  const gx = 11 * T, gw = T * 0.72, gt = 2.3 * T;
+  const gx = (11 + P) * T, gw = T * 0.72, gt = 2.3 * T;
   g.fillStyle = "#c29bc0"; g.beginPath(); g.roundRect(gx - gw / 2 - T * 0.07, gt - T * 0.06, gw + T * 0.14, cB - gt + T * 0.06, [gw, gw, 0, 0]); g.fill();
   const gg = g.createLinearGradient(0, gt, 0, cB);
   gg.addColorStop(0, "#3a2450"); gg.addColorStop(1, "#ffb36a");
@@ -309,21 +316,21 @@ function castle(g: Ctx, T: number) {
   g.fillRect(gx - gw / 2, gt + (cB - gt) * 0.35, gw, Math.max(1, u * 0.6));
   // hanging banners by the gate
   for (const bx of [9.95, 12.05]) {
-    const X = bx * T;
+    const X = (bx + P) * T;
     g.fillStyle = "#b986e0"; g.beginPath(); g.moveTo(X - T * 0.11, 2.12 * T); g.lineTo(X + T * 0.11, 2.12 * T); g.lineTo(X + T * 0.11, 2.62 * T); g.lineTo(X, 2.52 * T); g.lineTo(X - T * 0.11, 2.62 * T); g.closePath(); g.fill();
     g.fillStyle = "#ffd873"; g.fillRect(X - T * 0.11, 2.12 * T, T * 0.22, u);
     g.beginPath(); g.moveTo(X, 2.25 * T); g.lineTo(X + T * 0.05, 2.33 * T); g.lineTo(X, 2.41 * T); g.lineTo(X - T * 0.05, 2.33 * T); g.closePath(); g.fill();
   }
   // towers in front
-  tower(g, T, 9.35, 0.74, 1.24, 3, 0.52, pink);
-  tower(g, T, 12.65, 0.74, 1.24, 3, 0.52, pink);
-  tower(g, T, 7.75, 0.64, 1.62, 3, 1.0, lav);
-  tower(g, T, 14.25, 0.64, 1.62, 3, 1.0, lav);
+  tower(g, T, 9.35 + P, 0.74, 1.24, 3, 0.52, pink);
+  tower(g, T, 12.65 + P, 0.74, 1.24, 3, 0.52, pink);
+  tower(g, T, 7.75 + P, 0.64, 1.62, 3, 1.0, lav);
+  tower(g, T, 14.25 + P, 0.64, 1.62, 3, 1.0, lav);
   for (const [x, y] of CASTLE_WINDOWS) archWindow(g, T, x, y, y < 1.4 ? 0.85 : 1);
   // ivy on the tower feet
   for (const [vx, dir] of [[7.45, 1], [9.7, -1], [12.3, 1], [14.55, -1]] as [number, number][]) {
     for (let k = 0; k < 9; k++) {
-      const yy = 3 * T - k * T * 0.07, xx = vx * T + Math.sin(k * 1.3) * T * 0.05 + dir * k * T * 0.01;
+      const yy = 3 * T - k * T * 0.07, xx = (vx + P) * T + Math.sin(k * 1.3) * T * 0.05 + dir * k * T * 0.01;
       fillEll(g, xx, yy, T * 0.05, T * 0.035, k % 2 ? "#4f8a4c" : "#6fb05f", 0.5 * dir);
       if (k % 4 === 2) fillEll(g, xx + T * 0.03, yy - T * 0.02, T * 0.02, T * 0.02, "#ffb3dd");
     }
@@ -378,7 +385,7 @@ function cottage(g: Ctx, T: number, cx: number, purple: boolean) {
     }
   });
   // chimney
-  const [chx, chy] = CHIMNEYS[purple ? 1 : 0];
+  const [chx, chy] = CHIMNEYS.reduce((a, b) => (Math.abs(b[0] - cx) < Math.abs(a[0] - cx) ? b : a));
   g.fillStyle = "#8f7f97"; g.fillRect(chx * T - T * 0.09, chy * T, T * 0.18, T * 0.5);
   g.fillStyle = "#6d5f78"; g.fillRect(chx * T - T * 0.11, chy * T - T * 0.03, T * 0.22, T * 0.07);
   // the cap
@@ -472,9 +479,9 @@ function flower(g: Ctx, T: number, x: number, y: number, petal: string, eye: str
 }
 
 function meadow(g: Ctx, T: number) {
-  const pick = (i: number, s: number): [number, number] => [0.15 + hash(i, s, 101) * 21.7, 4.25 + hash(i, s, 102) * 7.6];
+  const pick = (i: number, s: number): [number, number] => [0.15 + hash(i, s, 101) * (W - 0.3), 4.25 + hash(i, s, 102) * 7.6];
   // lusher darker patches and clover
-  for (let i = 0; i < 18; i++) {
+  for (let i = 0; i < perWidth(18); i++) {
     const [x, y] = pick(i, 1);
     for (let k = 0; k < 5; k++) {
       const cx = (x + (hash(i, k, 103) - 0.5) * 0.45) * T, cy = (y + (hash(i, k, 104) - 0.5) * 0.3) * T, r = T * 0.032;
@@ -483,9 +490,9 @@ function meadow(g: Ctx, T: number) {
     }
     if (hash(i, 9, 105) > 0.55) flower(g, T, x * T, (y - 0.05) * T, "#fff8fb", "#ffe9f4", 0.8);
   }
-  for (let i = 0; i < 80; i++) { const [x, y] = pick(i, 2); if (isFree(x, y)) tufts(g, T, x * T, y * T, i); }
+  for (let i = 0; i < perWidth(80); i++) { const [x, y] = pick(i, 2); if (isFree(x, y)) tufts(g, T, x * T, y * T, i); }
   const FLOWERS: [string, string][] = [["#ff9ccf", "#fff0a0"], ["#9cbcff", "#ffffff"], ["#ffe27a", "#e08a3a"], ["#ffffff", "#ffd36e"], ["#d6a8ff", "#fff0a0"]];
-  for (let i = 0; i < 46; i++) {
+  for (let i = 0; i < perWidth(46); i++) {
     const [x, y] = pick(i, 3);
     if (!isFree(x, y)) continue;
     const [p, e] = FLOWERS[Math.floor(hash(i, 4, 106) * FLOWERS.length)];
@@ -494,7 +501,7 @@ function meadow(g: Ctx, T: number) {
   }
   // tiny glowing mushrooms
   TINY_SHROOMS.length = 0;
-  for (let i = 0; i < 40 && TINY_SHROOMS.length < 16; i++) {
+  for (let i = 0; i < perWidth(40) && TINY_SHROOMS.length < perWidth(16); i++) {
     const [x, y] = pick(i, 6);
     if (!isFree(x, y) || Math.hypot((x - RING.cx) / RING.rx, (y - RING.cy) / RING.ry) < 1.6) continue;
     const kind = hash(i, 7, 110) > 0.5 ? 1 : 0;
@@ -536,15 +543,15 @@ function shore(g: Ctx, T: number) {
     if (hash(i, 4, 121) > 0.7) fillEll(g, sx - r * 0.1, sy - r * 0.45, r * 0.6, r * 0.18, "#5f9a58");
   }
   // the mossy bank strip: little stones, moss cushions, star flowers
-  for (let i = 0; i < 70; i++) {
+  for (let i = 0; i < perWidth(70); i++) {
     const sx = hash(i, 0, 126) * WW, sy = y0 + T * (0.55 + hash(i, 1, 126) * 0.28), k = hash(i, 2, 126);
     if (k < 0.45) { const r = T * (0.025 + hash(i, 3, 126) * 0.035); fillEll(g, sx, sy, r, r * 0.65, css(lerp3("#6d6682", "#a59dbb", hash(i, 4, 126)))); fillEll(g, sx - r * 0.3, sy - r * 0.25, r * 0.35, r * 0.18, "rgba(255,250,255,.3)"); }
     else if (k < 0.8) { fillEll(g, sx, sy, T * 0.06, T * 0.03, "#4f8a50"); fillEll(g, sx - T * 0.015, sy - T * 0.012, T * 0.03, T * 0.013, "#7cc06a"); }
     else flower(g, T, sx, sy - T * 0.05, "#fff8fb", "#ffd36e", 0.7);
   }
   // bluebells
-  for (let i = 0; i < 26; i++) {
-    const bx = (0.2 + hash(i, 0, 122) * 21.6) * T, by = y0 + T * (0.35 + hash(i, 1, 122) * 0.3);
+  for (let i = 0; i < perWidth(26); i++) {
+    const bx = (0.2 + hash(i, 0, 122) * (W - 0.4)) * T, by = y0 + T * (0.35 + hash(i, 1, 122) * 0.3);
     if (!isFree(bx / T, by / T)) continue;
     for (let k = 0; k < 3; k++) {
       const sx = bx + (k - 1) * T * 0.06, top = by - T * (0.22 + hash(i, k, 123) * 0.1), lean = (k - 1) * T * 0.04 + T * 0.05;
@@ -558,7 +565,7 @@ function shore(g: Ctx, T: number) {
     }
   }
   // cattails by the water
-  for (const rx of [0.55, 7.55, 12.55, 19.45]) {
+  for (const rx of [0.55, 3.9, 0.55 + P, 7.55 + P, 12.55 + P, 19.45 + P]) {
     for (let k = 0; k < 4; k++) {
       const X = (rx + k * 0.09) * T, h = T * (0.45 + hash(k, Math.round(rx), 125) * 0.25), lean = (k - 1.5) * T * 0.05;
       g.strokeStyle = k % 2 ? "#4c8a52" : "#35683f"; g.lineWidth = Math.max(1, T * 0.022);

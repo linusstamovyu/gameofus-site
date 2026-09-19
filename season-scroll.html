@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Game of Us Season Scroll</title>
+  <meta name="robots" content="noindex">
+  <meta name="theme-color" content="#1c5f82">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect x='3' y='3' width='10' height='10' transform='rotate(45 8 8)' fill='%231a9e95' stroke='%23fdf6e3' stroke-width='2'/%3E%3C/svg%3E">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Pixelify+Sans:wght@500;700&family=Chakra+Petch:wght@600;700&display=swap">
+  <!-- Preview (16 Sep 2026): the hero's playable map, where a sideways swipe travels through the worlds in season order.
+       Not a build input. ?world=ski  ?pos=2.5 (parks a blend)  ?outfits=fade  ?blend=low|full  ?debug -->
+  <script type="module" src="/src/seasons/main.ts"></script>
+</head>
+<body class="season-page">
+<div class="season-top">
+  <div class="wrap">
+    <span class="season-title">Game of Us <em>· Season scroll</em></span>
+    <span class="season-flag">Preview</span>
+  </div>
+</div>
+
+<header class="hero" id="top">
+  <div class="wrap">
+    <div class="stage" id="stage" tabindex="0" aria-label="Playable map. Swipe sideways to travel through the seasons. Click or tap the ground to walk; after clicking, use W A S D to walk and E to talk.">
+      <canvas aria-hidden="true"></canvas>
+      <div class="title-card" id="titleCard">
+        <p class="eyebrow">One map, a whole year</p>
+        <h1>Same squad. <em>Every season.</em></h1>
+        <p>Swipe sideways on the map and the world turns: summer on the beach, the rainy season in the jungle, an autumn fairy tale, a neon city in late autumn, a winter ski village, and an off-season on Mars.</p>
+        <div class="row">
+          <button class="btn" id="heroTour" type="button">Take the tour ▶</button>
+          <button class="btn ghost" id="heroWalk" type="button">Just walk around</button>
+        </div>
+        <small><kbd>⇆</kbd> sideways swipe or <kbd>Shift</kbd> + scroll · <kbd>WASD</kbd> <kbd>E</kbd> after clicking the world</small>
+      </div>
+      <button class="mini-title" id="miniTitle" type="button" hidden>◀ Season scroll</button>
+      <label class="world-pick">
+        <span class="world-swatch" id="worldSwatch" aria-hidden="true"></span>
+        <span class="world-label">World</span>
+        <select id="worldSelect" aria-label="Choose the world: same squad, same map, new season"></select>
+      </label>
+      <nav class="tour" aria-label="Guided tour">
+        <button class="btn ghost" id="prev" type="button" aria-label="Previous stop">◀</button>
+        <div class="where"><small id="tourStep">Guided tour</small><strong id="tourName">Stops on the map</strong><div class="dots" id="dots"></div></div>
+        <button class="btn" id="next" type="button">Start ▶</button>
+      </nav>
+      <div class="season-hint" id="seasonHint" role="status" hidden></div>
+      <div class="scrim" id="scrim" hidden></div>
+      <section class="card" id="card" role="dialog" aria-labelledby="cardTitle" hidden></section>
+      <div class="toast" id="toast" role="status" hidden></div>
+      <noscript><p class="noscript">The map needs JavaScript.</p></noscript>
+    </div>
+
+    <section class="season-bar" aria-label="Seasons">
+      <div class="season-head">
+        <p class="season-now" id="seasonNow" aria-live="polite">Summer · Albufeira beach</p>
+        <div class="season-outfits" role="group" aria-label="Clothes while the seasons change">
+          <span>Clothes</span>
+          <button type="button" data-outfits="own">Own clothes</button>
+          <button type="button" data-outfits="fade">Outfits fade</button>
+        </div>
+      </div>
+      <div class="season-track" aria-hidden="true">
+        <div class="season-band" id="seasonBand"></div>
+        <span class="season-marker" id="seasonMarker"></span>
+        <span class="season-marker" id="seasonGhost"></span>
+      </div>
+      <div class="season-stops" id="seasonStops"></div>
+    </section>
+  </div>
+</header>
+</body>
+</html>

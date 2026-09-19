@@ -2,8 +2,8 @@
 // (the canopy wall, the carved ruin wall, the stepped temple, the slab trail, the
 // floor litter and the riverbank). Painted once into the layer; jungle.ts moves.
 import stopsData from "../../content/stops.json";
-import { Ground, PALMS, PARASOLS, PLAYER_START, W, hash } from "../map";
-import { blocks, rgb, vnoise, type Ctx } from "./kit";
+import { Ground, PAD_LEFT as P, PALMS, PARASOLS, PLAYER_START, W, hash } from "../map";
+import { blocks, perWidth, rgb, vnoise, type Ctx } from "./kit";
 
 export type C3 = [number, number, number];
 const clamp01 = (t: number) => Math.max(0, Math.min(1, t));
@@ -14,6 +14,9 @@ export const lerp3 = (a: C3, b: C3, t: number): C3 => {
 export const css = (c: C3, a = 1) =>
   a >= 1 ? `rgb(${c[0] | 0},${c[1] | 0},${c[2] | 0})` : `rgba(${c[0] | 0},${c[1] | 0},${c[2] | 0},${a})`;
 const TAU = Math.PI * 2;
+
+/** The temple's centre column: x 11 on the old 22-wide map, shifted with the stops by PAD_LEFT. */
+export const TEMPLE_X = 11 + P;
 
 export const PAL = {
   canopyDeep: rgb("#0b2213"), canopyDark: rgb("#163b1f"), leaf1: rgb("#1f4d25"), leaf2: rgb("#2f6b2c"),
@@ -161,21 +164,21 @@ function floor(g: Ctx, T: number) {
     }
     // leaf litter
     const litter = ["#7a5a2e", "#9a7a3a", "#6b7a30", "#b08a3e", "#5a4526", "#8f9a3e"];
-    for (let i = 0; i < 520; i++) {
+    for (let i = 0; i < perWidth(520); i++) {
       const fx = hash(i, 1, 60) * W, fy = 4 + hash(i, 2, 60) * 8;
       if (vnoise(fx, fy, 2.2, 9) < 0.35) continue; // litter gathers in drifts
       const a = hash(i, 3, 60) * TAU, len = u * (1.6 + hash(i, 4, 60) * 1.6);
       leaf(g, fx * T, fy * T, len, len * 0.45, a, litter[Math.floor(hash(i, 5, 60) * litter.length)], "rgba(40,28,12,.35)");
     }
     // pebbles
-    for (let i = 0; i < 70; i++) {
+    for (let i = 0; i < perWidth(70); i++) {
       const fx = hash(i, 1, 61) * W, fy = 4.2 + hash(i, 2, 61) * 7.6, r = u * (0.7 + hash(i, 3, 61));
       blob(g, fx * T + u * 0.3, fy * T + u * 0.4, r, r * 0.6, "rgba(20,20,10,.3)");
       blob(g, fx * T, fy * T, r, r * 0.65, css(lerp3(PAL.stone, PAL.stoneLite, hash(i, 4, 61))));
     }
     // half-buried carved stones: flat, so they still read as ground
-    for (const [fx, fy, s] of [[6.3, 10.4, 1], [19.6, 7.3, 2], [14.2, 11.3, 3], [1.4, 6.6, 4]] as const) {
-      const x = fx * T, y = fy * T, w = T * 0.7, h = T * 0.32;
+    for (const [fx, fy, s] of [[6.3, 10.4, 1], [19.6, 7.3, 2], [14.2, 11.3, 3], [1.4, 6.6, 4], [-4.6, 9.2, 5], [-2.3, 5.1, 6]] as const) {
+      const x = (fx + P) * T, y = fy * T, w = T * 0.7, h = T * 0.32;
       g.fillStyle = "rgba(15,25,10,.35)"; g.beginPath(); g.ellipse(x + w / 2, y + h * 0.75, w * 0.6, h * 0.5, 0, 0, TAU); g.fill();
       g.fillStyle = css(PAL.stone); g.fillRect(x, y, w, h);
       g.fillStyle = css(PAL.stoneLite); g.fillRect(x, y, w, u);
@@ -184,7 +187,7 @@ function floor(g: Ctx, T: number) {
       blob(g, x + w * (0.2 + hash(s, 0, 62) * 0.6), y + u * 0.4, w * 0.3, u * 1.2, css(PAL.moss));
     }
     // ferns and flowers, kept off every tile something stands on
-    for (let i = 0; i < 60; i++) {
+    for (let i = 0; i < perWidth(60); i++) {
       const fx = hash(i, 1, 63) * W, fy = 4.6 + hash(i, 2, 63) * 7.2;
       if (!free(fx, fy) || !free(fx, fy - 0.5)) continue;
       if (hash(i, 3, 63) < 0.42) fern(g, fx * T, fy * T, T * (0.32 + hash(i, 4, 63) * 0.18), i);
@@ -218,20 +221,20 @@ function bank(g: Ctx, T: number) {
       g.lineTo(W * T, 11.8 * T); g.lineTo(0, 11.8 * T); g.fill();
     }
     // puddles
-    for (let i = 0; i < 9; i++) {
+    for (let i = 0; i < perWidth(9); i++) {
       const x = (hash(i, 1, 72) * W) * T, y = 12.45 * T + hash(i, 2, 72) * T * 0.3, rx = T * (0.25 + hash(i, 3, 72) * 0.35);
       blob(g, x, y, rx, rx * 0.28, "rgba(40,50,35,.75)");
       blob(g, x - rx * 0.25, y - rx * 0.06, rx * 0.45, rx * 0.07, "rgba(190,210,170,.35)");
     }
     // bank stones
-    for (let i = 0; i < 14; i++) {
+    for (let i = 0; i < perWidth(14); i++) {
       const x = hash(i, 1, 73) * W * T, y = 12.55 * T + hash(i, 2, 73) * T * 0.35, r = u * (1.4 + hash(i, 3, 73) * 1.8);
       blob(g, x + u * 0.5, y + u * 0.5, r, r * 0.6, "rgba(20,15,8,.4)");
       blob(g, x, y, r, r * 0.66, css(lerp3(PAL.stoneDark, PAL.stone, hash(i, 4, 73))));
       blob(g, x - r * 0.3, y - r * 0.25, r * 0.45, r * 0.2, "rgba(210,210,180,.35)");
     }
     // reeds and bulrushes along the waterline
-    for (let c = 0; c < 16; c++) {
+    for (let c = 0; c < perWidth(16); c++) {
       const cx = (hash(c, 1, 74) * W) * T;
       if (!free(cx / T, 12)) continue;
       for (let k = 0; k < 7; k++) {
@@ -278,9 +281,9 @@ function trail(g: Ctx, T: number) {
     g.fillStyle = foot; g.fillRect(0, y0, W * T, T * 0.35);
     g.fillStyle = css(PAL.moss, 0.8); g.fillRect(0, y0, W * T, u * 0.9);
     // roots crossing the path from the wall
-    for (let i = 0; i < 7; i++) {
+    for (let i = 0; i < perWidth(7); i++) {
       const x = (hash(i, 1, 59) * W) * T;
-      if (Math.abs(x - 11 * T) < T * 1.2) continue; // leave the temple stair clear
+      if (Math.abs(x - TEMPLE_X * T) < T * 1.2) continue; // leave the temple stair clear
       const bend = (hash(i, 2, 59) - 0.5) * T * 1.4;
       g.lineCap = "round";
       g.strokeStyle = "rgba(20,15,8,.45)"; g.lineWidth = u * 2;
@@ -380,21 +383,21 @@ function canopy(g: Ctx, T: number) {
         const cx = (i / per + (hash(i, layer, 1) - 0.5) * 0.3) * T;
         const cy = (0.1 + layer * 0.28 + hash(i, layer, 2) * 0.4) * T;
         // the temple top stands clear of the canopy
-        if (Math.abs(cx - 11 * T) < T * (1.25 + layer * 0.25) && layer > 0) continue;
+        if (Math.abs(cx - TEMPLE_X * T) < T * (1.25 + layer * 0.25) && layer > 0) continue;
         clump(g, cx, cy, T * (0.34 + hash(i, layer, 3) * 0.2 - layer * 0.03), i * 7 + layer, shades[layer]);
       }
     }
     // bromeliads and a few red flowers in the canopy
-    for (let i = 0; i < 18; i++) {
+    for (let i = 0; i < perWidth(18); i++) {
       const cx = hash(i, 1, 80) * W * T, cy = (0.3 + hash(i, 2, 80) * 0.8) * T;
-      if (Math.abs(cx - 11 * T) < T * 1.8) continue;
+      if (Math.abs(cx - TEMPLE_X * T) < T * 1.8) continue;
       for (let p = 0; p < 5; p++) leaf(g, cx, cy, T * 0.1, T * 0.035, -Math.PI / 2 + (p - 2) * 0.5, p % 2 ? "#c8352a" : "#e8683a");
     }
   });
 }
 
 function temple(g: Ctx, T: number) {
-  const u = T / 16, C = 11 * T;
+  const u = T / 16, C = TEMPLE_X * T;
   const tiers = [ // [top, bottom, half width] in tiles
     [0.66, 1.24, 2.15], [1.24, 2.04, 2.9], [2.04, 3.0, 3.65],
   ];
@@ -484,7 +487,7 @@ function temple(g: Ctx, T: number) {
 }
 
 function vines(g: Ctx, T: number) {
-  const u = T / 16, C = 11 * T;
+  const u = T / 16, C = TEMPLE_X * T;
   clip(g, T, 0.5, 3.1, () => {
     for (let v = 0; v < W * 1.6; v++) {
       const x = (v / 1.6 + (hash(v, 0, 20) - 0.5) * 0.4) * T;
@@ -504,9 +507,9 @@ function vines(g: Ctx, T: number) {
 
 function wallFoot(g: Ctx, T: number) {
   clip(g, T, 2.3, 3.4, () => {
-    for (let i = 0; i < 16; i++) {
+    for (let i = 0; i < perWidth(16); i++) {
       const x = hash(i, 1, 85) * W * T;
-      if (Math.abs(x - 11 * T) < T * 1.6) continue;
+      if (Math.abs(x - TEMPLE_X * T) < T * 1.6) continue;
       fern(g, x, 3.12 * T, T * (0.35 + hash(i, 2, 85) * 0.2), 900 + i);
     }
   });

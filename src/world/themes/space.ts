@@ -1,7 +1,7 @@
 // Mars base: habitat domes on the horizon, a rust ridge with airlocks, a catwalk,
 // red regolith with craters and rover tracks, a landing-pad edge, and open space below.
-import { Ground, H, PALMS, PARASOLS, W, hash } from "../map";
-import { blocks, ellipse, glow, rgb, r01, rgba, roundRect, shadow, vnoise, wrap, type Ctx } from "./kit";
+import { Ground, H, PAD_LEFT as PAD, PALMS, PARASOLS, W, hash } from "../map";
+import { blocks, ellipse, glow, perWidth, rgb, r01, rgba, roundRect, shadow, vnoise, wrap, type Ctx } from "./kit";
 import type { Theme } from "./types";
 
 const TAU = Math.PI * 2;
@@ -14,28 +14,45 @@ function mix(a: string, b: string, t: number): string {
 const sstep = (a: number, b: number, v: number) => { const k = Math.max(0, Math.min(1, (v - a) / (b - a))); return k * k * (3 - 2 * k); };
 
 /* ---------- fixed features (tile units) ---------- */
-const DOMES = [{ x: 2.3, r: 0.75 }, { x: 6.9, r: 1.05 }, { x: 11.6, r: 0.7 }, { x: 15.4, r: 1.0 }, { x: 20.2, r: 0.8 }];
-const MAST = { x: 9.25, top: 0.07 };
-const AIRLOCKS = [4, 18]; // left tile of a 2-wide door in rows 1-2
+// Authored on the old 22-wide map, so each list is shifted by PAD_LEFT to keep
+// its place beside the stops; the pieces marked "left strip" fill the added columns.
+const shiftX = <T extends { x: number }>(list: T[]) => list.map(o => ({ ...o, x: o.x + PAD }));
+const DOMES = [
+  { x: PAD - 5.6, r: 0.85 }, { x: PAD - 1.8, r: 0.7 }, // left strip
+  ...shiftX([{ x: 2.3, r: 0.75 }, { x: 6.9, r: 1.05 }, { x: 11.6, r: 0.7 }, { x: 15.4, r: 1.0 }, { x: 20.2, r: 0.8 }]),
+];
+const SOLAR = [PAD - 3.9, 4.45 + PAD, 13.5 + PAD, 18.0 + PAD];
+const MAST = { x: 9.25 + PAD, top: 0.07 };
+const AIRLOCKS = [PAD - 5, 4 + PAD, 18 + PAD]; // left tile of a 2-wide door in rows 1-2
 const CRATERS = [
-  { x: 7.0, y: 5.9, r: 0.85 }, { x: 14.2, y: 7.0, r: 0.7 }, { x: 19.7, y: 8.3, r: 1.0 }, { x: 5.3, y: 11.35, r: 0.5 },
-  { x: 12.2, y: 11.1, r: 0.55 }, { x: 3.7, y: 4.7, r: 0.4 }, { x: 21.2, y: 10.9, r: 0.42 }, { x: 10.6, y: 7.8, r: 0.32 },
+  { x: 2.4, y: 6.7, r: 0.8 }, { x: 5.6, y: 9.5, r: 0.55 }, { x: 3.6, y: 11.75, r: 0.38 }, { x: 4.9, y: 4.8, r: 0.35 }, // left strip
+  ...shiftX([
+    { x: 7.0, y: 5.9, r: 0.85 }, { x: 14.2, y: 7.0, r: 0.7 }, { x: 19.7, y: 8.3, r: 1.0 }, { x: 5.3, y: 11.35, r: 0.5 },
+    { x: 12.2, y: 11.1, r: 0.55 }, { x: 3.7, y: 4.7, r: 0.4 }, { x: 21.2, y: 10.9, r: 0.42 }, { x: 10.6, y: 7.8, r: 0.32 },
+  ]),
 ];
 type P = [number, number];
+const shiftP = (p: [P, P, P, P]): [P, P, P, P] => p.map(([x, y]) => [x + PAD, y]) as [P, P, P, P];
 const TRACKS: { p: [P, P, P, P]; a0: number }[] = [
-  { p: [[-0.5, 9.6], [3.5, 8.4], [6.5, 12.3], [10.0, 11.8]], a0: 0.2 },
-  { p: [[13.0, 12.3], [15.5, 8.4], [17.5, 7.9], [20.1, 5.85]], a0: 0.05 },
+  // left strip: the rover comes in from the map edge and joins the old track where it used to start
+  { p: [[-0.5, 10.3], [1.8, 10.5], [PAD - 2.6, 10.8], [PAD - 0.5, 9.6]], a0: 0.2 },
+  { p: shiftP([[-0.5, 9.6], [3.5, 8.4], [6.5, 12.3], [10.0, 11.8]]), a0: 1 },
+  { p: shiftP([[13.0, 12.3], [15.5, 8.4], [17.5, 7.9], [20.1, 5.85]]), a0: 0.05 },
 ];
-const PLANET = { x: 17.2, y: 22.4, r: 5.9 };
-const MOON = { x: 4.6, y: 15.5, r: 0.55 };
+const PLANET = { x: 17.2 + PAD, y: 22.4, r: 5.9 };
+const MOON = { x: 4.6 + PAD, y: 15.5, r: 0.55 };
 const VOID_TOP = 13.62; // below the rock lip under the pad
 const NEBULA: [number, number, number, string, number][] = [
   [3.5, 14.6, 4.5, "#6a2bb0", 0.22], [9.5, 16.4, 5.0, "#1f7fa0", 0.18], [12.5, 14.4, 3.2, "#b0357a", 0.12], [1.0, 17.2, 3.0, "#2a58c0", 0.16],
+  [-4.2, 15.2, 3.6, "#b0357a", 0.14], [-6.0, 17.0, 3.4, "#1f7fa0", 0.16], // left strip
+].map(([x, ...rest]) => [(x as number) + PAD, ...rest] as [number, number, number, string, number]);
+const BOULDERS = [
+  { x: 3.4, y: 5.4, r: 0.25 }, { x: 6.0, y: 11.4, r: 0.22 }, { x: 1.6, y: 8.3, r: 0.2 }, // left strip
+  ...shiftX([{ x: 13.0, y: 4.55, r: 0.28 }, { x: 6.3, y: 8.2, r: 0.22 }, { x: 16.9, y: 9.35, r: 0.3 }, { x: 0.55, y: 11.8, r: 0.26 }, { x: 11.6, y: 9.7, r: 0.18 }, { x: 19.0, y: 11.5, r: 0.2 }]),
 ];
-const BOULDERS = [{ x: 13.0, y: 4.55, r: 0.28 }, { x: 6.3, y: 8.2, r: 0.22 }, { x: 16.9, y: 9.35, r: 0.3 }, { x: 0.55, y: 11.8, r: 0.26 }, { x: 11.6, y: 9.7, r: 0.18 }, { x: 19.0, y: 11.5, r: 0.2 }];
 /** How far the plateau's rock hangs down into row 13, in tiles. */
 const lipAt = (fx: number) => 0.2 + 0.26 * vnoise(fx, 0, 1.1, 23) + 0.1 * vnoise(fx, 0, 0.28, 24);
-const isRover = (x: number) => x === 10 || x === 20;
+const isRover = (x: number) => x === 10 + PAD || x === 20 + PAD;
 
 /* ---------- ground ---------- */
 function regolith(g: Ctx, x: number, y: number, T: number) {
@@ -256,7 +273,7 @@ function domes(g: Ctx, T: number) {
     for (let s = a + u * 4; s < b; s += u * 5) { g.fillStyle = "#3b414b"; g.fillRect(s, ty - u * 1.5, u * 0.8, u * 3); }
   }
   // solar arrays on stilts
-  for (const sx of [4.45, 13.5, 18.0]) {
+  for (const sx of SOLAR) {
     const x0 = sx * T;
     g.fillStyle = "#3b414b"; g.fillRect(x0 + u * 3, T * 0.6, u * 0.6, groundY - T * 0.6);
     g.fillStyle = "#1f3a6a";
@@ -595,7 +612,7 @@ export const space: Theme = {
           if (big && tw > 0.75) { ctx.fillStyle = `rgba(255,240,210,${(tw - 0.75) * 1.6})`; ctx.fillRect(sx - u * 1.2, sy + s / 2 - u * 0.15, u * 2.4 + s, u * 0.3); ctx.fillRect(sx + s / 2 - u * 0.15, sy - u * 1.2, u * 0.3, u * 2.4 + s); }
         }
     // a slow drifting star field
-    for (let i = 0; i < 28; i++) {
+    for (let i = 0; i < perWidth(28); i++) {
       const sx = wrap(r01(i, 7) * W - t * (0.05 + 0.05 * r01(i, 8)), W) * T, sy = (VOID_TOP + 0.1 + r01(i, 9) * (H - VOID_TOP - 0.2)) * T;
       if (sx < v.x0 * T - T || sx > (v.x1 + 1) * T || inPlanet(sx, sy, T)) continue;
       ctx.fillStyle = `rgba(190,210,255,${0.3 + 0.4 * r01(i, 10)})`; ctx.fillRect(sx, sy, u * 0.5, u * 0.5);
@@ -604,7 +621,7 @@ export const space: Theme = {
       // shooting star
       const P = 6.5, n = Math.floor(t / P), f = (t - n * P) / 0.9;
       if (f < 1) {
-        const x0 = (1 + r01(n, 3) * 17) * T, y0 = (13.9 + r01(n, 4) * 1.4) * T, dx = T * 5.5, dy = T * 1.6;
+        const x0 = (1 + r01(n, 3) * (W - 5)) * T, y0 = (13.9 + r01(n, 4) * 1.4) * T, dx = T * 5.5, dy = T * 1.6;
         const hx = x0 + dx * f, hy = y0 + dy * f, tl = 0.3;
         const grd = ctx.createLinearGradient(hx - dx * tl, hy - dy * tl, hx, hy);
         grd.addColorStop(0, "rgba(255,255,255,0)"); grd.addColorStop(1, `rgba(255,250,235,${0.9 * (1 - f)})`);
@@ -703,7 +720,7 @@ export const space: Theme = {
       if (wrap(t * 1.3 + hash(x, y, 6), 1) < 0.5) glow(ctx, lx, ly, T * 0.3, "#5ef0ff", 0.4);
     }
     // low-gravity dust motes, drifting and settling slowly
-    for (let i = 0; i < 46; i++) {
+    for (let i = 0; i < perWidth(46); i++) {
       const mx = wrap(r01(i, 1) * W + t * (0.06 + 0.1 * r01(i, 2)), W) * T;
       const my = (3.6 + r01(i, 3) * 8.8 + Math.sin(t * (0.3 + 0.3 * r01(i, 4)) + i) * 0.35) * T;
       if (!inView(mx, my, 0)) continue;

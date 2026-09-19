@@ -2,7 +2,7 @@
 // top, a timber terrace, fresh snow where everyone stands, a packed ridge and
 // a frozen lake nobody should walk on. Big pictures live in ./ski-village.
 import { Ground, H, W, hash } from "../map";
-import { blocks, ellipse, glow, mix, r01, rgb, roundRect, shadow, vnoise, wrap, type Ctx } from "./kit";
+import { blocks, ellipse, glow, mix, perWidth, r01, rgb, roundRect, shadow, vnoise, wrap, type Ctx } from "./kit";
 import { CHIMNEYS, SNOW, WINDOW_LIGHTS, drawPine, extras } from "./ski-village";
 import type { Theme } from "./types";
 
@@ -141,7 +141,7 @@ export const ski: Theme = {
     ctx.fillStyle = lg; ctx.fillRect(gx + shift - T * 1.1, top, T * 2.2, bottom - top);
     ctx.restore();
     // Twinkles on the ice, brightest inside the sweep.
-    for (let i = 0; i < 34; i++) {
+    for (let i = 0; i < perWidth(34); i++) {
       const x = r01(i, 1) * W * T, y = top + r01(i, 2) * (bottom - top);
       if (x < left || x > right) continue;
       const near = Math.max(0, 1 - Math.abs(x - (gx + 0.55 * (15.5 * T - y))) / (T * 2.5));
@@ -150,7 +150,7 @@ export const ski: Theme = {
     }
     ctx.globalCompositeOperation = "source-over";
     // Wind-blown snow streaks skating over the ice.
-    for (let i = 0; i < 40; i++) {
+    for (let i = 0; i < perWidth(40); i++) {
       const speed = 1.4 + r01(i, 5) * 1.8, cyc = W + 6;
       const pos = wrap(r01(i, 4) * cyc + t * speed, cyc) - 3;
       const x = pos * T, y = top + (0.2 + r01(i, 6) * 0.78) * (bottom - top) + Math.sin(t * 1.3 + i) * T * 0.06;
