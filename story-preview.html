@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Season story</title>
+  <meta name="robots" content="noindex">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Pixelify+Sans:wght@500;700&family=Chakra+Petch:wght@600;700&display=swap">
+  <!-- The season story (16-17 Sep 2026) on the hero it was built against. It ran on the homepage until the
+       19 Sep hero replaced it there; this page keeps it reachable and is not a build input. -->
+  <script type="module" src="/src/story/preview.ts"></script>
+</head>
+<body>
+<nav class="nav" aria-label="Main">
+  <div class="wrap">
+    <a class="logo" href="index.html" aria-label="Game of Us home"><img src="brand/game-of-us-logo-wide-white.webp" alt="Game of Us"></a>
+    <span class="draft-flag">Season story</span>
+  </div>
+</nav>
+<header class="hero" id="top">
+  <div class="wrap">
+    <div class="stage" id="stage" tabindex="0" aria-label="Playable beach. Click or tap the sand to walk; after clicking, use W A S D to walk and E to talk. Everything here is also written out below.">
+      <canvas aria-hidden="true"></canvas>
+      <div class="title-card" id="titleCard">
+        <p class="eyebrow">A retro RPG starring your friends</p>
+        <h1>Your friends. Your places. <em>Your game.</em></h1>
+        <p>We turn your group's real photos, places and in-jokes into a game you play together. This beach is a real one: walk around and meet the squad.</p>
+        <div class="row">
+          <button class="btn" id="heroTour" type="button" data-track="hero_cta" data-track-which="tour">Take the tour ▶</button>
+          <a class="btn ghost" href="explore.html" data-track="hero_cta" data-track-which="explore">See everything in it</a>
+        </div>
+        <small><button class="link-btn hero-walk" id="heroWalk" type="button" data-track="hero_cta" data-track-which="walk">Or just walk around</button> · Tap or click the sand to walk · <kbd>WASD</kbd> <kbd>Shift</kbd> <kbd>E</kbd> after clicking the world</small>
+      </div>
+      <button class="mini-title" id="miniTitle" type="button" hidden>◀ Game of Us</button>
+      <label class="world-pick">
+        <span class="world-swatch" id="worldSwatch" aria-hidden="true"></span>
+        <span class="world-label">World</span>
+        <select id="worldSelect" aria-label="Choose the world: same squad, same map, new setting"></select>
+      </label>
+      <nav class="tour" aria-label="Guided tour">
+        <button class="btn ghost" id="prev" type="button" aria-label="Previous stop">◀</button>
+        <div class="where"><small id="tourStep">Guided tour</small><strong id="tourName">Stops on the beach</strong><div class="dots" id="dots"></div></div>
+        <button class="btn" id="next" type="button">Start ▶</button>
+      </nav>
+      <div class="scrim" id="scrim" hidden></div>
+      <section class="card" id="card" role="dialog" aria-labelledby="cardTitle" hidden></section>
+      <div class="toast" id="toast" role="status" hidden></div>
+      <noscript><p class="noscript">The beach needs JavaScript. Everything on it is written out below.</p></noscript>
+    </div>
+    <div class="skip">
+      <span>Rather read than walk? Everything on the beach is also on this page.</span>
+      <a href="#features">Scroll to the site ↓</a>
+    </div>
+  </div>
+</header>
+<main>
+  <section class="wrap" style="padding:80px 0">
+    <p class="eyebrow">Preview</p>
+    <h2>Scroll the hero above: the map opens out and plays the year.</h2>
+    <p>The homepage now opens on the press-start hero instead. This page keeps this version runnable.</p>
+  </section>
+</main>
+</body>
+</html>

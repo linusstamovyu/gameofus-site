@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { EXPLORE_TABS } from "../src/explore/catalog";
 import { applyFavourites, checkFavourites, emptyFavourites, favouriteCount, toggleFavourite } from "../src/explore/favourites";
-import { includedBadge } from "../src/explore/included";
+import { badgeTier, includedBadge } from "../src/explore/included";
 import { BIG_GAMES, MINIGAMES } from "../src/order/catalogue";
 import { blockingProblems, newDraft, problems, setPartyMode, setAdults, STEPS } from "../src/order/draft";
 import type { VehiclesChoices } from "../src/order/sections/vehicles";
@@ -36,6 +36,13 @@ describe("included badge", () => {
   });
   it("says From Deluxe when Standard has none", () => {
     expect(includedBadge("evolutions")).toBe("From Deluxe");
+  });
+  // The chip is painted in that edition's own metal, so the name it reads has to resolve to an edition —
+  // a renamed tier would otherwise leave the badge quietly neutral rather than failing.
+  it("names the edition a From badge is about, and nothing else", () => {
+    expect(badgeTier(includedBadge("evolutions"))).toBe("deluxe");
+    expect(badgeTier(includedBadge("bigGames", 9))).toBeNull();
+    expect(badgeTier("From Nowhere")).toBeNull();
   });
 });
 

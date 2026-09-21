@@ -32,6 +32,8 @@
 .ex-text p{margin:0;font-size:13.5px;line-height:1.4;color:#4a4036;flex:1}
 .ex-badge{align-self:start;margin-top:6px;font-family:var(--num);font-size:11.5px;letter-spacing:.02em;background:#e6f4f2;color:var(--teal-dark);border-radius:4px;padding:2px 7px}
 .ex-badge.adult{background:#fbe3d6;color:#9a3d12}
+/* "From Deluxe" and friends wear that edition's own metal (styles.css, "edition tiers"). */
+.ex-badge[class*="tier-"]{background:var(--t-bg);color:var(--t-ink);border:1px solid var(--t-edge);padding:1px 6px}
 .ex-heart{position:absolute;top:8px;right:8px;width:38px;height:38px;border-radius:50%;border:0;background:rgba(253,246,227,.94);color:#e05a7e;font-size:22px;line-height:1;cursor:pointer;box-shadow:0 2px 0 rgba(0,0,0,.25);display:grid;place-items:center}
 .ex-card.on .ex-heart{background:#e05a7e;color:#fff}
 

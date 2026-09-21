@@ -19,6 +19,7 @@ import { perkActive, perkDaysLeft } from "../order/perk";
 import { track } from "../shared/analytics";
 import { currentCurrency } from "../shared/countryPicker";
 import { loadVisited, saveVisited, unlockPerk } from "../shared/tourProgress";
+import { tierClass, tierGem } from "../shared/tier";
 import { drawCharacter, drawMarker, drawPrompt, drawTarget } from "../world/draw";
 import { BeachMap, Ground, H, PALMS, PARASOLS, W, groundAt } from "../world/map";
 import { OUTFITS } from "../world/outfits";
@@ -64,6 +65,16 @@ export interface Shot {
   faceWhenStill?: Facing;
   /** 0..1: the map is awake. Markers fade in with it; above a half, taps, keys and cards work. */
   explore?: number;
+  /**
+   * The visitor may walk, talk and tap FOR THE WHOLE SHOT, while the film keeps the worlds, the camera and the
+   * zoom (owner, 20 Sep 2026: "allow walking at any time ... but scrolling continues the story"). It is a
+   * separate field from `explore` rather than a value of it because the two mean opposite things about
+   * `walkTo`: `explore` is the film LETTING GO, so a goal it is still publishing must be ignored, where `open`
+   * is the film still walking him and standing aside the moment a key goes down. Player.update already draws
+   * that line for us -- a held direction cancels the route, no key follows it -- so a director that wants the
+   * visitor to keep a detour simply stops sending a goal.
+   */
+  open?: boolean;
   /** Who has the dialogue box: a stop id, or "rico". Gets a speech mark over their head. */
   talking?: string | null;
   /** Nearest-neighbour drawing, for push-ins far enough that the pixels should show. */
@@ -165,7 +176,7 @@ export class SeasonWorld {
 
   private get theme(): Theme { return this.themes[this.dominant]; }
   /** Directed, and the visitor can't touch the map. */
-  private get locked() { return !!this.shot && (this.shot.explore ?? 0) < 0.5; }
+  private get locked() { return !!this.shot && (this.shot.explore ?? 0) < 0.5 && !this.shot.open; }
 
   /* ---------- the director's side ---------- */
   setDirector(d: Director | null) { this.director = d; }
@@ -632,8 +643,11 @@ export class SeasonWorld {
   private tiers(): HTMLElement {
     const g = el("div", "tiers");
     this.offer.tiers.forEach(t => {
-      const d = el("div", t.star ? "star" : null);
-      d.append(el("b", null, t.short), el("span", null, formatMoney(LADDERS[ACTIVE_LADDER].editions[t.id].founder[currentCurrency()], currentCurrency())), el("em", null, t.copy[ACTIVE_LADDER].friends));
+      // Same three metals as the price cards and the order page (shared/tier.ts).
+      const d = el("div", `${tierClass(t.id)}${t.star ? " star" : ""}`);
+      const name = el("b");
+      name.append(tierGem(), document.createTextNode(t.short));
+      d.append(name, el("span", null, formatMoney(LADDERS[ACTIVE_LADDER].editions[t.id].founder[currentCurrency()], currentCurrency())), el("em", null, t.copy[ACTIVE_LADDER].friends));
       g.append(d);
     });
     return g;
@@ -704,9 +718,10 @@ export class SeasonWorld {
     if (!this.jump && (f === 0 || f === 1)) this.warmOneLayer();
     this.paintMarker();
 
-    if (shot && this.locked) {
+    if (shot) {
       // Rico walks where the film wants him, with his own walk, and only re-routes when the goal moves.
-      const goal = shot.walkTo ?? null;
+      // An `open` shot routes him the same way; his own update then drops the route the frame a key goes down.
+      const goal = (this.locked || shot.open) ? shot.walkTo ?? null : null;
       if (goal && shot.snap) {
         const pl = this.player;
         pl.cancelRoute(); pl.x = pl.fx = goal[0]; pl.y = pl.fy = goal[1]; pl.moving = false; pl.t = 1;
@@ -716,14 +731,19 @@ export class SeasonWorld {
         this.walkGoal = goal;
         if (goal[0] !== this.player.x || goal[1] !== this.player.y || this.player.path.length) this.player.walkTo(goal[0], goal[1]);
       }
-      this.player.update(dt, null, false);
-      if (shot.faceWhenStill && !this.player.moving && !this.player.path.length) this.player.facing = shot.faceWhenStill;
-      return;
+      // Exploring hands Rico back; the next film frame routes him again from wherever he got to.
+      if (!goal) this.walkGoal = null;
+      if (this.locked) {
+        this.player.update(dt, null, false);
+        if (shot.faceWhenStill && !this.player.moving && !this.player.path.length) this.player.facing = shot.faceWhenStill;
+        return;
+      }
     }
-    // Exploring hands Rico back; the next film frame routes him again from wherever he got to.
-    if (shot) this.walkGoal = null;
     if (this.cardOpen()) return;
-    const arrived = this.player.update(dt, this.keyDir(), this.keys.has("shift"));
+    const held = this.keyDir();
+    const arrived = this.player.update(dt, held, this.keys.has("shift"));
+    // An `open` shot still turns him to the friend it has walked him up to, but never out from under a held key.
+    if (shot?.open && shot.faceWhenStill && !held && !this.player.moving && !this.player.path.length) this.player.facing = shot.faceWhenStill;
     if (arrived) this.openCard(arrived);
   }
   private measureFps(dt: number) {

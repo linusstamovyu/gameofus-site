@@ -1,11 +1,21 @@
 // Hero lab (hero-lab.html, not in the build): the character-select start screen merged with the scroll walk.
 // Owner's grilled picks, 17 Sep 2026 (Q1-Q17):
-//   start   Kai's real full-body photo beside his full-body character, worlds dissolving behind; Press start (or any
+//   start   the hero's real photo beside the character it became, worlds dissolving behind; Press start (or any
 //           scroll) steps the art out of the pair and shrinks it onto his tile (Q4, Q5, Q7, Q13)
 //   walk    you are Kai; scrolling walks to five friends in turn, each met in a new world, and each card holds for a
 //           stretch of scroll (Q2, Q6, Q9). The camera starts at the normal zoom and eases out a step per friend (Q8)
 //   end     back to the beach in everyone's own clothes, pulled out to the whole map, then a pop-up with the full-size
 //           art (Q10); then the pin lets go (Q11). Pausing never changes anything (Q12)
+// Owner, 20 Sep 2026, three additions:
+//   - WALKING IS ALWAYS ON. The shot is `open`, so WASD, taps and E work at every point of the story while the
+//     scroll keeps driving the worlds, the camera and the cards. The film only stops steering him while he is
+//     being steered: `manual` drops `walkTo`, and the next friend's walk takes him back into the story.
+//   - THE RAIL IS THE TOUR. The five faces moved out of the side column (hidden on desktop, which is why nothing
+//     said how far in you were) onto the map, where every face is a button that scrolls the pin to that friend,
+//     with one Next stop button beside them. That is the guided tour, folded into the hero, and finishing it
+//     unlocks the beach tour bonus and offers the game playing itself, as the old tour's finale did.
+//   - THE CAST COMES FIRST: a scroll beat that turns each friend's real photo into their character before you
+//     walk to any of them.
 // Two things are left to compare here: the ending (Q1) and whether the card sits beside the map or on it (Q3).
 // It drives SeasonWorld as a director and patches a few of its private members from outside: a throwaway preview.
 import "../styles.css";
@@ -17,7 +27,11 @@ import type { Offer, SquadMember, Stop } from "../content/types";
 import { $, asset, el } from "../dom";
 import { N, SEASONS } from "../seasons/seasons";
 import { SeasonWorld, type Shot } from "../seasons/seasonWorld";
-import { FRIENDS, TOTAL, clamp01, logLerp, phaseAt, smoother, zoomAtFriend, type Phase } from "./plan";
+import { perkActive, perkDaysLeft } from "../order/perk";
+import { track as trackEvent } from "../shared/analytics";
+import { unlockPerk } from "../shared/tourProgress";
+import { Showcase } from "../world/showcase";
+import { AT_END, FRIENDS, TOTAL, atFriend, clamp01, logLerp, phaseAt, smoother, zoomAtFriend, type Phase } from "./plan";
 
 type Ending = "squad" | "start" | "end" | "both";
 type Layout = "beside" | "top";
@@ -31,13 +45,65 @@ scrollTo(0, 0);
 document.body.dataset.ending = ending;
 document.body.dataset.layout = layout;
 
-/* ---------- the squad, with Kai as the player (the world draws its player under the id "rico") ---------- */
+/* ---------- who the hero is ---------- */
+// The intro is ONE film and the hero is its cast list (`<body data-hero>`, Kai where nothing says otherwise),
+// so standing another lad in front of it is a row in this table and no new code: the pair on the start screen,
+// the sheet the art collapses into, the player's world outfits and the copy all read from here. coco-lab.html
+// is the demo that does it (owner, 20 Sep 2026).
+//
+// THE PAIR'S TWO PICTURES MUST BE FRAMED THE SAME, and that is the one rule a new hero can break silently.
+// `drawTransform` slides them onto ONE spot at one height with their feet on one line and runs a digitise line
+// down the join, so a full-length photo beside a head-and-shoulders drawing reads as a picture changing size
+// rather than as a person becoming a character. Kai's pair is two full lengths; Coco's real photo stops at her
+// thighs, so her CHARACTER is cropped to meet the photo rather than the other way round (tools/cut_coco_pair.py).
+interface Hero {
+  /** Who in squad.json is the player. The world draws its player under the id "rico", so those two trade places. */
+  id: string;
+  photo: string;              // the real photo, cut out of its background
+  art: string;                // the character, framed exactly as that photo is
+  sheet: string;              // the 9-cell walk sheet the art collapses into
+  walk: string;               // the same sheet as `SquadMember.walk` spells it (relative to assets/)
+  outfit: (theme: string) => string;
+  possessive: string;
+  /** The art's height as a fraction of the walk sprite's whole 1x2 cell, and how far the cell's top sits above
+   *  the art's own top in art-heights. Those two land the shrink on the right spot whatever the art is cropped
+   *  to: for a full length the cell is the art plus headroom, for a bust it is twice as tall again. */
+  cellFill: number;
+  cellTop: number;
+}
+const HEROES: Record<string, Hero> = {
+  kai: {
+    id: "kai", photo: "lab/kai_photo_cut.webp", art: "lab/kai_fullbody.webp",
+    sheet: "lab/kai_walk_new.webp", walk: "../lab/kai_walk_new.webp",
+    outfit: t => `lab/kai_walk_new_${t}.webp`, possessive: "his",
+    cellFill: 0.83, cellTop: 1 / 0.83 - 1,
+  },
+  coco: {
+    id: "coco", photo: "lab/coco_photo_cut.webp", art: "lab/coco_bust.webp",
+    sheet: "assets/coco_walk.webp", walk: "coco_walk.webp",
+    outfit: t => `worlds/coco_walk_${t}.webp`, possessive: "her",
+    // Her pair is cropped to the photo's own framing and her CHARACTER is warped onto the photo's
+    // proportions (tools/fit_coco_to_photo.py), which is what prints these two. They are matched on the
+    // HEAD rather than on the whole figure as Kai's are: the sprite is chibi and her bust is a crop of a
+    // realistic body, so no one scale agrees about both their heads and their feet, and the head is the
+    // part the eye follows through the shrink — and the only part the bust and the sprite both show.
+    cellFill: 0.983, cellTop: 0.141,
+  },
+};
+const hero = HEROES[document.body.dataset.hero ?? ""] ?? HEROES.kai;
+
+/* ---------- the squad, with the hero as the player (the world draws its player under the id "rico") ---------- */
 const squad = squadData as unknown as SquadMember[];
 const byId = new Map(squad.map(m => [m.id, m]));
-const kai = byId.get("kai")!, rico = byId.get("rico")!;
-const worldSquad = squad.map(m =>
-  m.id === "rico" ? { ...kai, id: "rico", walk: "../lab/kai_walk_new.webp" } :
-  m.id === "kai" ? { ...rico, id: "kai" } : m);
+const heroName = byId.get(hero.id)!.name;
+// The hero is the player, and the world draws its player under the id "rico" (Q5), so those two trade places. The
+// swap is written once: everything that needs the real person behind a world id (their full-body art, say) asks.
+const SWAP: Record<string, string> = { rico: hero.id, [hero.id]: "rico" };
+const realId = (worldId: string) => SWAP[worldId] ?? worldId;
+const worldSquad = squad.map(m => {
+  const src = byId.get(realId(m.id))!;
+  return m.id === "rico" ? { ...src, id: "rico", walk: hero.walk } : { ...src, id: m.id };
+});
 const cast = new Map(worldSquad.map(m => [m.id, m]));
 const stops = stopsData as unknown as Stop[];
 const offer = offerData as unknown as Offer;
@@ -63,10 +129,10 @@ const stage = $("#stage");
 const world = new SeasonWorld(stage, stops, worldSquad, offer, { outfits: "fade" });
 const w = world as any; // private members, reached from outside on purpose: this is a throwaway preview
 const img = (src: string) => { const i = new Image(); i.src = src; return i; };
-// Kai's new world outfits for the player, and Rico's for the friend standing where Kai used to.
+// The hero's world outfits for the player, and Rico's for the friend standing where the hero used to.
 for (const t of ["space", "neon", "jungle", "ski", "fairy"]) {
-  w.sprites.set(`${t}:walk:rico`, img(`lab/kai_walk_new_${t}.webp`));
-  w.sprites.set(`${t}:walk:kai`, img(`worlds/rico_walk_${t}.webp`));
+  w.sprites.set(`${t}:walk:rico`, img(hero.outfit(t)));
+  w.sprites.set(`${t}:walk:${hero.id}`, img(`worlds/rico_walk_${t}.webp`));
 }
 SEASONS.forEach(s => w.loadThemeFiles(w.themes[SEASONS.indexOf(s)]));
 // The player is not on the map until the art has landed on his tile.
@@ -79,7 +145,12 @@ w.walkSprite = (who: string, theme: unknown) => (who === "rico" && !playerShown 
 const track = $("#track"), pin = $("#pin"), startEl = $("#start"), fx = $<HTMLCanvasElement>("#fx");
 const photoFig = $("#photoFig"), photoImg = $<HTMLImageElement>("#photoImg"), artImg = $<HTMLImageElement>("#artImg");
 const cardSide = $("#cardSide"), cardTop = $("#cardTop"), steps = $("#steps"), hint = $("#hint"), walkBtn = $("#walk");
+const rail = $("#rail"), nextBtn = $<HTMLButtonElement>("#nextStop"), keysEl = $("#keys");
+const castEl = $("#cast"), castRow = $("#castRow"), worldCard = $("#card");
 const endEl = $("#end"), endPanel = $("#endPanel");
+// One source of truth for the pair: the markup carries it for a no-script render, the table is what wins.
+photoImg.src = hero.photo; photoImg.alt = `${heroName} in real life`;
+artImg.src = hero.art; artImg.alt = `${heroName} as a character in the game`;
 if (ending === "end") { photoFig.hidden = true; $("#pairArrow").hidden = true; }
 
 function measure() {
@@ -90,13 +161,61 @@ function measure() {
 new ResizeObserver(measure).observe(pin);
 measure();
 
-FRIENDS.forEach(f => {
-  const m = cast.get(stops.find(s => s.id === f.stop)?.who ?? "")!;
+/** The five people you walk to, in walking order. The rail, the cards and the cast intro all read this. */
+const friendCast = FRIENDS.map(f => cast.get(stops.find(s => s.id === f.stop)?.who ?? "")!);
+
+/** Scroll the page so the pin sits `u` screens into its track. The inverse of the director's own measurement. */
+function scrollToScreens(u: number) {
+  const pinH = pin.offsetHeight || 1;
+  const navH = document.querySelector<HTMLElement>(".nav")?.offsetHeight ?? 0;
+  const top = track.getBoundingClientRect().top + scrollY - navH + u * pinH;
+  // The page sets scroll-behavior itself, so the behaviour is always stated rather than inherited.
+  scrollTo({ top: Math.max(0, top), behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" });
+}
+
+friendCast.forEach((m, i) => {
   const li = el("li");
+  const b = el("button");
+  b.type = "button";
   const face = el("img"); face.src = asset(m.face); face.alt = "";
-  li.append(face, el("span", null, m.name));
+  b.append(face, el("span", null, m.name));
+  b.setAttribute("aria-label", `Stop ${i + 1} of ${FRIENDS.length}: walk to ${m.name}`);
+  b.addEventListener("click", () => { trackEvent("hero_rail_stop", { id: FRIENDS[i].stop }); scrollToScreens(atFriend(i)); });
+  li.append(b);
   steps.append(li);
 });
+
+/* ---------- the cast, introduced before you walk to any of them ---------- */
+// The photo above the character, which is the ending's own layout and the site's "real photo -> in game"
+// idiom everywhere else. Overlaid instead, the two cross-fade between a head-and-shoulders snap and a
+// full-length drawing, which reads as a picture failing to load rather than as a person becoming a character.
+const castCells = friendCast.map(m => {
+  const one = el("div", "hl-cast-one");
+  const photo = el("img", "hl-cast-photo");
+  photo.src = asset(m.photo ?? ""); photo.alt = `${m.name} in real life`;
+  const art = el("img", "hl-cast-art");
+  art.src = `lab/${realId(m.id)}_fullbody.webp`; art.alt = `${m.name} in the game`;
+  // Either half missing leaves the other standing rather than an empty frame.
+  photo.addEventListener("error", () => photo.remove());
+  art.addEventListener("error", () => art.remove());
+  one.append(photo, art, el("b", null, m.name));
+  castRow.append(one);
+  return one;
+});
+/**
+ * The cast panel at intro progress t (null = not in the intro): each friend fades in a beat after the one before,
+ * and their photo becomes their character a beat after that. Scroll-driven, so it reads at the visitor's pace.
+ */
+function drawCast(t: number | null) {
+  castEl.setAttribute("aria-hidden", String(t === null));
+  if (t === null) { castEl.style.setProperty("--o", "0"); return; }
+  castEl.style.setProperty("--o", (smoother(clamp01(t / 0.1)) * (1 - smoother(clamp01((t - 0.84) / 0.16)))).toFixed(3));
+  castCells.forEach((cell, i) => {
+    const from = 0.04 + i * 0.11;
+    cell.style.setProperty("--k", smoother(clamp01((t - from) / 0.14)).toFixed(3));
+    cell.style.setProperty("--m", smoother(clamp01((t - from - 0.09) / 0.2)).toFixed(3));
+  });
+}
 
 /* ---------- friend cards ---------- */
 function fillCard(box: HTMLElement, i: number) {
@@ -127,7 +246,7 @@ function showCard(i: number) {
   } else if (i === -1 && box === cardSide) {
     cardSide.replaceChildren(el("p", "hl-side-hint", "Scroll to walk to your friends. Each one shows you part of the game."));
   } else if (i === -3) {
-    cardSide.replaceChildren(el("p", "hl-side-hint", "This is Kai. Press start and walk his beach: five friends, five worlds, one game."));
+    cardSide.replaceChildren(el("p", "hl-side-hint", `This is ${heroName}. Press start and walk ${hero.possessive} beach: five friends, five worlds, one game.`));
   }
   if (box === cardTop && i < 0) cardTop.hidden = true;
   if (box === cardSide) cardTop.hidden = true;
@@ -138,11 +257,25 @@ function showCard(i: number) {
 function fig(src: string, cls: string, caption: string, alt: string) {
   const f = el("figure", cls); const im = el("img"); im.src = src; im.alt = alt; f.append(im, el("figcaption", null, caption)); return f;
 }
+/* The game playing itself: the old tour's finale, kept where finishing the walk now lands (owner, 20 Sep 2026). */
+let showcaseOpen = false;
+function openShowcase() {
+  if (showcaseOpen) return;
+  showcaseOpen = true;
+  new Showcase(stage, () => { showcaseOpen = false; stage.focus({ preventScroll: true }); }).open();
+}
+
 function buildEnding() {
   const cta = el("a", "btn", "Make your squad's game ▶"); cta.href = "order.html?from=hero";
+  cta.dataset.track = "hero_to_builder";
+  const watch = el("button", "btn ghost", "Watch it play ▶");
+  watch.type = "button";
+  watch.addEventListener("click", openShowcase);
+  const actions = el("div", "hl-end-row");
+  actions.append(cta, watch);
   if (ending === "start") {
-    endPanel.append(el("p", "eyebrow", "That was Kai's squad"), el("h2", null, "Yours is next."),
-      el("p", null, "Send us a photo of each friend and the places you always end up. We build the rest."), cta);
+    endPanel.append(el("p", "eyebrow", `That was ${heroName}'s squad`), el("h2", null, "Yours is next."),
+      el("p", null, "Send us a photo of each friend and the places you always end up. We build the rest."), actions);
     return;
   }
   if (ending === "squad") {
@@ -155,16 +288,18 @@ function buildEnding() {
       col.append(photo, body, el("b", null, m.name));
       row.append(col);
     }
-    endPanel.append(el("p", "eyebrow", "Meet the squad"), el("h2", null, "Every character starts as a real photo."), row, cta);
+    endPanel.append(el("p", "eyebrow", "Meet the squad"), el("h2", null, "Every character starts as a real photo."), row, actions);
     return;
   }
   const big = el("div", "hl-kai");
   const arrow = () => { const a = el("span", "hl-arrow", "→"); a.setAttribute("aria-hidden", "true"); return a; };
-  const sprite = el("div", "hl-sprite"); sprite.setAttribute("role", "img"); sprite.setAttribute("aria-label", "Kai walking in the game");
-  big.append(fig("lab/kai_photo_cut.webp", "hl-photo", "Real photo", "Kai in real life"), arrow(),
-    fig("lab/kai_fullbody.webp", "hl-art", "Character", "Kai in the game"), arrow(), fig("", "hl-tiny", "On the map", ""));
+  const sprite = el("div", "hl-sprite"); sprite.setAttribute("role", "img"); sprite.setAttribute("aria-label", `${heroName} walking in the game`);
+  // The sheet is the hero's, so the stylesheet's own default only ever shows for Kai.
+  sprite.style.backgroundImage = `url(${hero.sheet})`;
+  big.append(fig(hero.photo, "hl-photo", "Real photo", `${heroName} in real life`), arrow(),
+    fig(hero.art, "hl-art", "Character", `${heroName} in the game`), arrow(), fig("", "hl-tiny", "On the map", ""));
   big.lastElementChild!.querySelector("img")!.replaceWith(sprite);
-  endPanel.append(el("p", "eyebrow", ending === "both" ? "Remember Kai?" : "Meet Kai"), el("h2", null, "One photo. One playable friend."), big, cta);
+  endPanel.append(el("p", "eyebrow", ending === "both" ? `Remember ${heroName}?` : `Meet ${heroName}`), el("h2", null, "One photo. One playable friend."), big, actions);
 }
 buildEnding();
 
@@ -185,6 +320,7 @@ function start() {
 }
 function resetStart() {
   started = false; transformT = 0; furthest = 0; playerShown = false; particles.length = 0;
+  rejoin(); curBeat = "";
   startEl.classList.remove("going", "gone");
   const p = w.player; p.cancelRoute(); p.x = p.fx = 9; p.y = p.fy = 8; p.moving = false; p.t = 1; p.facing = "down";
 }
@@ -200,7 +336,7 @@ function playerBox() {
 /* ---------- the transformation, drawn on its own canvas over the map ---------- */
 interface Box { x: number; y: number; w: number; h: number }
 const fxc = fx.getContext("2d")!;
-const sheet = img("lab/kai_walk_new.webp");
+const sheet = img(hero.sheet);
 let photoFrom: Box | null = null, artFrom: Box | null = null;
 const rel = (e: Element): Box => {
   const s = stage.getBoundingClientRect(), r = e.getBoundingClientRect();
@@ -333,7 +469,8 @@ function drawTransform(t: number, dt: number) {
     if (t < t4) {
       const prog = (t - t3) / BEAT.shrink, eased = 1 - Math.pow(1 - prog, 3);
       // The art's box, as tall as the sprite's whole cell would be at that size, so the landing lines up with the cell.
-      const artCell = { x: artBig.x - (artBig.h / 0.83 / 2 - artBig.w) / 2, y: artBig.y - artBig.h * (1 / 0.83 - 1), w: artBig.h / 0.83 / 2, h: artBig.h / 0.83 };
+      const cellH = artBig.h / hero.cellFill;
+      const artCell = { x: artBig.x - (cellH / 2 - artBig.w) / 2, y: artBig.y - artBig.h * hero.cellTop, w: cellH / 2, h: cellH };
       const r = lerpBox(prog < 0.4 ? artBig : artCell, land, eased);
       g.fillStyle = `rgba(0,0,0,${0.3 * eased})`;
       g.beginPath(); g.ellipse(r.x + r.w / 2, r.y + r.h, r.w * 0.4, r.w * 0.1, 0, 0, Math.PI * 2); g.fill();
@@ -367,9 +504,69 @@ function drawTransform(t: number, dt: number) {
   g.globalAlpha = 1;
 }
 
-/* ---------- explore (Q11, Q12) ---------- */
-let exploring = false, exploreScroll = 0;
-walkBtn.addEventListener("click", () => { exploring = true; exploreScroll = scrollY; showCard(-2); stage.focus({ preventScroll: true }); });
+/* ---------- walking, at any point of the story (owner, 20 Sep 2026) ---------- */
+// There is no mode to turn on: the shot is `open` from the moment Kai lands on the map, so a key or a tap simply
+// works. What `manual` does is stop the FILM steering him, by dropping `walkTo` for as long as the visitor is
+// wandering; scrolling on to the next friend takes him back into the story, which is what "scrolling continues
+// the story" has to mean for someone who walked off in the middle of it.
+let manual = false, manualBeat = "", curBeat = "";
+/**
+ * Which BEAT of the story a phase belongs to, which is a friend rather than a phase: walking up to Rico and
+ * standing with Rico are one beat. Measured per phase instead, a key pressed during a walk hands him back the
+ * moment he arrives, half a second later; and a scroll that jumps (a flick, or the rail's own buttons) skips
+ * the walk phase altogether, so a rule watching for one never fires at all. Found by jumping with the rail.
+ */
+const beatKey = (ph: Phase) => (ph.kind === "walk" || ph.kind === "hold" ? `f${ph.i}` : ph.kind);
+function takeControl() {
+  if (!playerShown || manual) return;
+  manual = true; manualBeat = curBeat; walkBtn.hidden = false;
+  trackEvent("hero_walk_manual", { at: curBeat });
+}
+function rejoin() { manual = false; walkBtn.hidden = true; }
+// Capture, so the film knows the visitor has taken over whatever else answers the same event.
+stage.addEventListener("keydown", e => {
+  const k = e.key.toLowerCase();
+  if (k.startsWith("arrow") || (k.length === 1 && "wasd".includes(k))) takeControl();
+}, true);
+stage.addEventListener("pointerdown", e => {
+  // Only the map itself: the rail, the cards and the ending are things you press, not places you walk to.
+  if ((e.target as Element).closest(".hl-rail, .hl-keys, .hl-walk, .hl-card, .hl-end, .hl-start, .card, .scrim, .showcase")) return;
+  takeControl();
+}, true);
+walkBtn.addEventListener("click", () => { rejoin(); stage.focus({ preventScroll: true }); });
+
+/* ---------- the tour, folded in: one button that scrolls to the next thing ---------- */
+let nextGo: (() => void) | null = null;
+nextBtn.addEventListener("click", () => nextGo?.());
+/** What "next" means where the story has got to, as a label and a scroll. */
+function nextStop(ph: Phase): { label: string; go: () => void } {
+  const last = FRIENDS.length - 1;
+  const toEnd = () => scrollToScreens(AT_END);
+  if (ph.kind === "start") return { label: "Start the walk ▶", go: () => scrollToScreens(atFriend(0)) };
+  if (ph.kind === "intro") return { label: `Meet ${friendCast[0].name} ▶`, go: () => scrollToScreens(atFriend(0)) };
+  if (ph.kind === "walk") return { label: `Meet ${friendCast[ph.i].name} ▶`, go: () => scrollToScreens(atFriend(ph.i)) };
+  if (ph.kind === "hold") {
+    return ph.i < last
+      ? { label: `Next: ${friendCast[ph.i + 1].name} ▶`, go: () => scrollToScreens(atFriend(ph.i + 1)) }
+      : { label: "See the squad ▶", go: toEnd };
+  }
+  if (ph.kind === "pull") return { label: "See the squad ▶", go: toEnd };
+  return { label: "Read on ↓", go: () => document.getElementById("features")?.scrollIntoView({ behavior: "smooth" }) };
+}
+
+/* ---------- the finale: what finishing the walk is worth (the old tour's own reward) ---------- */
+let perkNoted = false;
+function notePerk() {
+  if (perkNoted) return;
+  perkNoted = true;
+  const at = unlockPerk();
+  const line = perkActive(at)
+    ? `Beach tour bonus unlocked — order within ${perkDaysLeft(at)} day${perkDaysLeft(at) === 1 ? "" : "s"} and all 12 party minigames come free. It is applied for you.`
+    : "The beach tour bonus is one per device and this one has been used. Everything else is still on the table.";
+  const note = el("p", "hl-perk", line);
+  endPanel.insertBefore(note, endPanel.querySelector(".hl-end-row"));
+  trackEvent("tour_complete");
+}
 
 /* ---------- the director ---------- */
 /** ?at=4.2 holds the story that many screens in without scrolling (screenshots, and a hidden browser pane). */
@@ -383,11 +580,11 @@ world.setDirector(dt => {
   const navH = document.querySelector<HTMLElement>(".nav")?.offsetHeight ?? 0;
   // Screens scrolled since the pin stuck: 0 at the top of the page, TOTAL when it lets go.
   const scrolled = forcedAt ?? clamp01((navH - track.getBoundingClientRect().top) / pinH / TOTAL) * TOTAL;
-  if (exploring && Math.abs(scrollY - exploreScroll) > 4) exploring = false;
-  if (exploring) { walkBtn.hidden = true; return null; }
 
   const m = world.metrics();
-  const shot: Shot = { a: 0, b: 0, f: 0, cx: m.W / 2, cy: m.H / 2, z: 1, follow: 1 };
+  // `open` from the moment he is on the map: the film keeps the worlds, the camera and the cards, and the
+  // visitor keeps their legs. Before that there is no player to walk, so the start screen stays locked.
+  const shot: Shot = { a: 0, b: 0, f: 0, cx: m.W / 2, cy: m.H / 2, z: 1, follow: 1, open: playerShown };
 
   if (!started && scrolled > 0.02) start();
   // Scrolling all the way back up to the top brings the start screen back (not a Press start at the top).
@@ -400,7 +597,8 @@ world.setDirector(dt => {
     const k = Math.floor(demoPos), l = demoPos - k;
     Object.assign(shot, blendFrom(k, (k + 1) % N, smoother((l - 0.6) / 0.4)));
     shot.walkTo = [9, 8];
-    showCard(-3); hint.hidden = true; walkBtn.hidden = true; endEl.style.setProperty("--o", "0");
+    showCard(-3); hint.hidden = true; walkBtn.hidden = true; rail.hidden = true; keysEl.hidden = true;
+    drawCast(null); endEl.style.setProperty("--o", "0");
     return shot;
   }
 
@@ -417,11 +615,22 @@ world.setDirector(dt => {
   }
 
   const ph: Phase = phaseAt(scrolled);
+  const key = beatKey(ph);
+  // Walking off is yours for as long as the story is on the friend you left it on; the next one rejoins it.
+  if (manual && key !== manualBeat) rejoin();
+  // A talk card belongs to the beat it was opened in, so moving on closes it.
+  if (key !== curBeat) { curBeat = key; w.closeCard(); }
   hint.hidden = ph.kind !== "start";
-  walkBtn.hidden = ph.kind === "walk" || ph.kind === "pull";
+  rail.hidden = false;
+  keysEl.hidden = false;
+  walkBtn.hidden = !manual;
+  drawCast(ph.kind === "intro" ? ph.t : null);
+  const nx = nextStop(ph);
+  nextGo = nx.go;
+  if (nextBtn.textContent !== nx.label) nextBtn.textContent = nx.label;
 
   let target = -1, worldTo = 0, worldFrom = 0, f = 0, z = 1;
-  if (ph.kind === "start") {
+  if (ph.kind === "start" || ph.kind === "intro") {
     shot.walkTo = [9, 8]; shot.faceWhenStill = "down";
   } else if (ph.kind === "walk" || ph.kind === "hold") {
     const fr = FRIENDS[ph.i], stop = stops.find(s => s.id === fr.stop)!;
@@ -430,7 +639,8 @@ world.setDirector(dt => {
     f = ph.kind === "walk" ? smoother(ph.t / 0.85) : 1;
     z = ph.kind === "walk" ? logLerp(zoomAtFriend(ph.i - 1), zoomAtFriend(ph.i), smoother(ph.t)) : zoomAtFriend(ph.i);
     const p = world.playerTile();
-    const arrived = Math.abs(p.x - stop.ax) + Math.abs(p.y - stop.ay) < 0.3;
+    // Off wandering, the card still opens on the beat: scrolling on is what asks for it, not his feet.
+    const arrived = manual || Math.abs(p.x - stop.ax) + Math.abs(p.y - stop.ay) < 0.3;
     if (ph.kind === "hold" && arrived) {
       target = ph.i;
       shot.talking = stop.id;
@@ -447,19 +657,23 @@ world.setDirector(dt => {
   }
   Object.assign(shot, blendFrom(worldFrom, worldTo, f));
   shot.z = z;
+  // Being steered: the film stops sending a goal, so his own update keeps whatever detour he is on.
+  if (manual) shot.walkTo = undefined;
 
   // The card on the map sits on the right; lean the camera so Kai stays clear of it.
   const cardOnMap = layout === "top" && target >= 0 && matchMedia("(min-width: 761px)").matches;
   lean += ((cardOnMap ? 190 / (z * m.T) : 0) - lean) * Math.min(1, dt * 4);
   shot.ox = lean;
 
-  showCard(target >= 0 ? target : ph.kind === "start" || ph.kind === "walk" ? -1 : -2);
+  // The world's own talk card (E on a lad) is the richer one: the hero's card stands down while it is open.
+  showCard(worldCard.hidden ? (target >= 0 ? target : ph.kind === "walk" || ph.kind === "start" || ph.kind === "intro" ? -1 : -2) : -2);
 
   // The ending pop-up (Q1): after the pull-back, over the pinned view.
   const endOpacity = ph.kind === "end" ? smoother(ph.t / 0.25) : 0;
-  endEl.style.setProperty("--o", endOpacity.toFixed(3));
-  endEl.classList.toggle("on", endOpacity > 0.5);
-  endEl.setAttribute("aria-hidden", String(endOpacity < 0.5));
+  endEl.style.setProperty("--o", showcaseOpen ? "0" : endOpacity.toFixed(3));
+  endEl.classList.toggle("on", !showcaseOpen && endOpacity > 0.5);
+  endEl.setAttribute("aria-hidden", String(showcaseOpen || endOpacity < 0.5));
+  if (endOpacity > 0.5) notePerk();
   return shot;
 });
 

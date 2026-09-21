@@ -1,0 +1,46 @@
+{
+  "schemaVersion": 1,
+  "name": "Frokost shared standard playing-card deck",
+  "cardCount": 52,
+  "image": {
+    "format": "png",
+    "width": 64,
+    "height": 64,
+    "rendering": "pixelated"
+  },
+  "source": {
+    "title": "Playing Cards Pack",
+    "creator": "Kenney",
+    "page": "https://opengameart.org/content/playing-cards-pack",
+    "license": "CC0-1.0",
+    "archiveSha256": "b93b0313818e9c8f6acc24b008efdec1d8a6360b13afe953beed23881588be3c"
+  },
+  "assetPattern": "cards/{suit}/{rank}.png",
+  "suits": [
+    { "name": "clubs", "code": "C", "symbol": "♣", "color": "black" },
+    { "name": "diamonds", "code": "D", "symbol": "♦", "color": "red" },
+    { "name": "hearts", "code": "H", "symbol": "♥", "color": "red" },
+    { "name": "spades", "code": "S", "symbol": "♠", "color": "black" }
+  ],
+  "ranks": [
+    { "name": "ace", "label": "A", "highValue": 14, "blackjackValue": 11 },
+    { "name": "two", "label": "2", "highValue": 2, "blackjackValue": 2 },
+    { "name": "three", "label": "3", "highValue": 3, "blackjackValue": 3 },
+    { "name": "four", "label": "4", "highValue": 4, "blackjackValue": 4 },
+    { "name": "five", "label": "5", "highValue": 5, "blackjackValue": 5 },
+    { "name": "six", "label": "6", "highValue": 6, "blackjackValue": 6 },
+    { "name": "seven", "label": "7", "highValue": 7, "blackjackValue": 7 },
+    { "name": "eight", "label": "8", "highValue": 8, "blackjackValue": 8 },
+    { "name": "nine", "label": "9", "highValue": 9, "blackjackValue": 9 },
+    { "name": "ten", "label": "10", "highValue": 10, "blackjackValue": 10 },
+    { "name": "jack", "label": "J", "highValue": 11, "blackjackValue": 10 },
+    { "name": "queen", "label": "Q", "highValue": 12, "blackjackValue": 10 },
+    { "name": "king", "label": "K", "highValue": 13, "blackjackValue": 10 }
+  ],
+  "sharedAssets": {
+    "back": "backs/default.png",
+    "empty": "extras/empty.png",
+    "jokerRed": "extras/joker-red.png",
+    "jokerBlack": "extras/joker-black.png"
+  }
+}

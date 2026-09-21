@@ -1,0 +1,151 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#141a22" />
+    <title>Frokost Party Challenge — Landmine</title>
+    <script type="module" crossorigin src="./assets/index-B3Bw_4NW.js"></script>
+    <link rel="stylesheet" crossorigin href="./assets/index-Dvg1ZmJL.css">
+  </head>
+  <body>
+    <div id="app">
+      <div class="world-backdrop" aria-hidden="true">
+        <div class="sun"></div>
+        <div class="sea"></div>
+        <div class="town town-left"></div>
+        <div class="town town-right"></div>
+        <div class="palm palm-left"><i></i></div>
+        <div class="palm palm-right"><i></i></div>
+        <div class="promenade"></div>
+        <div class="hazard-stripe stripe-left"></div>
+        <div class="hazard-stripe stripe-right"></div>
+      </div>
+
+      <main class="minigame-app">
+        <section id="setup-screen" class="setup-screen" aria-labelledby="setup-title">
+          <div class="eyebrow"><span class="challenge-mark">!</span> STRANGER CHALLENGE</div>
+          <div class="setup-panel panel">
+            <header class="setup-heading">
+              <div class="npc-medallion" aria-hidden="true">💣</div>
+              <div>
+                <h1 id="setup-title">Promenade Prospector</h1>
+                <p id="stranger-line">“I'm looking for someone named… LINUS!”</p>
+              </div>
+            </header>
+
+            <form id="challenge-form">
+              <fieldset>
+                <legend>CHOOSE MINE DENSITY</legend>
+                <div class="difficulty-grid">
+                  <button class="difficulty-card" type="button" data-difficulty="baby" aria-pressed="false">
+                    <span class="difficulty-name">BABY FIELD</span>
+                    <span class="difficulty-tag">3 MINES · 12%</span>
+                    <span class="difficulty-goal">Reveal 22 safe tiles</span>
+                    <span class="difficulty-stake">Win: assign 1 sip</span>
+                  </button>
+                  <button class="difficulty-card selected" type="button" data-difficulty="regular" aria-pressed="true">
+                    <span class="difficulty-name">REGULAR</span>
+                    <span class="difficulty-tag">5 MINES · 20%</span>
+                    <span class="difficulty-goal">Reveal 20 safe tiles</span>
+                    <span class="difficulty-stake">Win: assign 2 sips</span>
+                  </button>
+                  <button class="difficulty-card" type="button" data-difficulty="hardest" aria-pressed="false">
+                    <span class="difficulty-name">HARDEST</span>
+                    <span class="difficulty-tag">7 MINES · 28%</span>
+                    <span class="difficulty-goal">Reveal 18 safe tiles</span>
+                    <span class="difficulty-stake">Win: assign 4 sips</span>
+                  </button>
+                </div>
+              </fieldset>
+
+              <fieldset>
+                <legend>PARTY RULES</legend>
+                <div class="mode-switch" role="group" aria-label="Party rules">
+                  <button type="button" data-party-mode="off" aria-pressed="false">OFF</button>
+                  <button type="button" data-party-mode="light" aria-pressed="false">LIGHT · MAX 2</button>
+                  <button class="selected" type="button" data-party-mode="standard" aria-pressed="true">STANDARD · MAX 4</button>
+                </div>
+                <p class="safe-note">Every result can be a sip or an alcohol-free substitute. Declining is always free.</p>
+              </fieldset>
+
+              <div class="rules-summary">
+                <strong>HOW TO SURVIVE</strong>
+                <span>Reveal every safe tile. Numbers count mines in the eight neighboring tiles. Flag suspected mines. Your first reveal is always safe.</span>
+              </div>
+              <button class="primary-button" type="submit">ENTER THE MINEFIELD</button>
+            </form>
+          </div>
+          <p class="input-hint">Click/tap to reveal · Right-click, hold, or F to flag · Arrow keys / WASD to move</p>
+        </section>
+
+        <section id="game-screen" class="game-screen hidden" aria-labelledby="game-title">
+          <header class="game-header">
+            <button id="back-button" class="back-button" type="button">◀ LEAVE</button>
+            <div class="game-heading">
+              <span class="challenge-label">STRANGER CHALLENGE</span>
+              <h1 id="game-title">LANDMINE</h1>
+            </div>
+            <div class="difficulty-badge" id="difficulty-badge">REGULAR · 5 MINES</div>
+          </header>
+
+          <div class="game-layout">
+            <aside class="npc-panel panel">
+              <div class="npc-medallion small" aria-hidden="true">💣</div>
+              <div class="npc-name">PROMENADE PROSPECTOR</div>
+              <div class="speech-bubble" id="npc-speech">“Numbers don't lie. Tourists do.”</div>
+              <dl class="session-score" aria-label="Session score">
+                <div><dt>CLEARS</dt><dd id="win-score">0</dd></div>
+                <div><dt>BOOMS</dt><dd id="loss-score">0</dd></div>
+              </dl>
+            </aside>
+
+            <section class="board-column">
+              <div class="mission-bar panel">
+                <div><span>SAFE LEFT</span><strong id="safe-left">20</strong></div>
+                <div class="mission-centre" id="turn-status" aria-live="polite">CHOOSE YOUR FIRST TILE</div>
+                <div><span>FLAGS</span><strong id="flags-left">5</strong></div>
+              </div>
+              <div id="mine-board" class="mine-board" role="grid" aria-label="5 by 5 landmine field"></div>
+              <div class="board-footer">
+                <span id="timer">00:00</span>
+                <span>FIRST REVEAL IS SAFE</span>
+                <span id="seed-label">FIELD #000000</span>
+              </div>
+            </section>
+
+            <aside class="rules-panel panel">
+              <h2>THE STAKES</h2>
+              <div class="stake-row win"><span>SURVIVE</span><strong id="win-stake">ASSIGN 2 SIPS</strong></div>
+              <div class="stake-row loss"><span>DETONATE</span><strong id="loss-stake">TAKE 1 SIP</strong></div>
+              <div class="progress-block">
+                <div class="progress-copy"><span>FIELD CLEARED</span><strong id="progress-label">0 / 20</strong></div>
+                <div class="progress-track"><div id="progress-fill"></div></div>
+              </div>
+              <div class="legend">
+                <div><span class="legend-cell hidden-cell"></span>UNREVEALED</div>
+                <div><span class="legend-cell flag-cell"></span>FLAGGED</div>
+                <div><span class="legend-cell number-cell">2</span>2 NEARBY MINES</div>
+              </div>
+              <div class="party-chip" id="party-chip">STANDARD · MAX 4</div>
+            </aside>
+          </div>
+
+          <div id="result-layer" class="result-layer hidden" role="dialog" aria-modal="true" aria-labelledby="result-title">
+            <div class="result-card panel">
+              <div id="result-kicker" class="result-kicker">FIELD CLEARED</div>
+              <h2 id="result-title">YOU SURVIVED!</h2>
+              <div id="result-consequence" class="result-consequence">ASSIGN 2 SIPS</div>
+              <p id="result-copy">Every safe tile is clear. The Prospector looks disappointed.</p>
+              <div class="result-stats"><span id="result-time">TIME 00:00</span><span id="result-field">FIELD #000000</span></div>
+              <div class="result-actions">
+                <button id="rematch-button" class="primary-button" type="button">NEW FIELD</button>
+                <button id="change-button" class="secondary-button" type="button">CHANGE CHALLENGE</button>
+              </div>
+            </div>
+          </div>
+        </section>
+      </main>
+    </div>
+  </body>
+</html>

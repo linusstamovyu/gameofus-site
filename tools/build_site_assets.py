@@ -25,6 +25,7 @@ from PIL import Image, ImageDraw, ImageFont, ImageOps
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from cut_portrait_backdrop import cut as cut_backdrop  # noqa: E402
+from recut_outfit_sheets import OUT as RECUT  # noqa: E402
 from recut_outfit_sheets import OVERRIDES, override_cell  # noqa: E402
 
 SITE = Path(__file__).resolve().parent.parent
@@ -91,7 +92,17 @@ def save_webp(im: Image.Image, name: str, quality: int = 90) -> None:
 
 def build_squad() -> None:
     for sid, folder in SQUAD.items():
-        walk = src(GAME / "characters" / folder / "Runtime" / f"{sid}_walk_runtime.png")
+        # A whole beach sheet recut from a Codex regen (tools/cut_regen_2026_09.py) wins outright: it is
+        # already the 1152x256 nine-cell sheet, already keyed and already sized to the live art, so the
+        # game's runtime sheet and the single-cell overrides below have nothing left to contribute.
+        # Without this the next full rebuild would quietly put the old art back.
+        recut_beach = RECUT / f"{sid}_walk_beach.png"
+        if recut_beach.exists():
+            im = Image.open(recut_beach).convert("RGBA")
+            save_webp(im.resize((im.width // 2, im.height // 2), Image.LANCZOS), f"{sid}_walk.webp")
+            walk = None
+        else:
+            walk = src(GAME / "characters" / folder / "Runtime" / f"{sid}_walk_runtime.png")
         if walk:
             im = Image.open(walk).convert("RGBA")
             # A regenerated standing frame for the beach (source/outfits/regen-requests) replaces its cell.

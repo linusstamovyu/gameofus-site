@@ -25,9 +25,20 @@ body[data-layout="top"] .hl-side { display: none; }
 .hl-press { font-size: 19px; padding: 13px 24px; animation: hlPulse 1.6s ease-in-out infinite; }
 @keyframes hlPulse { 50% { box-shadow: inset 0 -4px 0 var(--teal-dark), 0 0 0 10px rgba(26,158,149,0); } 0%,100% { box-shadow: inset 0 -4px 0 var(--teal-dark), 0 0 0 0 rgba(26,158,149,.5); } }
 .hl-or { font-family: var(--pixel); color: var(--muted); }
-.hl-pair { display: flex; align-items: flex-end; justify-content: center; gap: 14px; height: min(100%, 470px); align-self: center; min-width: 0; transition: opacity .4s, transform .5s; }
-.hl-pair figure { margin: 0; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; gap: 8px; }
-.hl-pair img { display: block; height: calc(100% - 34px); width: auto; }
+.hl-pair { display: flex; align-items: flex-end; justify-content: center; gap: 14px; height: min(100%, 560px); align-self: center; min-width: 0; transition: opacity .4s, transform .5s; }
+.hl-pair figure { margin: 0; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; position: relative; }
+.hl-pair img { display: block; height: 100%; width: auto; }
+/* THE CAPTION SITS ON THE FIGURE'S FEET; IT DOES NOT HANG UNDER IT, and that is load-bearing rather than
+   styling. The only full-body photo of Kai is a phone screenshot in which one foot is hidden behind a boat
+   cushion, so that trouser leg simply stops. Cropping the picture to lose it would cost the full-body read
+   the whole screen exists for, so the label plate — already on screen, and already needing somewhere to go
+   — does the hiding. Both figures carry the SAME numbers, measured against each other in /plate-lab.html,
+   so the photograph and the character are covered at the same point on the body: the far shoe keeps its toe
+   and tucks its sole behind the plate, the near foot goes under entirely.
+   Percentages are of each figure's own box, which is what makes one rule work on two pictures of different
+   sizes. Re-tune them by dragging in the plate lab, never by eye here. */
+.hl-pair figcaption { position: absolute; left: 8.9%; top: 93.7%; width: 76.4%; height: 8.8%;
+  display: flex; align-items: center; justify-content: center; }
 /* The real photo is cut out of its background, so photo and character stand side by side the same way. */
 .hl-photo img { filter: drop-shadow(0 6px 0 rgba(0,0,0,.25)); }
 .hl-art img { filter: drop-shadow(0 6px 0 rgba(0,0,0,.25)); }
@@ -42,19 +53,52 @@ body[data-layout="top"] .hl-side { display: none; }
 .hl-fx { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 4; pointer-events: none; }
 
 /* ---------- walking ---------- */
-.hl-hint, .hl-walk { position: absolute; z-index: 3; font-family: var(--pixel); }
-.hl-hint { left: 50%; bottom: 18px; transform: translateX(-50%); margin: 0; padding: 8px 16px; border-radius: 999px; background: rgba(32,36,44,.88); color: var(--paper);
+/* Walking is ALWAYS available (owner, 20 Sep 2026), so what sits on the map is a standing statement of the keys
+   rather than a button that turns a mode on. `.hl-walk` is the way back into the story after wandering off. */
+.hl-hint, .hl-walk, .hl-keys { position: absolute; z-index: 3; font-family: var(--pixel); }
+.hl-hint { left: 50%; bottom: 104px; transform: translateX(-50%); margin: 0; padding: 8px 16px; border-radius: 999px; background: rgba(32,36,44,.88); color: var(--paper);
   font-size: 15px; white-space: nowrap; animation: hlBob 1.4s ease-in-out infinite; }
 @keyframes hlBob { 50% { transform: translate(-50%, 4px); } }
-.hl-walk { left: 14px; bottom: 14px; font-size: 13px; background: rgba(32,36,44,.85); color: var(--paper); border: 0; border-radius: 6px; padding: 7px 11px; cursor: pointer; }
+.hl-keys { left: 14px; top: 14px; margin: 0; font-size: 12px; background: rgba(32,36,44,.82); color: var(--paper); border-radius: 6px; padding: 6px 10px; display: flex; align-items: center; gap: 4px; }
+.hl-keys span { opacity: .75; margin-right: 2px; }
+.hl-keys kbd { font-family: var(--pixel); font-size: 11px; background: rgba(253,246,227,.16); border: 1px solid rgba(253,246,227,.4); border-radius: 4px; padding: 1px 5px; }
+.hl-walk { left: 14px; top: 48px; font-size: 13px; background: var(--teal-dark); color: var(--paper); border: 0; border-radius: 6px; padding: 7px 11px; cursor: pointer; }
+.hl-walk:hover { filter: brightness(1.12); }
 
+/* ---------- the rail: where you are, and the tour folded in (owner, 20 Sep 2026) ---------- */
+/* It lives ON the stage rather than in the side column, because the side column is hidden on desktop and the
+   progress it shows is the one thing that says the pinned hero is going somewhere. Every face is a button. */
+.hl-rail { position: absolute; z-index: 7; left: 50%; bottom: 14px; transform: translateX(-50%); display: flex; align-items: center; gap: 10px;
+  background: rgba(32,36,44,.86); border-radius: 12px; padding: 8px 10px; max-width: calc(100% - 28px); }
+.hl-rail[hidden] { display: none; }
 .hl-side { min-height: 0; display: flex; flex-direction: column; gap: 14px; }
 .hl-steps { list-style: none; margin: 0; padding: 0; display: flex; gap: 6px; }
-.hl-steps li { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 2px; font-family: var(--pixel); font-size: 11px; color: #9fc3d6; opacity: .55; transition: opacity .25s; }
+.hl-steps li { flex: 1; display: flex; }
+.hl-steps button { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 2px; font-family: var(--pixel); font-size: 11px; color: #9fc3d6; opacity: .55;
+  background: none; border: 0; padding: 2px; cursor: pointer; transition: opacity .25s; }
 .hl-steps img { width: 44px; height: 44px; object-fit: contain; border-radius: 6px; background: rgba(253,246,227,.12); border: 2px solid transparent; }
-.hl-steps li.done { opacity: .85; }
-.hl-steps li.on { opacity: 1; color: var(--paper); }
+.hl-steps button:hover, .hl-steps button:focus-visible { opacity: 1; color: var(--paper); }
+.hl-steps li.done button { opacity: .85; }
+.hl-steps li.on button { opacity: 1; color: var(--paper); }
 .hl-steps li.on img { border-color: var(--paper); background: rgba(253,246,227,.25); }
+.hl-next { font-family: var(--pixel); font-size: 14px; white-space: nowrap; background: var(--teal); color: #08211f; border: 0; border-radius: 8px;
+  padding: 9px 14px; cursor: pointer; box-shadow: inset 0 -3px 0 var(--teal-dark); }
+.hl-next:hover { filter: brightness(1.08); }
+.hl-next[hidden] { display: none; }
+
+/* ---------- the cast, before you walk to any of them ---------- */
+.hl-cast { position: absolute; z-index: 6; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px;
+  padding: 20px; pointer-events: none; background: rgba(12,18,28, calc(.58 * var(--o, 0))); opacity: var(--o, 0); }
+.hl-cast-head { margin: 0; font-family: var(--pixel); font-size: clamp(15px, 1.6vw, 20px); color: var(--paper); text-align: center; text-shadow: 0 2px 0 rgba(0,0,0,.6); }
+.hl-cast-row { display: flex; align-items: flex-end; justify-content: center; gap: clamp(6px, 1.4vw, 18px); max-width: 100%; }
+.hl-cast-one { display: flex; flex-direction: column; align-items: center; gap: 5px; width: clamp(86px, 11vw, 132px);
+  background: radial-gradient(ellipse 70% 60% at 50% 60%, #fffaf0, #e9dab8); border: 3px solid var(--ink); border-radius: 10px; padding: 8px 6px 6px;
+  opacity: var(--k, 0); transform: translateY(calc(14px * (1 - var(--k, 0)))); }
+.hl-cast-photo { width: 66%; aspect-ratio: 1; object-fit: cover; border: 3px solid #fffdf7; border-radius: 3px; box-shadow: 0 3px 8px rgba(0,0,0,.3); transform: rotate(-3deg); }
+/* The character arrives under the photo a beat later: the same "real photo -> in game" the ending ends on. */
+.hl-cast-art { height: clamp(66px, 13vh, 150px); width: 100%; object-fit: contain; object-position: bottom; filter: drop-shadow(0 4px 0 rgba(0,0,0,.2));
+  opacity: var(--m, 0); transform: translateY(calc(10px * (1 - var(--m, 0)))); }
+.hl-cast-one b { font-family: var(--pixel); font-size: clamp(11px, 1.1vw, 14px); }
 .hl-card { background: var(--paper); border: 4px solid var(--ink); border-radius: 10px; box-shadow: 6px 6px 0 rgba(0,0,0,.3); padding: 16px 18px;
   display: flex; flex-direction: column; gap: 9px; overflow: auto; }
 .hl-card:empty { display: none; }
@@ -76,10 +120,16 @@ body[data-layout="top"] .hl-side { display: none; }
 .hl-card-top.in { animation: hlInSide .28s ease-out; }
 @keyframes hlInSide { from { opacity: 0; transform: translate(16px, -50%); } to { opacity: 1; transform: translateY(-50%); } }
 
+/* The showcase mounts into the stage; the ending pop-up is z-index 10, so it has to sit over it. */
+.hl-stage .showcase { z-index: 20; }
+
 /* ---------- ending pop-up ---------- */
 .hl-end { position: absolute; inset: 0; z-index: 10; display: grid; place-items: center; padding: 26px; pointer-events: none;
   background: rgba(12, 18, 28, calc(.62 * var(--o, 0))); opacity: var(--o, 0); }
 .hl-end.on { pointer-events: auto; }
+.hl-end-row { display: flex; flex-wrap: wrap; justify-content: center; gap: 12px; }
+.hl-perk { margin: 0; font-family: var(--pixel); font-size: 14px; color: var(--teal-dark); background: rgba(26,158,149,.12);
+  border: 2px dashed var(--teal-dark); border-radius: 8px; padding: 8px 12px; max-width: 620px; }
 .hl-end-panel { background: var(--paper); border: 4px solid var(--ink); border-radius: 14px; box-shadow: 8px 8px 0 rgba(0,0,0,.3);
   padding: 22px 26px; max-width: 1080px; width: 100%; max-height: 100%; overflow: auto; display: flex; flex-direction: column; align-items: center; gap: 12px; text-align: center;
   transform: translateY(calc((1 - var(--o, 0)) * 24px)); }
@@ -114,7 +164,13 @@ body[data-layout="top"] .hl-side { display: none; }
 @media (max-width: 760px) {
   .hl-row, body[data-layout="top"] .hl-row { grid-template-columns: 1fr; grid-template-rows: minmax(0, 56%) minmax(0, 1fr); gap: 10px; }
   body[data-layout="top"] .hl-side { display: flex; }
+  .hl-rail { gap: 6px; padding: 5px 7px; bottom: 8px; }
   .hl-steps img { width: 30px; height: 30px; }
+  .hl-steps button { font-size: 0; gap: 0; }
+  .hl-next { font-size: 12px; padding: 7px 10px; }
+  .hl-hint { bottom: 74px; font-size: 13px; }
+  .hl-keys { display: none; }
+  .hl-cast-head { font-size: 13px; }
   .hl-start { grid-template-columns: 1fr; grid-template-rows: auto minmax(0, 1fr); padding: 10px; }
   .hl-headline { padding: 10px 12px; gap: 6px; }
   .hl-headline > p:not(.eyebrow) { display: none; }

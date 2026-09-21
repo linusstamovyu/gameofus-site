@@ -13,7 +13,7 @@ import { OCCASION_IDS, type OccasionId } from "./occasions";
 import { loadPerk } from "../shared/tourProgress";
 import { applyFavourites, favouriteCount, loadFavourites } from "../explore/favourites";
 import { track, trackClicks } from "../shared/analytics";
-import { tierPill } from "./tier";
+import { tierPill } from "../shared/tier";
 import { showProblem } from "./fix";
 import { EDITION_IDS, FOUNDER_SPOTS, quote, type EditionId } from "./prices";
 import { clearAll, loadDraft, saveDraft } from "./storage";

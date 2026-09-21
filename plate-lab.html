@@ -1,0 +1,227 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Plate lab</title>
+  <meta name="robots" content="noindex">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Pixelify+Sans:wght@500;700&family=Chakra+Petch:wght@600;700&display=swap">
+  <!-- Dev-only. Drag the two caption plates over the start screen's figures until they sit where you want,
+       then copy the CSS out of the panel. Not a build input (see vite.config.ts's rollupOptions). -->
+  <style>
+    :root{ --ink:#20242c; --paper:#fdf6e3; --teal:#1a9e95; --pixel:"Pixelify Sans",monospace; }
+    *{box-sizing:border-box}
+    body{margin:0;font-family:"Chakra Petch",system-ui,sans-serif;background:#123040;color:var(--paper)}
+    header{padding:10px 16px;background:#6b4326;display:flex;gap:14px;align-items:baseline}
+    header b{font-family:var(--pixel);font-size:18px}
+    header span{font-size:13px;opacity:.85}
+    .wrap{display:grid;grid-template-columns:minmax(0,1fr) 340px;gap:16px;padding:16px;align-items:start}
+    /* The stage apes the start screen: both figures the same height, standing side by side. */
+    /* The bottom padding is headroom for the plates: they sit at the figure's feet and can be dragged BELOW
+       them, and the resize handle hangs 7px outside the plate again — with the figures flush to the frame
+       the lettering and the handle were both clipped by overflow:hidden. */
+    #stage{position:relative;border:3px solid var(--ink);border-radius:10px;overflow:hidden;
+      display:flex;align-items:flex-end;justify-content:center;gap:var(--gap,40px);
+      padding:24px 24px var(--floor,120px);min-height:760px}
+    .fig{position:relative;height:var(--figh,560px);flex:0 0 auto}
+    .fig>img{display:block;height:100%;width:auto;filter:drop-shadow(0 6px 0 rgba(0,0,0,.25))}
+    /* The plate. left/top/width/height are all % of THIS figure's own box, which is what makes the two
+       comparable: the same numbers land on the same part of the body even though the images differ in size. */
+    .plate{position:absolute;display:flex;align-items:center;justify-content:center;cursor:grab;
+      font-family:var(--pixel);font-weight:700;font-size:12px;letter-spacing:.12em;text-transform:uppercase;
+      background:var(--paper);color:var(--ink);border:2px solid var(--ink);border-radius:4px;white-space:nowrap;
+      user-select:none;touch-action:none}
+    .plate.game{background:var(--teal);color:#fff}
+    .plate.sel{outline:2px dashed #ffd166;outline-offset:3px}
+    .plate .h{position:absolute;right:-7px;bottom:-7px;width:16px;height:16px;background:#ffd166;border:2px solid var(--ink);
+      border-radius:3px;cursor:nwse-resize}
+    .arrow{align-self:center;font-family:var(--pixel);font-weight:700;font-size:34px;color:var(--paper);text-shadow:0 3px 0 var(--ink)}
+    aside{background:#1b2430;border:3px solid var(--ink);border-radius:10px;padding:14px;position:sticky;top:16px}
+    aside h2{font-family:var(--pixel);font-size:15px;margin:0 0 10px}
+    .row{display:flex;justify-content:space-between;gap:8px;font-size:13px;padding:3px 0}
+    .row b{font-variant-numeric:tabular-nums}
+    label.chk{display:flex;gap:8px;align-items:center;font-size:13px;margin:10px 0}
+    .swatches{display:flex;gap:6px;flex-wrap:wrap;margin:8px 0 12px}
+    .swatches button{width:34px;height:26px;border:2px solid var(--ink);border-radius:4px;cursor:pointer}
+    pre{background:#0d1620;border:2px solid var(--ink);border-radius:6px;padding:10px;font-size:11.5px;
+      white-space:pre-wrap;word-break:break-word;margin:8px 0 0;color:#cfe8ff}
+    button.copy,button.reset{font-family:var(--pixel);font-size:12px;padding:7px 10px;border:2px solid var(--ink);
+      border-radius:5px;background:var(--paper);color:var(--ink);cursor:pointer;margin-right:6px}
+    .hint{font-size:12px;opacity:.8;line-height:1.5;margin-top:10px}
+    .sizer{display:flex;gap:8px;align-items:center;font-size:13px;margin:6px 0}
+    .sizer input{flex:1}
+  </style>
+</head>
+<body>
+<header>
+  <b>Plate lab</b>
+  <span>Drag a plate to move it · drag the yellow corner to resize · arrow keys nudge (hold Shift for 5×) · click a plate to select it</span>
+</header>
+
+<div class="wrap">
+  <div id="stage">
+    <div class="fig" id="figPhoto">
+      <img src="lab/kai_photo_cut.webp" alt="Kai in real life">
+      <div class="plate" id="platePhoto" tabindex="0">REAL PHOTO<span class="h" data-resize></span></div>
+    </div>
+    <span class="arrow">→</span>
+    <div class="fig" id="figArt">
+      <img src="lab/kai_fullbody.webp" alt="Kai in the game">
+      <div class="plate game" id="plateArt" tabindex="0">IN GAME<span class="h" data-resize></span></div>
+    </div>
+  </div>
+
+  <aside>
+    <h2>Plates</h2>
+    <label class="chk"><input type="checkbox" id="link" checked> Move both together</label>
+
+    <div class="sizer"><span>Figure height</span><input type="range" id="figh" min="320" max="720" value="560"><b id="fighV">560</b></div>
+    <div class="sizer"><span>Gap</span><input type="range" id="gap" min="0" max="160" value="40"><b id="gapV">40</b></div>
+    <div class="sizer"><span>Floor space</span><input type="range" id="floor" min="40" max="260" value="120"><b id="floorV">120</b></div>
+
+    <h2 style="margin-top:14px">Background</h2>
+    <div class="swatches" id="swatches"></div>
+
+    <h2>Numbers</h2>
+    <div class="row"><span>REAL PHOTO</span><b id="numPhoto">—</b></div>
+    <div class="row"><span>IN GAME</span><b id="numArt">—</b></div>
+
+    <pre id="css">—</pre>
+    <button class="copy" id="copy">Copy CSS</button>
+    <button class="reset" id="reset">Reset</button>
+
+    <p class="hint">Everything is a % of each figure's own box, so the same numbers land on the same part of
+      the body even though the photo and the artwork are different sizes. Hand me the CSS and I'll put it in
+      the real start screen.</p>
+  </aside>
+</div>
+
+<script type="module">
+const stage = document.getElementById("stage");
+const figs = {
+  photo: { fig: document.getElementById("figPhoto"), plate: document.getElementById("platePhoto"), out: document.getElementById("numPhoto") },
+  art:   { fig: document.getElementById("figArt"),   plate: document.getElementById("plateArt"),   out: document.getElementById("numArt") },
+};
+// Percentages of the figure's own box: x/y are the plate's top-left, w/h its size.
+const START = { x: 44, y: 89, w: 56, h: 11 };
+const state = { photo: { ...START }, art: { ...START } };
+let selected = "photo";
+
+const BACKGROUNDS = [
+  ["#e2d0a4", "beach sand"],
+  ["#6d9a5a", "jungle"],
+  ["#1d2340", "neon night"],
+  ["#dfe9f2", "ski"],
+  ["#8b5a8f", "fairy"],
+  ["#8a4a34", "mars"],
+];
+
+function apply(which) {
+  const s = state[which], p = figs[which].plate;
+  p.style.left = s.x + "%"; p.style.top = s.y + "%";
+  p.style.width = s.w + "%"; p.style.height = s.h + "%";
+  figs[which].out.textContent = `x ${s.x.toFixed(1)}%  y ${s.y.toFixed(1)}%  w ${s.w.toFixed(1)}%  h ${s.h.toFixed(1)}%`;
+}
+function applyAll() { apply("photo"); apply("art"); writeCss(); }
+
+function writeCss() {
+  const a = state.photo, b = state.art;
+  const same = ["x", "y", "w", "h"].every(k => Math.abs(a[k] - b[k]) < 0.05);
+  const block = (sel, s) =>
+    `${sel} {\n  left: ${s.x.toFixed(1)}%; top: ${s.y.toFixed(1)}%;\n  width: ${s.w.toFixed(1)}%; height: ${s.h.toFixed(1)}%;\n}`;
+  document.getElementById("css").textContent = same
+    ? `/* both plates share one rule */\n` + block(".hl-pair figcaption", a)
+    : block(".hl-photo figcaption", a) + "\n" + block(".hl-art figcaption", b);
+}
+
+// ---- dragging -------------------------------------------------------------
+let drag = null;
+function onDown(which, e) {
+  const resizing = e.target.hasAttribute("data-resize");
+  selected = which;
+  for (const k of Object.keys(figs)) figs[k].plate.classList.toggle("sel", k === which);
+  const box = figs[which].fig.getBoundingClientRect();
+  drag = { which, resizing, box, sx: e.clientX, sy: e.clientY, start: { ...state[which] } };
+  figs[which].plate.setPointerCapture(e.pointerId);
+  figs[which].plate.style.cursor = resizing ? "nwse-resize" : "grabbing";
+  e.preventDefault();
+}
+function onMove(e) {
+  if (!drag) return;
+  const dxp = ((e.clientX - drag.sx) / drag.box.width) * 100;
+  const dyp = ((e.clientY - drag.sy) / drag.box.height) * 100;
+  const next = { ...drag.start };
+  if (drag.resizing) {
+    next.w = Math.max(6, Math.min(200, drag.start.w + dxp));
+    next.h = Math.max(3, Math.min(100, drag.start.h + dyp));
+  } else {
+    next.x = drag.start.x + dxp;
+    next.y = drag.start.y + dyp;
+  }
+  set(drag.which, next);
+}
+function onUp() {
+  if (!drag) return;
+  figs[drag.which].plate.style.cursor = "grab";
+  drag = null;
+}
+/** Write a plate's numbers, mirroring to the other one while "move both together" is on. */
+function set(which, next) {
+  state[which] = next;
+  if (document.getElementById("link").checked) {
+    const other = which === "photo" ? "art" : "photo";
+    state[other] = { ...next };
+  }
+  applyAll();
+}
+
+for (const [k, o] of Object.entries(figs)) {
+  o.plate.addEventListener("pointerdown", e => onDown(k, e));
+  o.plate.addEventListener("keydown", e => {
+    const step = e.shiftKey ? 5 : 1;
+    const n = { ...state[k] };
+    if (e.key === "ArrowLeft") n.x -= step; else if (e.key === "ArrowRight") n.x += step;
+    else if (e.key === "ArrowUp") n.y -= step; else if (e.key === "ArrowDown") n.y += step;
+    else return;
+    e.preventDefault(); set(k, n);
+  });
+}
+window.addEventListener("pointermove", onMove);
+window.addEventListener("pointerup", onUp);
+
+// ---- panel ----------------------------------------------------------------
+const sw = document.getElementById("swatches");
+for (const [c, name] of BACKGROUNDS) {
+  const b = document.createElement("button");
+  b.style.background = c; b.title = name;
+  b.addEventListener("click", () => { stage.style.background = c; });
+  sw.append(b);
+}
+stage.style.background = BACKGROUNDS[0][0];
+
+const figh = document.getElementById("figh"), gap = document.getElementById("gap"), floor = document.getElementById("floor");
+const sync = () => {
+  stage.style.setProperty("--figh", figh.value + "px");
+  stage.style.setProperty("--gap", gap.value + "px");
+  stage.style.setProperty("--floor", floor.value + "px");
+  document.getElementById("fighV").textContent = figh.value;
+  document.getElementById("gapV").textContent = gap.value;
+  document.getElementById("floorV").textContent = floor.value;
+};
+for (const el of [figh, gap, floor]) el.addEventListener("input", sync);
+sync();
+
+document.getElementById("copy").addEventListener("click", async () => {
+  try { await navigator.clipboard.writeText(document.getElementById("css").textContent); } catch { /* clipboard may be blocked */ }
+});
+document.getElementById("reset").addEventListener("click", () => {
+  state.photo = { ...START }; state.art = { ...START }; applyAll();
+});
+
+applyAll();
+figs.photo.plate.classList.add("sel");
+</script>
+</body>
+</html>

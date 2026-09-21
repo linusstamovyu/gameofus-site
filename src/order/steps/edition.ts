@@ -6,7 +6,7 @@ import offerData from "../../content/offer.json";
 import type { Offer } from "../../content/types";
 import { checkbox, heading, money, stepEyebrow, type StepView } from "../context";
 import { chooseEdition, squadFriends } from "../draft";
-import { tierClass } from "../tier";
+import { tierClass } from "../../shared/tier";
 import { ACTIVE_LADDER, ADDONS, EDITION_IDS, FOUNDER_SPOTS, isFounder, LADDERS } from "../prices";
 
 const offer = offerData as unknown as Offer;

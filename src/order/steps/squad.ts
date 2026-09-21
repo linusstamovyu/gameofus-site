@@ -10,7 +10,7 @@ import { processPhoto, recheckStoredPhoto, warmFaceDetector } from "../photo";
 import { ACTIVE_LADDER, ADDONS, downgradeHint, EDITION_IDS, LADDERS, MAX_FRIENDS, upgradeHint } from "../prices";
 import { faceCrop, type Box } from "../photoRules";
 import { deletePhoto, loadPhoto, savePhoto } from "../storage";
-import { tierClass, tierPill, TIER_LOOK } from "../tier";
+import { tierClass, tierPill, TIER_LOOK } from "../../shared/tier";
 
 const newId = () => (crypto.randomUUID?.() ?? `${Date.now()}-${Math.random()}`).replace(/[^a-z0-9-]/gi, "").slice(0, 36);
 const STATUS_PREFIX = { ok: "", warn: "Check this: ", fail: "Won't work: ", unchecked: "" } as const;

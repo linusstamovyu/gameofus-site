@@ -14,6 +14,8 @@ export default defineConfig({
         order: resolve(__dirname, "order.html"),
         explore: resolve(__dirname, "explore.html"),
         logoVote: resolve(__dirname, "logo-vote.html"),
+        // The hero intro with Coco instead of Kai: a saved demo (noindex), not linked from the site.
+        cocoLab: resolve(__dirname, "coco-lab.html"),
       },
     },
   },

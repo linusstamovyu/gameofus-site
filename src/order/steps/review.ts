@@ -4,7 +4,7 @@ import { el } from "../../dom";
 import { BIG_GAMES, MINIGAMES } from "../catalogue";
 import { checkbox, heading, money, stepEyebrow, type StepView } from "../context";
 import { problems, sectionContext, shareMessage, squadFriends, type Organiser } from "../draft";
-import { tierPill } from "../tier";
+import { tierPill } from "../../shared/tier";
 import { SECTIONS } from "../sections";
 import { track } from "../../shared/analytics";
 import { perkDaysLeft } from "../perk";

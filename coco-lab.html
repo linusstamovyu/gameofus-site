@@ -1,0 +1,120 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Coco lab · the hero intro with Coco</title>
+  <meta name="robots" content="noindex">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Pixelify+Sans:wght@500;700&family=Chakra+Petch:wght@600;700&display=swap">
+  <!-- Dev-only demo (owner, 20 Sep 2026): the SAME intro film index.html runs, with Coco as the hero instead of
+       Kai. `data-hero` on the body is the only difference; everything else is heroLab.ts unchanged, so the two
+       pages are a true side by side. Open index.html in the next tab to compare.
+       ?ending=squad|start|end|both  ?layout=beside|top  ?at=<screens>  ?debug -->
+  <script type="module" src="/src/heroLab/heroLab.ts"></script>
+</head>
+<body class="hl-page" data-hero="coco">
+<nav class="nav" aria-label="Main">
+  <div class="wrap">
+    <a class="logo" href="index.html" aria-label="Game of Us home"><img src="brand/game-of-us-logo-wide-white.webp" alt="Game of Us"></a>
+    <span class="draft-flag">Coco lab</span>
+    <ul>
+      <li><a href="index.html">Kai's version ▸</a></li>
+    </ul>
+  </div>
+</nav>
+
+<header class="hl-hero" id="top">
+  <div class="hl-track" id="track">
+    <div class="hl-pin" id="pin">
+      <div class="wrap hl-row">
+        <div class="stage hl-stage" id="stage" tabindex="0" aria-label="Playable beach. Press start, then scroll to walk to each of your friends. You can also walk it yourself at any time: click the map, then use W A S D, and E to talk.">
+          <canvas aria-hidden="true"></canvas>
+
+          <!-- The start screen: the real photo beside the character it became. Both are cropped to the photo's
+               own framing -- head to the top of her jeans -- AND the character is warped onto the photo's own
+               proportions (tools/fit_coco_to_photo.py: her drawn head was a fifth too big for the body under
+               it), so the digitise line runs down one figure rather than between two differently built ones. -->
+          <div class="hl-start" id="start">
+            <div class="hl-headline">
+              <p class="eyebrow">A retro RPG starring your friends</p>
+              <h1>Your friends. Your places. <em>Any world.</em></h1>
+              <p>Real photos in, playable characters out. This is Coco.</p>
+              <div class="hl-go">
+                <button class="btn hl-press" id="press" type="button" data-track="hero_cta" data-track-which="start">Press start ▶</button>
+                <span class="hl-or">or scroll ↓</span>
+              </div>
+            </div>
+            <div class="hl-pair" id="pair">
+              <figure class="hl-photo" id="photoFig"><img id="photoImg" src="lab/coco_photo_cut.webp" alt="Coco in real life"><figcaption>Real photo</figcaption></figure>
+              <span class="hl-arrow" id="pairArrow" aria-hidden="true">→</span>
+              <figure class="hl-art" id="artFig"><img id="artImg" src="lab/coco_bust.webp" alt="Coco as a character in the game"><figcaption>In game</figcaption></figure>
+            </div>
+          </div>
+          <canvas class="hl-fx" id="fx" aria-hidden="true"></canvas>
+
+          <div class="hl-card hl-card-top" id="cardTop" hidden></div>
+
+          <div class="hl-cast" id="cast" aria-hidden="true">
+            <p class="hl-cast-head">Coco’s squad — five real people, five characters</p>
+            <div class="hl-cast-row" id="castRow"></div>
+          </div>
+
+          <div class="hl-rail" id="rail" hidden>
+            <ol class="hl-steps" id="steps"></ol>
+            <button class="hl-next" id="nextStop" type="button" data-track="hero_next_stop">Next stop ▶</button>
+          </div>
+
+          <p class="hl-keys" id="keys" hidden><span>Walk it yourself:</span> <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> or tap the ground · <kbd>E</kbd> to talk</p>
+          <button class="hl-walk" id="walk" type="button" hidden>↩ Back to the walk</button>
+          <p class="hl-hint" id="hint" hidden>Scroll to walk to your friends ↓</p>
+
+          <!-- The world's own controls: the story hides most of them, and they come back for free walking. -->
+          <div class="title-card" id="titleCard" hidden></div>
+          <button class="mini-title" id="miniTitle" type="button" hidden></button>
+          <label class="world-pick" hidden><span class="world-swatch" id="worldSwatch" aria-hidden="true"></span><select id="worldSelect" aria-label="Choose the world: same squad, same map, new setting"></select></label>
+          <nav class="tour" aria-label="Guided tour" hidden><button id="prev" type="button"></button><div><small id="tourStep"></small><strong id="tourName"></strong><div id="dots"></div></div><button id="next" type="button"></button></nav>
+          <span hidden><button id="heroTour" type="button"></button><button id="heroWalk" type="button"></button></span>
+          <div class="scrim" id="scrim" hidden></div>
+          <section class="card" id="card" role="dialog" aria-labelledby="cardTitle" hidden></section>
+          <div class="toast" id="toast" role="status" hidden></div>
+          <noscript><p class="noscript">The beach needs JavaScript.</p></noscript>
+        </div>
+        <aside class="hl-side" id="side" aria-live="polite">
+          <div class="hl-card" id="cardSide"></div>
+        </aside>
+      </div>
+
+      <div class="hl-end" id="end" aria-hidden="true"><div class="hl-end-panel" id="endPanel"></div></div>
+    </div>
+  </div>
+</header>
+
+<main class="hl-rest">
+  <section class="wrap">
+    <p class="eyebrow">The rest of the page</p>
+    <h2>The map lets go here and the page carries on.</h2>
+    <p>This is the demo of the hero intro with <b>Coco</b> as the main character: her real photo, cut out of the
+      street it was taken on, beside the character it became — both cropped to the photo's own framing. Press
+      start (or just scroll) and she digitises, drops onto the beach, and you walk her to all five of the others.</p>
+    <p>Scroll back up to the very top and the start screen comes back, so the transformation can be replayed
+      without reloading. <a href="index.html">Kai's version is the live one ▸</a></p>
+  </section>
+</main>
+
+<form class="hl-lab" id="lab">
+  <b>Coco preview</b>
+  <fieldset><legend>Ending</legend>
+    <label><input type="radio" name="ending" value="squad"> Squad at the end</label>
+    <label><input type="radio" name="ending" value="start"> Start only</label>
+    <label><input type="radio" name="ending" value="end"> End only</label>
+    <label><input type="radio" name="ending" value="both"> Coco at start and end</label>
+  </fieldset>
+  <fieldset><legend>Layout</legend>
+    <label><input type="radio" name="layout" value="top"> Card on the map</label>
+    <label><input type="radio" name="layout" value="beside"> Map beside cards</label>
+  </fieldset>
+</form>
+</body>
+</html>

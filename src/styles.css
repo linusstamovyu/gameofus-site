@@ -111,11 +111,13 @@
     background:var(--ink);color:var(--paper);display:flex;align-items:center;justify-content:center}
   ol.steps b{display:block}
   .tiers{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
-  .tiers div{border:2px solid #d9c9a3;border-radius:6px;padding:8px 6px;text-align:center;background:#fffaf0}
-  .tiers div.star{border-color:var(--teal);background:#e8f5f2}
-  .tiers b{display:block;font-family:var(--pixel);font-size:13px}
+  /* Same three metals as the price cards and the order page (see "edition tiers" below). */
+  .tiers div{border:2px solid var(--t-edge,#d9c9a3);border-radius:6px;padding:8px 6px;text-align:center;background:var(--t-bg,#fffaf0);color:var(--t-ink,inherit)}
+  .tiers div.star{box-shadow:0 0 0 2px var(--t-glow)}
+  .tiers b{display:flex;align-items:center;justify-content:center;font-family:var(--pixel);font-size:13px}
+  .tiers .tier-gem{width:8px;height:8px;margin-right:5px}
   .tiers span{display:block;font-size:13px;font-variant-numeric:tabular-nums;margin-top:3px;font-weight:700}
-  .tiers em{display:block;font-style:normal;font-size:11px;color:var(--muted)}
+  .tiers em{display:block;font-style:normal;font-size:11px;color:var(--t-soft,var(--muted))}
   .actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:4px}
   .actions .btn{flex:1;justify-content:center}
   .skip{display:flex;justify-content:space-between;align-items:center;margin-top:14px;color:#cfe6ef;font-size:14px;gap:16px;flex-wrap:wrap}
@@ -185,15 +187,41 @@
   .step ul{margin:0;padding-left:18px;color:#4a4036;font-size:14px}
   .step .when{margin-top:auto;font-family:var(--pixel);font-size:13px;color:var(--teal-dark)}
 
+  /* ---------- edition tiers (shared: price cards, the tour's price card, the whole order page) ----------
+     Editions dressed as card rarities (owner, 15 Sep 2026: "as FIFA and stuff do"): Standard SILVER, Deluxe
+     GOLD (the one we recommend, so the most attractive), Ultimate a dark holographic SPECIAL.
+     THEY LIVE HERE, NOT IN order.css, because a tier is shown in four places and they all have to agree
+     (owner, 17 Sep 2026: "look everywhere and make sure its always consistent"). Before this the home page
+     said the opposite thing — Deluxe teal, the other two gold — so gold meant "recommended" on one page and
+     "not recommended" on the next. Teal stays the site's ACTION colour (buttons, the chosen card's ring);
+     the metals only ever say which edition you are looking at.
+     Text on every tier is checked for contrast: dark ink on silver and gold, near-white on the special. */
+  .tier-standard{--t-bg:linear-gradient(155deg,#fbfcfd 0%,#dfe3e8 42%,#f1f3f6 58%,#c5ccd4 100%);--t-edge:#8e97a3;--t-ink:#20242c;--t-soft:#4a525d;--t-gem:linear-gradient(135deg,#ffffff,#9aa3ae);--t-glow:rgba(120,130,145,.35)}
+  .tier-deluxe{--t-bg:linear-gradient(155deg,#fff6cf 0%,#f4d277 38%,#fde6a3 56%,#dcaa42 100%);--t-edge:#a8761c;--t-ink:#2a1d04;--t-soft:#5a3f08;--t-gem:linear-gradient(135deg,#fff3b0,#c78a14);--t-glow:rgba(214,160,40,.55)}
+  .tier-ultimate{--t-bg:linear-gradient(155deg,#35195a 0%,#170c2b 55%,#2d1145 100%);--t-edge:#b98cff;--t-ink:#f5eeff;--t-soft:#d9c8f5;--t-gem:linear-gradient(135deg,#ff8bd8,#7af0ff 50%,#ffe27a);--t-glow:rgba(160,110,255,.5)}
+  .tier-gem{display:inline-block;flex:none;width:10px;height:10px;transform:rotate(45deg);background:var(--t-gem);border:1px solid var(--t-edge);margin-right:7px;vertical-align:1px}
+  .tier-pill{display:inline-flex;align-items:center;font-family:var(--pixel);font-size:13px;line-height:1;white-space:nowrap;padding:4px 9px 4px 8px;border-radius:999px;background:var(--t-bg);color:var(--t-ink);border:2px solid var(--t-edge);vertical-align:middle}
+  .tier-pill .tier-gem{width:8px;height:8px;margin-right:6px}
+
   /* ---------- prices ---------- */
   .prices{padding:90px 0}
   .prices .eyebrow{color:var(--teal-dark);margin-bottom:10px}
   .carts{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;align-items:stretch}
   .cart{background:var(--paper);border:3px solid var(--ink);border-radius:12px 12px 6px 6px;display:flex;flex-direction:column;overflow:hidden}
   .cart .label{padding:16px 20px;background:var(--gold);border-bottom:3px solid var(--ink);display:flex;justify-content:space-between;align-items:center}
-  .cart.star .label{background:var(--teal);color:#fff}
-  .cart .label h3{font-size:24px}
+  .cart .label h3{font-size:24px;display:inline-flex;align-items:center}
   .cart .tag{font-family:var(--pixel);font-size:11px;letter-spacing:.12em;text-transform:uppercase;background:var(--ink);color:var(--paper);padding:2px 7px;border-radius:3px}
+  /* The label band wears the rarity; the body stays cream, so the price and the feature list read the same on
+     all three cards. The `--t-*` tokens are the shared block above, i.e. the order page's own colours. */
+  .cart[class*="tier-"] .label{position:relative;overflow:hidden;background:var(--t-bg);color:var(--t-ink);border-bottom-color:var(--t-edge)}
+  .cart[class*="tier-"] .label > *{position:relative}
+  .cart.tier-deluxe .label::after{content:"";position:absolute;inset:0;pointer-events:none;background:linear-gradient(115deg,transparent 35%,rgba(255,255,255,.45) 48%,transparent 60%)}
+  .cart.tier-ultimate .label::after{content:"";position:absolute;inset:0;pointer-events:none;background:linear-gradient(115deg,transparent 30%,rgba(122,240,255,.16) 45%,rgba(255,139,216,.16) 55%,transparent 70%)}
+  .cart.tier-deluxe .tag{background:#2a1d04;color:#ffe29a}
+  .cart.tier-ultimate .tag{background:linear-gradient(90deg,#ff8bd8,#7af0ff,#ffe27a);color:#170c2b}
+  /* "Most picked" is said in gold now, not in teal: the glow and the lift are the order page's own emphasis. */
+  .cart.star{box-shadow:0 0 0 1px #f7dc8c,0 8px 22px var(--t-glow)}
+  @media (min-width:861px){.cart.star{transform:translateY(-6px)}}
   .cart .price{padding:18px 20px 6px;font-family:var(--num);font-weight:700;font-size:34px;font-variant-numeric:tabular-nums}
   .cart .price small{font-size:14px;color:var(--muted);font-family:var(--body)}
   .cart .price .founder{font-family:var(--body);font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--teal-dark)}

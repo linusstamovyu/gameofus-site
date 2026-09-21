@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Frokost shared card deck</title>
+    <style>
+      :root {
+        color-scheme: dark;
+        font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+        background: #152b24;
+        color: #fff5cf;
+      }
+
+      body {
+        margin: 0;
+        padding: 32px;
+        background:
+          linear-gradient(rgb(255 255 255 / 3%) 1px, transparent 1px),
+          linear-gradient(90deg, rgb(255 255 255 / 3%) 1px, transparent 1px),
+          #152b24;
+        background-size: 16px 16px;
+      }
+
+      main {
+        max-width: 1120px;
+        margin: auto;
+      }
+
+      h1, h2, p { margin: 0 0 16px; }
+      p { color: #bcd0c2; }
+
+      .suit {
+        display: grid;
+        grid-template-columns: 116px repeat(13, 64px);
+        gap: 8px;
+        align-items: center;
+        margin-bottom: 12px;
+      }
+
+      .suit strong { text-transform: capitalize; }
+
+      img {
+        display: block;
+        width: 64px;
+        height: 64px;
+        image-rendering: pixelated;
+      }
+
+      .shared {
+        display: flex;
+        gap: 16px;
+        margin-top: 28px;
+      }
+
+      figure { margin: 0; }
+      figcaption { margin-top: 6px; color: #bcd0c2; font-size: 12px; }
+
+      @media (max-width: 1100px) {
+        body { overflow-x: auto; }
+        main { min-width: 1030px; }
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>Standard 52-card deck</h1>
+      <p>64×64 PNG master assets · 13 cards per suit · CC0</p>
+      <section id="deck" aria-label="All 52 playing cards"></section>
+
+      <h2>Shared assets</h2>
+      <section class="shared" id="shared" aria-label="Card back and optional extras"></section>
+    </main>
+
+    <script type="module">
+      import { CARD_BACK_ASSET, JOKER_ASSETS, RANKS, SUITS } from "./deck.js";
+
+      const deckElement = document.querySelector("#deck");
+      for (const suit of SUITS) {
+        const row = document.createElement("div");
+        row.className = "suit";
+        row.innerHTML = `<strong>${suit.symbol} ${suit.name}</strong>`;
+
+        for (const rank of RANKS) {
+          const image = document.createElement("img");
+          image.src = `cards/${suit.name}/${rank.label}.png`;
+          image.alt = `${rank.name} of ${suit.name}`;
+          image.title = `${rank.label}${suit.code}`;
+          row.append(image);
+        }
+
+        deckElement.append(row);
+      }
+
+      const sharedAssets = [
+        ["Card back", CARD_BACK_ASSET],
+        ["Red joker", JOKER_ASSETS.red],
+        ["Black joker", JOKER_ASSETS.black],
+        ["Empty frame", "extras/empty.png"],
+      ];
+
+      const sharedElement = document.querySelector("#shared");
+      for (const [label, asset] of sharedAssets) {
+        const figure = document.createElement("figure");
+        figure.innerHTML = `<img src="${asset}" alt="${label}"><figcaption>${label}</figcaption>`;
+        sharedElement.append(figure);
+      }
+    </script>
+  </body>
+</html>

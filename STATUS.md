@@ -55,3 +55,22 @@ and pick which occasion the hero leads with (task 7).
 - Device testing on real phones (week 3, needs your devices)
 - Stretch: bake the real beach zone from the game's map preview
 - Launch day: `isDraft: false`, fill `site.json`, deploy
+
+## Parked (21 Sep) — the Coco hero intro
+
+`coco-lab.html` is the homepage intro with **Coco** as the hero instead of Kai, saved for a possible rework.
+**The live homepage stays Kai's.** Built into `dist/` and deployed as `/coco-lab.html` (noindex, not linked).
+Everything it needs is one row in `HEROES` in `src/heroLab/heroLab.ts` plus `data-hero="coco"` on the page.
+
+**Future work: fix Coco's pixel art itself.** Her drawn head is about a fifth too big for her body
+(crown→chin 0.428 of crown→waistband, against 0.360 in her real photo), so every landmark on her face sat low.
+Today that is patched with code: `tools/fit_coco_to_photo.py` warps the character onto the photo (head ×0.84 on
+both axes, torso stretched ×1.17 below the neckline, body ×0.83 wide). That works for the start-screen pair but
+it's a resample of pixel art — edges go soft, and the walk sprite and every other use of her art are still the
+old proportions. The proper fix is to regenerate `source/regen-2026-09/out/coco-photo-pose/coco_fullbody_game_style_v2.png`
+with the photo's proportions (smaller head, longer torso), then re-run:
+
+    python3 tools/cut_coco_pair.py && python3 tools/fit_coco_to_photo.py
+
+The warp should then come out near ×1.0 everywhere; `source/regen-2026-09/out/coco-photo-pose/coco_pair_proof.png` is the check.
+Update `cellFill` / `cellTop` in `heroLab.ts` from the numbers the tool prints.

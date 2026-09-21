@@ -156,12 +156,10 @@
 
 /* ===== edition tiers + squad slots (owner, 15 Sep 2026) =====
    Editions dressed as card rarities: Standard SILVER, Deluxe GOLD (recommended, most attractive), Ultimate a dark
-   holographic SPECIAL. Each tier sets the same custom properties; cards, pills, chips and hints read them.
+   holographic SPECIAL. THE COLOURS LIVE IN styles.css, under "edition tiers", because the home page's price
+   cards and the beach tour's price card wear them too (owner, 17 Sep 2026). Everything below reads the same
+   `--t-*` properties and only shapes the order page's own cards, chips and hints.
    Text on every tier is checked for contrast (dark ink on silver/gold, near-white on the special). */
-.tier-standard{--t-bg:linear-gradient(155deg,#fbfcfd 0%,#dfe3e8 42%,#f1f3f6 58%,#c5ccd4 100%);--t-edge:#8e97a3;--t-ink:#20242c;--t-soft:#4a525d;--t-gem:linear-gradient(135deg,#ffffff,#9aa3ae);--t-glow:rgba(120,130,145,.35)}
-.tier-deluxe{--t-bg:linear-gradient(155deg,#fff6cf 0%,#f4d277 38%,#fde6a3 56%,#dcaa42 100%);--t-edge:#a8761c;--t-ink:#2a1d04;--t-soft:#5a3f08;--t-gem:linear-gradient(135deg,#fff3b0,#c78a14);--t-glow:rgba(214,160,40,.55)}
-.tier-ultimate{--t-bg:linear-gradient(155deg,#35195a 0%,#170c2b 55%,#2d1145 100%);--t-edge:#b98cff;--t-ink:#f5eeff;--t-soft:#d9c8f5;--t-gem:linear-gradient(135deg,#ff8bd8,#7af0ff 50%,#ffe27a);--t-glow:rgba(160,110,255,.5)}
-.tier-gem{display:inline-block;flex:none;width:10px;height:10px;transform:rotate(45deg);background:var(--t-gem);border:1px solid var(--t-edge);margin-right:7px;vertical-align:1px}
 
 /* edition cards */
 .edition[class*="tier-"]{position:relative;overflow:hidden;background:var(--t-bg);color:var(--t-ink);border:3px solid var(--t-edge);box-shadow:0 4px 0 rgba(0,0,0,.12)}
@@ -186,9 +184,7 @@
 .edition.tier-ultimate .ed-pick.ghost{background:rgba(255,255,255,.12);color:#f5eeff;box-shadow:inset 0 -4px 0 rgba(0,0,0,.4)}
 .edition.tier-standard .ed-pick.ghost{background:#fff;box-shadow:inset 0 -4px 0 #aeb5be}
 
-/* the pill: sticky bar, squad step, review */
-.tier-pill{display:inline-flex;align-items:center;font-family:var(--pixel);font-size:13px;line-height:1;white-space:nowrap;padding:4px 9px 4px 8px;border-radius:999px;background:var(--t-bg);color:var(--t-ink);border:2px solid var(--t-edge);vertical-align:middle}
-.tier-pill .tier-gem{width:8px;height:8px;margin-right:6px}
+/* the pill (styles.css draws it): sticky bar, squad step, review */
 .bar-main .tier-pill{font-size:12px;vertical-align:4px}
 .review-edition .tier-pill{font-size:20px;padding:6px 14px 6px 12px}
 .review-edition .tier-pill .tier-gem{width:12px;height:12px;margin-right:9px}

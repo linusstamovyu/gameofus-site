@@ -14,6 +14,10 @@ import { track, trackClicks } from "../shared/analytics";
 import { EXPLORE_TABS, type ExploreCard, type ExploreTab } from "./catalog";
 import { favouriteCount, loadFavourites, saveFavourites, toggleFavourite, type Favourites } from "./favourites";
 import { decodeList, LIST_MIN_FAVOURITES } from "./listEmail";
+import { openMinigameDemo } from "./demo";
+import { MINIGAME_LOOPS } from "./minigameLoops";
+import { badgeTier } from "./included";
+import { tierClass } from "../shared/tier";
 
 const site = siteData as SiteConfig;
 
@@ -41,6 +45,20 @@ function art(card: ExploreCard): HTMLElement {
   } else if (card.scene && SCENES[card.scene]) {
     box.append(loopBox(SCENES[card.scene](), "ex-loop"));
   }
+  // A party minigame moves on hover rather than on screen: twelve loops drawing at once under a grid of
+  // stills is the case the shared player's autoplay rule was written against (../order/preview/loop).
+  const loop = card.fav?.kind === "minigame" ? MINIGAME_LOOPS[card.fav.id] : undefined;
+  // The whole picture is the hover target, so crossing onto the Play button on top of it does not stop it.
+  if (loop) box.append(loopBox(loop(), "ex-loop", box, true));
+  // A party minigame opens the real thing (demo.ts). The button sits on the art rather than in the text,
+  // where it reads as what it is: the way into the picture, not another line about it.
+  if (card.fav?.kind === "minigame") {
+    const play = el("button", "ex-play", "▶ Play it");
+    play.type = "button";
+    play.setAttribute("aria-label", `Play ${card.title} now`);
+    play.addEventListener("click", () => openMinigameDemo(card.fav!.id, card.title, play));
+    box.append(play);
+  }
   return box;
 }
 
@@ -49,7 +67,9 @@ function cardView(tab: ExploreTab, card: ExploreCard): HTMLElement {
   const item = el("article", `ex-card${on ? " on" : ""}`);
   const text = el("div", "ex-text");
   text.append(el("h3", null, card.title), el("p", null, card.blurb));
-  const badge = el("span", `ex-badge${card.adult ? " adult" : ""}`, card.badge);
+  // A "From Deluxe" badge wears Deluxe's gold, the same metal the price cards and the order page use.
+  const tier = badgeTier(card.badge);
+  const badge = el("span", `ex-badge${tier ? ` ${tierClass(tier)}` : ""}${card.adult ? " adult" : ""}`, card.badge);
   text.append(badge);
   item.append(art(card), text);
   if (card.fav) {

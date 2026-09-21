@@ -2,11 +2,18 @@
 //
 // Scroll is measured in "screens" of the pin's height, spent in order:
 //   start   the first sliver: any scroll at all plays the transformation (Q4)
+//   intro   the cast, before you walk to any of them: each friend's real photo turns into their character, one
+//           after the next as you scroll (owner, 20 Sep 2026). It is a BEAT OF THE SCROLL and not a timed pop-up
+//           because the transformation it follows can be set off two ways -- Press start, or scrolling -- and a
+//           timed panel either fights a visitor who is already scrolling or holds up one who is not. As a phase it
+//           reads at whatever pace they scroll, and it gives the scroll something to do before the first walk,
+//           which is half of why the pin used to read as a stuck page.
 //   friends five stretches, each a walk to one friend then a hold while their card is open (Q2)
 //   end     the camera pulls back to the whole beach as the world returns to summer (Q8, Q10),
 //           then the ending pop-up holds, then the pin lets go (Q11)
 
 export const START = 0.35;
+export const INTRO = 0.9;
 export const WALK = 0.6;
 export const HOLD = 0.6;
 export const PULL = 0.8;
@@ -22,7 +29,7 @@ export const FRIENDS: Friend[] = [
   { stop: "coco", world: 4 },   // snow
   { stop: "ethan", world: 5 },  // mars
 ];
-export const TOTAL = START + FRIENDS.length * (WALK + HOLD) + PULL + END_HOLD;
+export const TOTAL = START + INTRO + FRIENDS.length * (WALK + HOLD) + PULL + END_HOLD;
 
 /** The zoom at each friend: a small step out every time (Q8). The end pulls on to the whole beach. */
 export const zoomAtFriend = (i: number) => Math.exp(Math.log(0.76) * Math.max(0, i) / (FRIENDS.length - 1));
@@ -33,6 +40,7 @@ export const logLerp = (a: number, b: number, t: number) => Math.exp(Math.log(a)
 
 export type Phase =
   | { kind: "start" }
+  | { kind: "intro"; t: number }
   | { kind: "walk"; i: number; t: number }
   | { kind: "hold"; i: number; t: number }
   | { kind: "pull"; t: number }
@@ -42,6 +50,8 @@ export type Phase =
 export function phaseAt(u: number): Phase {
   let s = u - START;
   if (s < 0) return { kind: "start" };
+  if (s < INTRO) return { kind: "intro", t: s / INTRO };
+  s -= INTRO;
   for (let i = 0; i < FRIENDS.length; i++) {
     if (s < WALK) return { kind: "walk", i, t: s / WALK };
     s -= WALK;
@@ -51,3 +61,8 @@ export function phaseAt(u: number): Phase {
   if (s < PULL) return { kind: "pull", t: s / PULL };
   return { kind: "end", t: clamp01((s - PULL) / END_HOLD) };
 }
+
+/** Screens into the track where friend `i`'s card is fully open: the middle of their hold. */
+export const atFriend = (i: number) => START + INTRO + i * (WALK + HOLD) + WALK + HOLD / 2;
+/** Screens into the track where the ending pop-up is up. */
+export const AT_END = START + INTRO + FRIENDS.length * (WALK + HOLD) + PULL + END_HOLD * 0.55;

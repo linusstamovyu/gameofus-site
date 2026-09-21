@@ -36,9 +36,10 @@ export interface Scene {
 
 /**
  * A box of the scene's own aspect that plays it. `cls` is added to the box, so a card's `art` class keeps the
- * card's shape; pass `hoverTarget` when the interactive element is not an ancestor.
+ * card's shape; pass `hoverTarget` when the interactive element is not an ancestor, and `onHover` for a grid
+ * where the loops should wait to be asked rather than all play at once.
  */
-export function loopBox(scene: Scene, cls = "", hoverTarget?: HTMLElement): HTMLElement {
+export function loopBox(scene: Scene, cls = "", hoverTarget?: HTMLElement, onHover = false): HTMLElement {
   const box = document.createElement("span");
   box.className = `loop-box ${cls}`.trim();
   box.style.aspectRatio = `${scene.w} / ${scene.h}`;
@@ -53,7 +54,7 @@ export function loopBox(scene: Scene, cls = "", hoverTarget?: HTMLElement): HTML
       scene.draw(g, t, url => imgs[url] ?? null);
     },
   };
-  box.append(loopPreview(adapted, { poster: scene.poster, label: scene.label, hoverTarget }));
+  box.append(loopPreview(adapted, { poster: scene.poster, label: scene.label, hoverTarget, onHover }));
   return box;
 }
 

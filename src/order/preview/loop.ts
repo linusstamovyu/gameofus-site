@@ -20,7 +20,10 @@
  *
  * PLAYBACK RULES
  *  - Autoplays muted when on screen (IntersectionObserver), pauses when off screen or when the tab is hidden.
- *    Hover-to-play was rejected: phones have no hover, and a grid of stills reads as dead.
+ *    Hover-to-play was rejected as the DEFAULT: phones have no hover, and a grid of stills reads as dead.
+ *  - `onHover` asks for it anyway, for a grid where every card would otherwise be drawing at once (the twelve
+ *    party minigames). It reuses the reduced-motion path below whole, which is what makes it work on a phone:
+ *    a tap plays one loop. Owner, 20 Sep 2026.
  *  - prefers-reduced-motion: shows the poster and plays only while the pointer is over it or its card has
  *    keyboard focus, or for one loop after a tap. Pass `hoverTarget` if the interactive card is not the parent.
  *  - One shared requestAnimationFrame drives every visible preview; nothing runs when none are visible.
@@ -50,6 +53,8 @@ export interface LoopPreviewOptions {
   label?: string;
   /** Element whose hover/focus plays the loop under reduced motion. Defaults to the closest button/a/label. */
   hoverTarget?: HTMLElement;
+  /** Play only while hovered, focused, or for one loop after a tap — whatever the visitor's motion setting. */
+  onHover?: boolean;
 }
 
 interface Instance {
@@ -60,7 +65,9 @@ interface Instance {
   images?: LoopImages;
   loading?: boolean;
   visible: boolean;
-  wanted: boolean; // reduced motion: hovered / focused / tapped
+  /** This preview waits to be asked, the way every preview does under reduced motion. */
+  onHover: boolean;
+  wanted: boolean; // reduced motion, or onHover: hovered / focused / tapped
   drawn: boolean;
   /** Has been in the document; only then can leaving it mean it was thrown away. */
   attached: boolean;
@@ -92,7 +99,7 @@ function loadImage(url: string): Promise<HTMLImageElement> {
 
 function shouldPlay(i: Instance): boolean {
   if (!i.visible || !i.images || document.hidden) return false;
-  if (!reduced?.matches) return true;
+  if (!reduced?.matches && !i.onHover) return true;
   return i.wanted || (tapUntil.get(i.scene.id) ?? 0) > performance.now();
 }
 
@@ -223,11 +230,11 @@ export function loopPreview(scene: LoopScene, opts: LoopPreviewOptions = {}): HT
   const g = canvas.getContext("2d");
   if (!g) return host; // no canvas: the poster is the preview
 
-  const inst: Instance = { host, canvas, g, scene, visible: false, wanted: false, drawn: false, attached: false };
+  const inst: Instance = { host, canvas, g, scene, visible: false, onHover: !!opts.onHover, wanted: false, drawn: false, attached: false };
   sweep();
   instances.add(inst);
 
-  // Reduced motion: hover, keyboard focus, or a tap (one loop) plays it. Bound once the host is in the DOM.
+  // Reduced motion (or onHover): hover, keyboard focus, or a tap (one loop) plays it. Bound once in the DOM.
   queueMicrotask(() => {
     const target = opts.hoverTarget ?? (host.closest("button, a, label") as HTMLElement | null) ?? host;
     const want = (on: boolean) => () => {

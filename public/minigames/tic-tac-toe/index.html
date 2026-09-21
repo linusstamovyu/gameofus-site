@@ -1,0 +1,139 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#111522" />
+    <title>Frokost Party Challenge — Tic-Tac-Toe</title>
+    <script type="module" crossorigin src="./assets/index-DodmHlIY.js"></script>
+    <link rel="stylesheet" crossorigin href="./assets/index-LqVXr1Zm.css">
+  </head>
+  <body>
+    <div id="app">
+      <div class="world-backdrop" aria-hidden="true">
+        <div class="sun"></div>
+        <div class="cloud cloud-a"></div>
+        <div class="cloud cloud-b"></div>
+        <div class="sea"></div>
+        <div class="town town-left"></div>
+        <div class="town town-right"></div>
+        <div class="palm palm-left"><i></i></div>
+        <div class="palm palm-right"><i></i></div>
+        <div class="promenade"></div>
+      </div>
+
+      <main class="minigame-app">
+        <section id="setup-screen" class="setup-screen" aria-labelledby="setup-title">
+          <div class="eyebrow"><span class="challenge-mark">!</span> STRANGER CHALLENGE</div>
+          <div class="setup-panel panel">
+            <header class="setup-heading">
+              <div class="npc-medallion" aria-hidden="true">🧠</div>
+              <div>
+                <h1 id="setup-title">Boardwalk Brain</h1>
+                <p id="stranger-line">“I'm looking for someone named… LINUS!”</p>
+              </div>
+            </header>
+
+            <form id="challenge-form">
+              <fieldset>
+                <legend>CHOOSE DIFFICULTY</legend>
+                <div class="difficulty-grid">
+                  <button class="difficulty-card" type="button" data-difficulty="baby" aria-pressed="false">
+                    <span class="difficulty-name">BABY BOT</span>
+                    <span class="difficulty-tag">RANDOM MOVES</span>
+                    <span class="difficulty-stake">Win: assign 1 sip</span>
+                  </button>
+                  <button class="difficulty-card selected" type="button" data-difficulty="regular" aria-pressed="true">
+                    <span class="difficulty-name">REGULAR</span>
+                    <span class="difficulty-tag">WINS + BLOCKS</span>
+                    <span class="difficulty-stake">Win: assign 2 sips</span>
+                  </button>
+                  <button class="difficulty-card" type="button" data-difficulty="mastermind" aria-pressed="false">
+                    <span class="difficulty-name">MASTERMIND</span>
+                    <span class="difficulty-tag">PERFECT PLAY</span>
+                    <span class="difficulty-stake">Win: assign 4 sips</span>
+                  </button>
+                </div>
+              </fieldset>
+
+              <fieldset>
+                <legend>PARTY RULES</legend>
+                <div class="mode-switch" role="group" aria-label="Party rules">
+                  <button type="button" data-party-mode="off" aria-pressed="false">OFF</button>
+                  <button type="button" data-party-mode="light" aria-pressed="false">LIGHT · MAX 2</button>
+                  <button class="selected" type="button" data-party-mode="standard" aria-pressed="true">STANDARD · MAX 4</button>
+                </div>
+                <p class="safe-note">Every result can be a sip or an alcohol-free substitute. Declining is always free.</p>
+              </fieldset>
+
+              <button class="primary-button" type="submit">ACCEPT CHALLENGE</button>
+            </form>
+          </div>
+          <p class="input-hint">Pointer or touch · Arrow keys / WASD · E / Enter to confirm</p>
+        </section>
+
+        <section id="game-screen" class="game-screen hidden" aria-labelledby="game-title">
+          <header class="game-header">
+            <button id="back-button" class="back-button" type="button">◀ LEAVE</button>
+            <div class="game-heading">
+              <span class="challenge-label">STRANGER CHALLENGE</span>
+              <h1 id="game-title">TIC-TAC-TOE</h1>
+            </div>
+            <div class="difficulty-badge" id="difficulty-badge">REGULAR</div>
+          </header>
+
+          <div class="game-layout">
+            <aside class="npc-panel panel">
+              <div class="npc-medallion small" aria-hidden="true">🧠</div>
+              <div class="npc-name">BOARDWALK BRAIN</div>
+              <div class="speech-bubble" id="npc-speech">“Let's see if you can think diagonally.”</div>
+              <dl class="scoreboard" aria-label="Session score">
+                <div><dt id="player-score-name">LINUS</dt><dd id="player-score">0</dd></div>
+                <div><dt>BRAIN</dt><dd id="ai-score">0</dd></div>
+                <div><dt>DRAWS</dt><dd id="draw-score">0</dd></div>
+              </dl>
+            </aside>
+
+            <section class="board-column">
+              <div id="turn-banner" class="turn-banner panel" aria-live="polite">LINUS — YOUR MOVE</div>
+              <div id="board" class="board" role="grid" aria-label="Tic-tac-toe board">
+                <button type="button" class="cell" role="gridcell" data-cell="0" aria-label="Top left, empty"></button>
+                <button type="button" class="cell" role="gridcell" data-cell="1" aria-label="Top center, empty"></button>
+                <button type="button" class="cell" role="gridcell" data-cell="2" aria-label="Top right, empty"></button>
+                <button type="button" class="cell" role="gridcell" data-cell="3" aria-label="Middle left, empty"></button>
+                <button type="button" class="cell" role="gridcell" data-cell="4" aria-label="Center, empty"></button>
+                <button type="button" class="cell" role="gridcell" data-cell="5" aria-label="Middle right, empty"></button>
+                <button type="button" class="cell" role="gridcell" data-cell="6" aria-label="Bottom left, empty"></button>
+                <button type="button" class="cell" role="gridcell" data-cell="7" aria-label="Bottom center, empty"></button>
+                <button type="button" class="cell" role="gridcell" data-cell="8" aria-label="Bottom right, empty"></button>
+              </div>
+              <p class="board-hint">YOU ARE <strong class="player-mark">×</strong> · BRAIN IS <strong class="ai-mark">○</strong></p>
+            </section>
+
+            <aside class="rules-panel panel">
+              <h2>THE STAKES</h2>
+              <div class="stake-row win"><span>WIN</span><strong id="win-stake">ASSIGN 2</strong></div>
+              <div class="stake-row loss"><span>LOSE</span><strong id="loss-stake">TAKE 1</strong></div>
+              <div class="stake-row draw"><span>DRAW</span><strong>NO RESULT</strong></div>
+              <div class="rules-copy" id="ai-rules">Regular spots immediate wins and blocks obvious traps.</div>
+              <div class="party-chip" id="party-chip">STANDARD · MAX 4</div>
+            </aside>
+          </div>
+
+          <div id="result-layer" class="result-layer hidden" role="dialog" aria-modal="true" aria-labelledby="result-title">
+            <div class="result-card panel">
+              <div id="result-kicker" class="result-kicker">CHALLENGE COMPLETE</div>
+              <h2 id="result-title">YOU WIN!</h2>
+              <div id="result-consequence" class="result-consequence">ASSIGN 2 SIPS</div>
+              <p id="result-copy">Boardwalk Brain needs a moment to recalculate.</p>
+              <div class="result-actions">
+                <button id="rematch-button" class="primary-button" type="button">REMATCH</button>
+                <button id="change-button" class="secondary-button" type="button">CHANGE CHALLENGE</button>
+              </div>
+            </div>
+          </div>
+        </section>
+      </main>
+    </div>
+  </body>
+</html>

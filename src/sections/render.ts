@@ -3,6 +3,7 @@ import type { Occasions, Offer, SquadMember } from "../content/types";
 import { occasionArt } from "../order/occasions";
 import { $, asset, el } from "../dom";
 import { ACTIVE_LADDER, ADDONS, FOUNDER_SPOTS, LADDERS, formatMoney, type AddonId, type Currency, type Edition } from "../order/prices";
+import { tierClass, tierGem } from "../shared/tier";
 
 export function renderSquad(squad: SquadMember[]) {
   const roster = $("#roster");
@@ -57,9 +58,13 @@ export function renderOffer(offer: Offer, currency: Currency) {
   for (const t of offer.tiers) {
     const ed = ladder.editions[t.id];
     const copy = t.copy[ladder.id];
-    const card = el("article", t.star ? "cart star" : "cart");
+    // The card wears its tier's metal (shared/tier.ts): silver, gold, holographic special. `star` is still
+    // "Most picked" and is now said in the tier's own colour rather than in teal, which is the action colour.
+    const card = el("article", `cart ${tierClass(t.id)}${t.star ? " star" : ""}`);
     const label = el("div", "label");
-    label.append(el("h3", null, t.name), el("span", "tag", copy.tag));
+    const name = el("h3");
+    name.append(tierGem(), document.createTextNode(t.name));
+    label.append(name, el("span", "tag", copy.tag));
     const price = el("div", "price");
     price.append(el("span", "founder", "Founder price"), document.createElement("br"));
     const total = el("p", "total");

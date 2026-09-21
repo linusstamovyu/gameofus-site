@@ -37,40 +37,75 @@
   </div>
 </nav>
 
-<header class="hero" id="top">
-  <div class="wrap">
-    <div class="stage" id="stage" tabindex="0" aria-label="Playable beach. Click or tap the sand to walk; after clicking, use W A S D to walk and E to talk. Everything here is also written out below.">
-      <canvas aria-hidden="true"></canvas>
-      <div class="title-card" id="titleCard">
-        <p class="eyebrow">A retro RPG starring your friends</p>
-        <h1>Your friends. Your places. <em>Your game.</em></h1>
-        <p>We turn your group's real photos, places and in-jokes into a game you play together. This beach is a real one: walk around and meet the squad.</p>
-        <div class="row">
-          <button class="btn" id="heroTour" type="button" data-track="hero_cta" data-track-which="tour">Take the tour ▶</button>
-          <a class="btn ghost" href="explore.html" data-track="hero_cta" data-track-which="explore">See everything in it</a>
+<header class="hl-hero" id="top">
+  <div class="hl-track" id="track">
+    <div class="hl-pin" id="pin">
+      <div class="wrap hl-row">
+        <div class="stage hl-stage" id="stage" tabindex="0" aria-label="Playable beach. Press start, then scroll to walk to each of your friends. You can also walk it yourself at any time: click the map, then use W A S D, and E to talk. Everything here is also written out below.">
+          <canvas aria-hidden="true"></canvas>
+
+          <!-- The start screen: the real photo beside the character it became. -->
+          <div class="hl-start" id="start">
+            <div class="hl-headline">
+              <p class="eyebrow">A retro RPG starring your friends</p>
+              <h1>Your friends. Your places. <em>Any world.</em></h1>
+              <p>Real photos in, playable characters out. This is Kai.</p>
+              <div class="hl-go">
+                <button class="btn hl-press" id="press" type="button" data-track="hero_cta" data-track-which="start">Press start ▶</button>
+                <span class="hl-or">or scroll ↓</span>
+              </div>
+            </div>
+            <div class="hl-pair" id="pair">
+              <figure class="hl-photo" id="photoFig"><img id="photoImg" src="lab/kai_photo_cut.webp" alt="Kai in real life"><figcaption>Real photo</figcaption></figure>
+              <span class="hl-arrow" id="pairArrow" aria-hidden="true">→</span>
+              <figure class="hl-art" id="artFig"><img id="artImg" src="lab/kai_fullbody.webp" alt="Kai as a character in the game"><figcaption>In game</figcaption></figure>
+            </div>
+          </div>
+          <canvas class="hl-fx" id="fx" aria-hidden="true"></canvas>
+
+          <div class="hl-card hl-card-top" id="cardTop" hidden></div>
+
+          <!-- The cast, introduced before you walk to any of them (owner, 20 Sep 2026): each friend's real photo
+               turns into their character as you scroll. A beat of the scroll, not a timed pop-up — see plan.ts. -->
+          <div class="hl-cast" id="cast" aria-hidden="true">
+            <p class="hl-cast-head">Kai’s squad — five real people, five characters</p>
+            <div class="hl-cast-row" id="castRow"></div>
+          </div>
+
+          <!-- Where you are in the walk, and the way to jump about in it: the guided tour, folded into the hero
+               (owner, 20 Sep 2026). Every face is a button that scrolls the pin to that friend. -->
+          <div class="hl-rail" id="rail" hidden>
+            <ol class="hl-steps" id="steps"></ol>
+            <button class="hl-next" id="nextStop" type="button" data-track="hero_next_stop">Next stop ▶</button>
+          </div>
+
+          <p class="hl-keys" id="keys" hidden><span>Walk it yourself:</span> <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> or tap the ground · <kbd>E</kbd> to talk</p>
+          <button class="hl-walk" id="walk" type="button" hidden>↩ Back to the walk</button>
+          <p class="hl-hint" id="hint" hidden>Scroll to walk to your friends ↓</p>
+
+          <!-- The world's own controls: the story hides most of them, and they come back for free walking. -->
+          <div class="title-card" id="titleCard" hidden></div>
+          <button class="mini-title" id="miniTitle" type="button" hidden></button>
+          <label class="world-pick" hidden><span class="world-swatch" id="worldSwatch" aria-hidden="true"></span><select id="worldSelect" aria-label="Choose the world: same squad, same map, new setting"></select></label>
+          <nav class="tour" aria-label="Guided tour" hidden><button id="prev" type="button"></button><div><small id="tourStep"></small><strong id="tourName"></strong><div id="dots"></div></div><button id="next" type="button"></button></nav>
+          <span hidden><button id="heroTour" type="button"></button><button id="heroWalk" type="button"></button></span>
+          <div class="scrim" id="scrim" hidden></div>
+          <section class="card" id="card" role="dialog" aria-labelledby="cardTitle" hidden></section>
+          <div class="toast" id="toast" role="status" hidden></div>
+          <noscript><p class="noscript">The beach needs JavaScript. Everything on it is written out below.</p></noscript>
         </div>
-        <small><button class="link-btn hero-walk" id="heroWalk" type="button" data-track="hero_cta" data-track-which="walk">Or just walk around</button> · Tap or click the sand to walk · <kbd>WASD</kbd> <kbd>Shift</kbd> <kbd>E</kbd> after clicking the world</small>
+        <aside class="hl-side" id="side" aria-live="polite">
+          <div class="hl-card" id="cardSide"></div>
+        </aside>
       </div>
-      <button class="mini-title" id="miniTitle" type="button" hidden>◀ Game of Us</button>
-      <label class="world-pick">
-        <span class="world-swatch" id="worldSwatch" aria-hidden="true"></span>
-        <span class="world-label">World</span>
-        <select id="worldSelect" aria-label="Choose the world: same squad, same map, new setting"></select>
-      </label>
-      <nav class="tour" aria-label="Guided tour">
-        <button class="btn ghost" id="prev" type="button" aria-label="Previous stop">◀</button>
-        <div class="where"><small id="tourStep">Guided tour</small><strong id="tourName">Stops on the beach</strong><div class="dots" id="dots"></div></div>
-        <button class="btn" id="next" type="button">Start ▶</button>
-      </nav>
-      <div class="scrim" id="scrim" hidden></div>
-      <section class="card" id="card" role="dialog" aria-labelledby="cardTitle" hidden></section>
-      <div class="toast" id="toast" role="status" hidden></div>
-      <noscript><p class="noscript">The beach needs JavaScript. Everything on it is written out below.</p></noscript>
+
+      <!-- The ending: a pop-up over the pinned view, drawn at full size rather than zooming the map. -->
+      <div class="hl-end" id="end" aria-hidden="true"><div class="hl-end-panel" id="endPanel"></div></div>
     </div>
-    <div class="skip">
-      <span>Rather read than walk? Everything on the beach is also on this page.</span>
-      <a href="#features">Scroll to the site ↓</a>
-    </div>
+  </div>
+  <div class="skip">
+    <span>Rather read than walk? Everything on the beach is also on this page.</span>
+    <a href="#features">Scroll to the site ↓</a>
   </div>
 </header>
 

@@ -4,6 +4,7 @@ import { $, asset, el, photoPair } from "../dom";
 import { ACTIVE_LADDER, LADDERS, formatMoney } from "../order/prices";
 import { currentCurrency } from "../shared/countryPicker";
 import { track } from "../shared/analytics";
+import { tierClass, tierGem } from "../shared/tier";
 import { loadVisited, saveVisited, unlockPerk } from "../shared/tourProgress";
 import { perkActive, perkDaysLeft } from "../order/perk";
 import { drawCharacter, drawMarker, drawPrompt, drawTarget } from "./draw";
@@ -295,8 +296,11 @@ export class BeachWorld {
   private tiers(): HTMLElement {
     const g = el("div", "tiers");
     this.offer.tiers.forEach(t => {
-      const d = el("div", t.star ? "star" : null);
-      d.append(el("b", null, t.short), el("span", null, formatMoney(LADDERS[ACTIVE_LADDER].editions[t.id].founder[currentCurrency()], currentCurrency())), el("em", null, t.copy[ACTIVE_LADDER].friends));
+      // Same three metals as the price cards and the order page (shared/tier.ts).
+      const d = el("div", `${tierClass(t.id)}${t.star ? " star" : ""}`);
+      const name = el("b");
+      name.append(tierGem(), document.createTextNode(t.short));
+      d.append(name, el("span", null, formatMoney(LADDERS[ACTIVE_LADDER].editions[t.id].founder[currentCurrency()], currentCurrency())), el("em", null, t.copy[ACTIVE_LADDER].friends));
       g.append(d);
     });
     return g;

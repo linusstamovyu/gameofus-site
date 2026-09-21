@@ -1,6 +1,7 @@
 // The "Included in X" badge on an Explore card (plan 18 §1), derived from the active ladder so it can never
 // disagree with the price cards. PURE.
 import { ACTIVE_LADDER, ALL, EDITION_IDS, LADDERS, type Allowance, type EditionId, type LadderId } from "../order/prices";
+import { TIER_LOOK } from "../shared/tier";
 
 const NAME: Record<EditionId, string> = { standard: "Standard", deluxe: "Deluxe", ultimate: "Ultimate" };
 
@@ -15,4 +16,15 @@ export function includedBadge(key: keyof Allowance, all?: number, ladder: Ladder
   if (first < 0) return "Add-on";
   if (first > 0) return `From ${NAME[counts[first][0]]}`;
   return counts.map(([id, n]) => `${NAME[id]} ${shown(n)}`).join(" · ");
+}
+
+/**
+ * The edition a "From X" badge names, so the chip can wear that tier's metal (owner, 17 Sep 2026: the tier
+ * colours have to agree everywhere). A badge that lists all three names no tier and stays neutral — three
+ * metals inside one 11px chip is noise, and no single colour is the right one for it. PURE.
+ */
+export function badgeTier(badge: string): EditionId | null {
+  const m = /^From (.+)$/.exec(badge);
+  if (!m) return null;
+  return EDITION_IDS.find(id => TIER_LOOK[id].name === m[1]) ?? null;
 }
